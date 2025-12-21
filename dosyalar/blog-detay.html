@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Detay | Abdullah Cihan</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css">       
+    <link rel="stylesheet" href="blog-detay.css">  
+</head>
+<body>
+
+    <div id="progress-container"><div id="progress-bar"></div></div>
+    <div class="background-glow"></div>
+
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
+            <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li><a href="index.html#blog">Blog</a></li>
+                    <li><a href="#youtube">YouTube</a></li>
+                    <li><a href="#iletisim" class="btn-cta">İletişim</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="article-header-section">
+            <div class="container">
+                <a href="index.html#blog" class="back-link"><i class="fa-solid fa-arrow-left"></i> Blog'a Dön</a>
+                
+                <div class="article-meta">
+                    <span id="detail-category" class="category">Kategori</span>
+                    <span id="detail-date" class="date">Tarih</span>
+                </div>
+                
+                <h1 id="detail-title" class="article-main-title">Yazı Yükleniyor...</h1>
+            </div>
+        </section>
+
+        <section id="article-body-section" class="section article-body">
+            <div class="container detail-layout">
+                
+                <div class="article-content glass">
+                    
+                    <div class="article-cover">
+                        <div class="cover-placeholder">
+                            <i id="detail-icon" class="fa-solid fa-spinner"></i>
+                        </div>
+                        <img id="detail-img" src="" style="display:none;" alt="Kapak Görseli">
+                    </div>
+
+                    <div id="detail-content">
+                        <p>İçerik getiriliyor...</p>
+                    </div>
+
+                    <div class="share-box">
+                    <span class="share-title">Bu yazıyı paylaş:</span>
+
+                    <div class="share-actions">
+                        <a class="share-btn share-x" href="#" id="share-x" target="_blank" rel="noopener noreferrer" aria-label="X'te paylaş">
+                        <i class="fa-brands fa-x-twitter"></i>
+                        <span>X</span>
+                        </a>
+
+                        <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn'de paylaş">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                        <span>LinkedIn</span>
+                        </a>
+
+                        <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp'ta paylaş">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                        </a>
+
+                        <button class="share-btn share-copy" type="button" id="share-copy" aria-label="Linki kopyala">
+                        <i class="fa-solid fa-link"></i>
+                        <span>Kopyala</span>
+                        </button>
+                    </div>
+
+                    <small class="share-hint">Link otomatik alınır. İstersen kopyalayıp paylaşabilirsin.</small>
+
+                    <div class="share-toast" id="share-toast" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <aside class="sidebar">
+                    <div class="sidebar-widget glass">
+                        <h3>Kategoriler</h3>
+                        <ul class="cat-list">
+                            <li><a href="#">Python <span>(12)</span></a></li>
+                            <li><a href="#">Teknoloji <span>(8)</span></a></li>
+                            <li><a href="#">Felsefe <span>(5)</span></a></li>
+                            <li><a href="#">Video <span>(15)</span></a></li>
+                        </ul>
+                    </div>
+                    <div class="sidebar-widget glass text-center">
+                        <h3>Abone Ol</h3>
+                        <p class="small-text">YouTube kanalıma beklerim.</p>
+                        <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn-sidebar">Kanalı Gör</a>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <footer id="iletisim">
+            <div class="container footer-content">
+                <div class="copyright">&copy; 2025 Abdullah Cihan.</div>
+            </div>
+        </footer>
+    </main>
+
+    <a href="#" class="back-to-top"><i class="fa-solid fa-arrow-up"></i></a>
+    <script src="blog-detay.js"></script>
+    
+    <script>
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+        if(hamburger){
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>
