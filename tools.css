@@ -1,0 +1,39 @@
+/* tools.css - Hızlı Araçlar */
+
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #cbd5e1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: 0.2s;
+}
+
+.tool-item:hover {
+  background: rgba(59,130,246,0.12);
+  border-color: rgba(59,130,246,0.35);
+  color: #fff;
+}
+
+.tool-item i {
+  width: 18px;
+  text-align: center;
+  color: #60a5fa;
+}
+
+.tool-empty {
+  margin-top: 12px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
