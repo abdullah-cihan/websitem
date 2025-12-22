@@ -82,6 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = sessionStorage.getItem('adminToken');
     const exp = Number(sessionStorage.getItem('adminTokenExp') || '0');
     if (token && exp > now()) {
+      sessionStorage.setItem("admin_key", prompt("Admin anahtarını gir (1 kere):"));
+      sessionStorage.setItem("is_admin", "1");
+
       window.location.href = 'admin.html';
       return;
     }
