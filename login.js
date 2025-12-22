@@ -81,8 +81,11 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const token = sessionStorage.getItem('adminToken');
     const exp = Number(sessionStorage.getItem('adminTokenExp') || '0');
+
     if (token && exp > now()) {
-      sessionStorage.setItem("admin_key", prompt("Admin anahtarını gir (1 kere):"));
+      const k = prompt("Admin anahtarını gir (Worker ADMIN_KEY):");
+      if (!k) return;
+      sessionStorage.setItem("admin_key", k);
       sessionStorage.setItem("is_admin", "1");
 
       window.location.href = 'admin.html';
@@ -115,6 +118,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sessionStorage.setItem('adminToken', tokenHex);
         sessionStorage.setItem('adminTokenExp', String(now() + (2 * 60 * 60 * 1000)));
+
+        // ✅ Worker'a istek atmak için ADMIN_KEY al
+        const k = prompt("Admin anahtarını gir (Worker ADMIN_KEY):");
+        if (!k) { showError(true); return; }
+        sessionStorage.setItem("admin_key", k);
+        sessionStorage.setItem("is_admin", "1");
 
         setFailState({ count: 0, lockUntil: 0 });
 
