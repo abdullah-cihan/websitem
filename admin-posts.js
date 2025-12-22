@@ -3,6 +3,8 @@
 (function () {
   const DEFAULT_CATEGORIES = ['Python', 'Teknoloji', 'Felsefe', 'Yazılım', 'Kariyer', 'Video'];
 
+  const WORKER_URL = "https://github-posts-api.abdullahcihan21.workers.dev";
+
   const state = {
     blogPosts: [],
     categories: [],
@@ -21,6 +23,53 @@
       return false;
     }
     return true;
+  }
+
+  // =========================
+  // API HELPERS (Worker)
+  // =========================
+  function adminKey() {
+    return sessionStorage.getItem("admin_key") || "";
+  }
+
+  async function apiGetPosts() {
+    const res = await fetch(`${WORKER_URL}/posts`, {
+      method: "GET",
+      headers: {
+        "X-ADMIN-KEY": adminKey(),
+      },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json(); // {posts:[...]}
+    return Array.isArray(data.posts) ? data.posts : [];
+  }
+
+  // Komple listeyi yazar (edit/sil için)
+  async function apiPutAllPosts(posts) {
+    const res = await fetch(`${WORKER_URL}/posts/all`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ADMIN-KEY": adminKey(),
+      },
+      body: JSON.stringify({ posts }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // Yeni post ekler
+  async function apiAddPost(post) {
+    const res = await fetch(`${WORKER_URL}/posts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-ADMIN-KEY": adminKey(),
+      },
+      body: JSON.stringify(post),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
   }
 
   // =========================
@@ -110,10 +159,8 @@
         </td>
       `;
 
-      // Satır tıklanınca edit
       tr.addEventListener('click', () => window.editPost(realIndex));
 
-      // Sil butonu
       tr.querySelector('.btn-delete')?.addEventListener('click', (e) => {
         e.stopPropagation();
         window.deletePost(realIndex);
@@ -153,193 +200,4 @@
   // =========================
   window.addNewCategory = () => {
     if (!ensureCore()) return;
-    const core = C();
-
-    const name = prompt('Yeni kategori adı:');
-    const cat = (name || '').trim();
-    if (!cat) return;
-
-    if (state.categories.some((c) => c.toLowerCase() === cat.toLowerCase())) {
-      showToast('Bu kategori zaten var.', 'warning');
-      return;
-    }
-
-    state.categories.unshift(cat);
-    core.writeLS('categories', state.categories);
-
-    renderCategorySelect();
-    showToast('Kategori eklendi.', 'success');
-  };
-
-  window.filterPosts = () => {
-    if (!ensureCore()) return;
-
-    const q = (document.getElementById('search-posts')?.value || '').toLowerCase().trim();
-    const filtered = state.blogPosts.filter((p) => {
-      const title = String(p?.title || '').toLowerCase();
-      const cat = String(p?.category || '').toLowerCase();
-      return title.includes(q) || cat.includes(q);
-    });
-
-    renderPostsTable(filtered);
-  };
-
-  window.savePost = (status = 'published') => {
-    if (!ensureCore()) return;
-    const core = C();
-
-    const title = (document.getElementById('post-title')?.value || '').trim();
-    const date =
-      (document.getElementById('post-date')?.value || '').trim() ||
-      new Date().toLocaleDateString('tr-TR');
-
-    const category = (document.getElementById('post-category')?.value || '').trim();
-    const icon = (document.getElementById('post-image')?.value || '').trim();
-    const desc = (document.getElementById('post-desc')?.value || '').trim();
-    const isFeatured = !!document.getElementById('post-featured')?.checked;
-
-    const content = state.quill ? state.quill.root.innerHTML : '';
-    const plain = state.quill ? state.quill.getText().trim() : '';
-
-    if (!title) return showToast('Başlık boş olamaz', 'error');
-    if (!category) return showToast('Kategori seçiniz', 'error');
-    if (status !== 'draft' && !plain) return showToast('İçerik boş olamaz', 'error');
-
-    const postData = {
-      title,
-      date,
-      category,
-      icon,
-      desc,
-      content,
-      tags: Array.isArray(state.tags) ? [...state.tags] : [],
-      isFeatured,
-      status: status === 'draft' ? 'draft' : 'published',
-      linkType: 'internal',
-      url: '',
-    };
-
-    if (state.editModeIndex !== null && state.blogPosts[state.editModeIndex]) {
-      state.blogPosts[state.editModeIndex] = { ...state.blogPosts[state.editModeIndex], ...postData };
-      showToast('Yazı güncellendi', 'success');
-    } else {
-      state.blogPosts.unshift(postData);
-      showToast(status === 'draft' ? 'Taslak kaydedildi' : 'Yazı yayınlandı', 'success');
-    }
-
-    core.writeLS('posts', state.blogPosts);
-    renderPostsTable();
-    resetPostForm();
-    window.showSection?.('posts');
-  };
-
-  window.editPost = (index) => {
-    if (!ensureCore()) return;
-
-    const post = state.blogPosts[index];
-    if (!post) return;
-
-    state.editModeIndex = index;
-
-    const titleEl = document.getElementById('post-title');
-    const dateEl = document.getElementById('post-date');
-    const catEl = document.getElementById('post-category');
-    const imgEl = document.getElementById('post-image');
-    const descEl = document.getElementById('post-desc');
-    const featuredEl = document.getElementById('post-featured');
-
-    if (titleEl) titleEl.value = post.title || '';
-    if (dateEl) dateEl.value = post.date || '';
-    if (catEl) catEl.value = post.category || state.categories[0] || '';
-    if (imgEl) imgEl.value = post.icon || '';
-    if (descEl) descEl.value = post.desc || '';
-    if (featuredEl) featuredEl.checked = !!post.isFeatured;
-
-    state.tags = Array.isArray(post.tags) ? [...post.tags] : [];
-    renderTags();
-
-    if (state.quill) state.quill.root.innerHTML = post.content || '';
-
-    showToast('Düzenleme modu', 'warning');
-    window.showSection?.('new-post');
-  };
-
-  window.deletePost = (index) => {
-    if (!ensureCore()) return;
-    const core = C();
-
-    if (!confirm('Bu yazıyı silmek istediğinize emin misiniz?')) return;
-
-    state.blogPosts.splice(index, 1);
-    core.writeLS('posts', state.blogPosts);
-
-    renderPostsTable();
-    showToast('Yazı silindi', 'error');
-  };
-
-  // =========================
-  // INIT
-  // =========================
-  document.addEventListener('DOMContentLoaded', () => {
-    if (!ensureCore()) return;
-    const core = C();
-
-    state.blogPosts = core.readArrayLS('posts', []);
-    state.categories = core.readArrayLS('categories', DEFAULT_CATEGORIES);
-    if (!state.categories.length) state.categories = [...DEFAULT_CATEGORIES];
-
-    // Quill
-    const editorContainer = document.getElementById('editor-container');
-    if (editorContainer && window.Quill) {
-      state.quill = new Quill('#editor-container', {
-        theme: 'snow',
-        placeholder: 'İçeriği buraya yazın...',
-        modules: {
-          toolbar: [
-            [{ header: [2, 3, false] }],
-            ['bold', 'italic', 'underline', 'code-block'],
-            ['link', 'blockquote', 'image'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['clean'],
-          ],
-        },
-      });
-
-      state.quill.on('text-change', () => {
-        const text = state.quill.getText();
-        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
-        const readTimeEl = document.getElementById('read-time');
-        if (readTimeEl) readTimeEl.value = `${Math.ceil(wordCount / 200) || 1} Dakika`;
-      });
-    }
-
-    // Date default
-    const dateEl = document.getElementById('post-date');
-    if (dateEl && !dateEl.value) dateEl.value = new Date().toLocaleDateString('tr-TR');
-
-    // Tags input
-    const tagsInput = document.getElementById('tags-input');
-    if (tagsInput) {
-      tagsInput.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter') return;
-        e.preventDefault();
-
-        const val = (tagsInput.value || '').trim();
-        if (!val) return;
-
-        const normalized = val.toLowerCase();
-        if (state.tags.some((x) => x.toLowerCase() === normalized)) {
-          tagsInput.value = '';
-          return;
-        }
-
-        state.tags.push(val);
-        tagsInput.value = '';
-        renderTags();
-      });
-    }
-
-    renderCategorySelect();
-    renderPostsTable();
-  });
-})();
+    const core
