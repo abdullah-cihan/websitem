@@ -333,3 +333,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error("Veri çekilemedi:", e);
     }
 });
+window.savePost = window.savePostRemote;
