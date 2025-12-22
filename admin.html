@@ -295,11 +295,10 @@
     </main>
   </div>
 
-  <!-- SCRIPTS: Modüler sıra -->
   <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
   <script>
-    // ✅ Direkt admin.html'e geleni engelle (login olmadan)
+    // ✅ Güvenlik kontrolü
     (function () {
       try {
         const token = sessionStorage.getItem("adminToken");
