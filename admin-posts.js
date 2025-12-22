@@ -1,246 +1,187 @@
-/* admin-posts.js - İyileştirilmiş Versiyon */
+/* admin-posts.js - KAPSAMSIZ (GARANTİ) VERSİYON */
 
-(function () {
-  console.log("Admin Posts Script Yükleniyor...");
+console.log("Admin Posts Script Başlatıldı...");
 
-  const DEFAULT_CATEGORIES = ['Python', 'Teknoloji', 'Felsefe', 'Yazılım', 'Kariyer', 'Video'];
-  const WORKER_URL = "https://github-posts-api.abdullahcihan21.workers.dev";
+// Sayfa yüklendiğinde bu uyarıyı görmüyorsanız dosya yüklenmiyor demektir.
+// Çalıştığını teyit edince bu satırı silebilirsiniz:
+// alert("Script Yüklendi!"); 
 
-  const state = {
-    blogPosts: [],
-    categories: [],
-    editModeIndex: null,
-    tags: [],
-    quill: null,
-  };
+const DEFAULT_CATEGORIES = ['Python', 'Teknoloji', 'Felsefe', 'Yazılım', 'Kariyer', 'Video'];
+const WORKER_URL = "https://github-posts-api.abdullahcihan21.workers.dev";
 
-  function C() {
-    return window.AdminCore;
+// Değişkenleri global yapıyoruz ki erişim sorunu olmasın
+window.AppState = {
+  blogPosts: [],
+  categories: [],
+  editModeIndex: null,
+  tags: [],
+  quill: null,
+};
+
+function getCore() {
+  return window.AdminCore;
+}
+
+function ensureCore() {
+  if (!window.AdminCore) {
+    console.error('AdminCore (admin.js) yüklenmemiş veya bulunamadı!');
+    alert("Hata: admin.js dosyası yüklenemedi. Sayfayı yenileyin.");
+    return false;
   }
+  return true;
+}
 
-  function ensureCore() {
-    if (!C()) {
-      console.error('AdminCore bulunamadı. admin.js önce yüklenmeli.');
-      return false;
-    }
-    return true;
-  }
+function getAdminKey() {
+  return sessionStorage.getItem("admin_key") || "";
+}
 
-  // API Fonksiyonları
-  function adminKey() { return sessionStorage.getItem("admin_key") || ""; }
+// =========================
+// ANA KAYDETME FONKSİYONU
+// =========================
+// Bu fonksiyonu doğrudan window'a atıyoruz.
+window.savePostRemote = async function(status) {
+    console.log("Butona basıldı. Durum:", status);
 
-  async function apiGetPosts() {
-    const res = await fetch(`${WORKER_URL}/posts`, {
-      method: "GET",
-      headers: { "X-ADMIN-KEY": adminKey() },
-    });
-    if (!res.ok) throw new Error(await res.text());
-    const data = await res.json();
-    return Array.isArray(data.posts) ? data.posts : [];
-  }
-
-  async function apiAddPost(post) {
-    const res = await fetch(`${WORKER_URL}/posts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-ADMIN-KEY": adminKey() },
-      body: JSON.stringify(post),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  async function apiPutAllPosts(posts) {
-    const res = await fetch(`${WORKER_URL}/posts/all`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-ADMIN-KEY": adminKey() },
-      body: JSON.stringify({ posts }),
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-  }
-
-  // Render Fonksiyonları
-  function renderCategorySelect() {
-    const sel = document.getElementById('post-category');
-    const catsCount = document.getElementById('total-cats-count');
-    if (catsCount) catsCount.textContent = String(state.categories.length);
-    if (!sel) return;
-    sel.innerHTML = '';
-    state.categories.forEach((cat) => {
-      const opt = document.createElement('option');
-      opt.value = cat;
-      opt.textContent = cat;
-      sel.appendChild(opt);
-    });
-  }
-
-  function renderTags() {
-    const tagsList = document.getElementById('tags-list');
-    if (!tagsList) return;
-    tagsList.innerHTML = '';
-    state.tags.forEach((t, idx) => {
-      const li = document.createElement('li');
-      li.className = 'tag-chip';
-      li.textContent = t + ' ';
-      const x = document.createElement('i');
-      x.className = 'fa-solid fa-xmark';
-      x.style.cursor = 'pointer';
-      x.addEventListener('click', () => {
-        state.tags.splice(idx, 1);
-        renderTags();
-      });
-      li.appendChild(x);
-      tagsList.appendChild(li);
-    });
-  }
-
-  function renderPostsTable(postsToRender = state.blogPosts) {
-    const core = C();
-    const tbody = document.getElementById('posts-table-body');
-    const countEl = document.getElementById('total-posts-count');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    postsToRender.forEach((post) => {
-      const realIndex = state.blogPosts.indexOf(post);
-      const iconRaw = post?.icon || '';
-      const iconUrl = String(iconRaw).includes('http') ? core.safeHttpUrl(iconRaw) : '';
-      const iconCls = !iconUrl ? core.safeIconClass(iconRaw) : '';
-
-      let imgDisplay = '';
-      if (iconUrl) {
-        imgDisplay = `<img src="${core.escapeHTML(iconUrl)}" style="width:40px;height:40px;border-radius:5px;object-fit:cover;">`;
-      } else {
-        const finalIcon = iconCls || 'fa-solid fa-pen';
-        imgDisplay = `<div style="width:40px;height:40px;background:#334155;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;"><i class="${core.escapeHTML(finalIcon)}"></i></div>`;
-      }
-
-      const statusBadge = post?.status === 'draft'
-        ? `<span style="background:rgba(251,191,36,0.2);color:#fbbf24;padding:4px 8px;border-radius:4px;font-size:0.8rem;">Taslak</span>`
-        : `<span style="background:rgba(16,185,129,0.2);color:#10b981;padding:4px 8px;border-radius:4px;font-size:0.8rem;">Yayında</span>`;
-
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.innerHTML = `
-        <td>${imgDisplay}</td>
-        <td style="font-weight:600; color:white;">${core.escapeHTML(post?.title || '')}</td>
-        <td>${core.escapeHTML(post?.category || '')}</td>
-        <td>${statusBadge}</td>
-        <td><button type="button" class="action-btn btn-delete"><i class="fa-solid fa-trash"></i></button></td>
-      `;
-
-      tr.addEventListener('click', () => window.editPost(realIndex));
-      tr.querySelector('.btn-delete')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.deletePost(realIndex);
-      });
-
-      tbody.appendChild(tr);
-    });
-
-    if (countEl) countEl.textContent = String(state.blogPosts.length);
-  }
-
-  function resetPostForm() {
-    state.editModeIndex = null;
-    const ids = ['post-title', 'post-date', 'post-image', 'post-desc', 'read-time'];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    
-    const dateEl = document.getElementById('post-date');
-    if (dateEl) dateEl.value = new Date().toLocaleDateString('tr-TR');
-    
-    const featuredEl = document.getElementById('post-featured');
-    if (featuredEl) featuredEl.checked = false;
-
-    state.tags = [];
-    renderTags();
-    if (state.quill) state.quill.setText('');
-  }
-
-  // =========================
-  // GLOBAL FUNCTIONS
-  // =========================
-
-  // ✅ BU FONKSİYON ARTIK GARANTİ ÇALIŞIR
-  window.savePostRemote = async function(status = 'published') {
-    console.log("savePostRemote tetiklendi: ", status); // Debug
-
+    // 1. AdminCore kontrolü
     if (!ensureCore()) return;
-    if (!adminKey()) {
-      alert("Admin anahtarı yok! Lütfen çıkış yapıp tekrar girin.");
-      return;
+
+    // 2. Anahtar kontrolü
+    if (!getAdminKey()) {
+        alert("Oturum süreniz dolmuş veya Admin Key eksik. Lütfen çıkış yapıp tekrar girin.");
+        return;
     }
 
-    const title = (document.getElementById('post-title')?.value || '').trim();
-    const date = (document.getElementById('post-date')?.value || '').trim() || new Date().toLocaleDateString('tr-TR');
-    const category = (document.getElementById('post-category')?.value || '').trim();
-    const icon = (document.getElementById('post-image')?.value || '').trim();
-    const desc = (document.getElementById('post-desc')?.value || '').trim();
-    const isFeatured = !!document.getElementById('post-featured')?.checked;
+    // 3. Form verilerini al
+    const titleEl = document.getElementById('post-title');
+    const categoryEl = document.getElementById('post-category');
+    
+    if (!titleEl || !categoryEl) {
+        alert("Hata: HTML elementleri bulunamadı (post-title veya post-category).");
+        return;
+    }
 
-    const content = state.quill ? state.quill.root.innerHTML : '';
-    const plain = state.quill ? state.quill.getText().trim() : '';
+    const title = titleEl.value.trim();
+    const category = categoryEl.value.trim();
+    const date = document.getElementById('post-date')?.value || new Date().toLocaleDateString('tr-TR');
+    const icon = document.getElementById('post-image')?.value.trim() || '';
+    const desc = document.getElementById('post-desc')?.value.trim() || '';
+    const isFeatured = document.getElementById('post-featured')?.checked || false;
 
-    if (!title) { alert('Başlık giriniz'); return; }
-    if (!category) { alert('Kategori seçiniz'); return; }
-    if (status !== 'draft' && !plain) { alert('İçerik boş olamaz'); return; }
+    // Quill editöründen içerik al
+    let content = '';
+    let plainText = '';
+    
+    if (window.AppState.quill) {
+        content = window.AppState.quill.root.innerHTML;
+        plainText = window.AppState.quill.getText().trim();
+    }
+
+    // 4. Doğrulama
+    if (!title) { alert('Lütfen yazı başlığını girin.'); return; }
+    if (!category) { alert('Lütfen bir kategori seçin.'); return; }
+    if (status !== 'draft' && !plainText) { alert('Yazı içeriği boş olamaz.'); return; }
 
     const postData = {
-      title, date, category, icon, desc, content,
-      tags: [...state.tags],
-      isFeatured,
-      status,
-      linkType: 'internal',
-      url: ''
+        title,
+        date,
+        category,
+        icon,
+        desc,
+        content,
+        tags: window.AppState.tags,
+        isFeatured,
+        status: status,
+        linkType: 'internal',
+        url: ''
     };
 
+    // 5. API İsteği Gönder
     try {
-      if (state.editModeIndex !== null && state.blogPosts[state.editModeIndex]) {
-        state.blogPosts[state.editModeIndex] = { ...state.blogPosts[state.editModeIndex], ...postData };
-        await apiPutAllPosts(state.blogPosts);
-        alert('Yazı Güncellendi!');
-      } else {
-        await apiAddPost(postData);
-        alert(status === 'draft' ? 'Taslak kaydedildi' : 'Yazı Yayınlandı!');
-      }
-      
-      state.blogPosts = await apiGetPosts();
-      renderPostsTable();
-      resetPostForm();
-      if(window.showSection) window.showSection('posts');
-      
-    } catch (e) {
-      console.error(e);
-      alert('Hata: ' + e.message);
-    }
-  };
+        // Butonu geçici olarak kilitle (çift tıklamayı önle)
+        const btn = document.activeElement;
+        if(btn) btn.disabled = true;
 
-  window.addNewCategory = () => {
-    if (!ensureCore()) return;
-    const core = C();
+        if (window.AppState.editModeIndex !== null) {
+            // Güncelleme Modu
+            window.AppState.blogPosts[window.AppState.editModeIndex] = { 
+                ...window.AppState.blogPosts[window.AppState.editModeIndex], 
+                ...postData 
+            };
+            await apiPutAllPosts(window.AppState.blogPosts);
+            alert("✅ Yazı başarıyla güncellendi!");
+        } else {
+            // Yeni Ekleme Modu
+            await apiAddPost(postData);
+            alert(status === 'draft' ? "✅ Taslak kaydedildi." : "✅ Yazı yayınlandı!");
+        }
+
+        // Listeyi yenile
+        window.AppState.blogPosts = await apiGetPosts();
+        renderPostsTable();
+        resetPostForm();
+        
+        // Listeye geri dön
+        if (window.showSection) window.showSection('posts');
+
+    } catch (error) {
+        console.error("Kaydetme Hatası:", error);
+        alert("Hata oluştu: " + error.message);
+    } finally {
+        // Buton kilidini aç
+        const btn = document.activeElement;
+        if(btn) btn.disabled = false;
+    }
+};
+
+// =========================
+// API HELPERS
+// =========================
+async function apiGetPosts() {
+  const res = await fetch(`${WORKER_URL}/posts`, {
+    method: "GET",
+    headers: { "X-ADMIN-KEY": getAdminKey() },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return Array.isArray(data.posts) ? data.posts : [];
+}
+
+async function apiAddPost(post) {
+  const res = await fetch(`${WORKER_URL}/posts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-ADMIN-KEY": getAdminKey() },
+    body: JSON.stringify(post),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function apiPutAllPosts(posts) {
+  const res = await fetch(`${WORKER_URL}/posts/all`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-ADMIN-KEY": getAdminKey() },
+    body: JSON.stringify({ posts }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+// =========================
+// DİĞER FONKSİYONLAR
+// =========================
+
+window.addNewCategory = function() {
     const name = prompt('Yeni kategori adı:');
     if (!name) return;
-    state.categories.unshift(name);
-    core.writeLS('categories', state.categories);
+    window.AppState.categories.unshift(name);
+    if(window.AdminCore) window.AdminCore.writeLS('categories', window.AppState.categories);
     renderCategorySelect();
-  };
+};
 
-  window.filterPosts = () => {
-    const q = (document.getElementById('search-posts')?.value || '').toLowerCase();
-    const filtered = state.blogPosts.filter(p => 
-       (p.title || '').toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q)
-    );
-    renderPostsTable(filtered);
-  };
-
-  window.editPost = (index) => {
-    const post = state.blogPosts[index];
+window.editPost = function(index) {
+    const post = window.AppState.blogPosts[index];
     if (!post) return;
-    state.editModeIndex = index;
+    window.AppState.editModeIndex = index;
 
     document.getElementById('post-title').value = post.title || '';
     document.getElementById('post-date').value = post.date || '';
@@ -249,49 +190,119 @@
     document.getElementById('post-desc').value = post.desc || '';
     document.getElementById('post-featured').checked = !!post.isFeatured;
 
-    state.tags = post.tags ? [...post.tags] : [];
+    window.AppState.tags = post.tags ? [...post.tags] : [];
     renderTags();
-    if (state.quill) state.quill.root.innerHTML = post.content || '';
+    
+    if (window.AppState.quill) {
+        window.AppState.quill.root.innerHTML = post.content || '';
+    }
 
     if(window.showSection) window.showSection('new-post');
-  };
+};
 
-  window.deletePost = async (index) => {
-    if (!confirm('Silmek istediğine emin misin?')) return;
+window.deletePost = async function(index) {
+    if(!confirm("Silmek istediğinize emin misiniz?")) return;
     try {
-        state.blogPosts.splice(index, 1);
-        await apiPutAllPosts(state.blogPosts);
+        window.AppState.blogPosts.splice(index, 1);
+        await apiPutAllPosts(window.AppState.blogPosts);
         renderPostsTable();
-    } catch(e) { console.error(e); }
-  };
+    } catch(e) {
+        alert("Silinemedi: " + e.message);
+    }
+};
 
-  // INIT
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (!ensureCore()) return;
-    const core = C();
-    state.categories = core.readArrayLS('categories', DEFAULT_CATEGORIES);
+function renderCategorySelect() {
+    const sel = document.getElementById('post-category');
+    if (!sel) return;
+    sel.innerHTML = '';
+    window.AppState.categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        sel.appendChild(opt);
+    });
+}
+
+function renderTags() {
+    const list = document.getElementById('tags-list');
+    if(!list) return;
+    list.innerHTML = '';
+    window.AppState.tags.forEach((tag, idx) => {
+        const li = document.createElement('li');
+        li.className = 'tag-chip';
+        li.innerHTML = `${tag} <i class="fa-solid fa-xmark" onclick="removeTag(${idx})"></i>`;
+        list.appendChild(li);
+    });
+}
+
+// Etiket silme fonksiyonu (HTML içinden çağrılabilmesi için window'a ekledik)
+window.removeTag = function(idx) {
+    window.AppState.tags.splice(idx, 1);
+    renderTags();
+}
+
+function renderPostsTable() {
+    const tbody = document.getElementById('posts-table-body');
+    if(!tbody) return;
+    tbody.innerHTML = '';
     
-    // Quill Init
+    window.AppState.blogPosts.forEach((post, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><i class="fa-solid fa-image"></i></td>
+            <td>${post.title}</td>
+            <td>${post.category}</td>
+            <td>${post.status}</td>
+            <td>
+                <button onclick="window.deletePost(${i})" class="btn-delete"><i class="fa-solid fa-trash"></i></button>
+            </td>
+        `;
+        // Tıklayınca düzenle
+        tr.onclick = (e) => {
+            if(!e.target.closest('button')) window.editPost(i);
+        };
+        tbody.appendChild(tr);
+    });
+    
+    const countEl = document.getElementById('total-posts-count');
+    if(countEl) countEl.innerText = window.AppState.blogPosts.length;
+}
+
+function resetPostForm() {
+    window.AppState.editModeIndex = null;
+    document.getElementById('add-post-form').reset();
+    window.AppState.tags = [];
+    renderTags();
+    if(window.AppState.quill) window.AppState.quill.setText('');
+}
+
+// =========================
+// BAŞLATMA (INIT)
+// =========================
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log("DOM Yüklendi. Başlatılıyor...");
+    
+    if(window.AdminCore) {
+        window.AppState.categories = window.AdminCore.readArrayLS('categories', DEFAULT_CATEGORIES);
+    } else {
+        window.AppState.categories = [...DEFAULT_CATEGORIES];
+    }
+
+    // Editör Kurulumu
     if (document.getElementById('editor-container') && window.Quill) {
-      state.quill = new Quill('#editor-container', {
-        theme: 'snow',
-        placeholder: 'İçerik...',
-        modules: {
-          toolbar: [
-            [{ header: [2, 3, false] }],
-            ['bold', 'italic', 'underline', 'code-block'],
-            ['link', 'blockquote', 'image'],
-            [{ list: 'ordered' }, { list: 'bullet' }],
-            ['clean']
-          ]
-        }
-      });
-      state.quill.on('text-change', () => {
-         const txt = state.quill.getText();
-         const count = txt.trim() ? txt.split(/\s+/).length : 0;
-         const rt = document.getElementById('read-time');
-         if(rt) rt.value = Math.ceil(count/200) + ' dk';
-      });
+        window.AppState.quill = new Quill('#editor-container', {
+            theme: 'snow',
+            placeholder: 'İçerik...',
+            modules: {
+                toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ['bold', 'italic', 'underline', 'code-block'],
+                    ['link', 'blockquote', 'image'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['clean']
+                ]
+            }
+        });
     }
 
     // Tag Input
@@ -301,23 +312,24 @@
             if(e.key === 'Enter') {
                 e.preventDefault();
                 const val = tInput.value.trim();
-                if(val && !state.tags.includes(val)) {
-                    state.tags.push(val);
+                if(val) {
+                    window.AppState.tags.push(val);
                     renderTags();
+                    tInput.value = '';
                 }
-                tInput.value = '';
             }
         });
     }
 
     renderCategorySelect();
-    
+
+    // Verileri Çek
     try {
-        if(adminKey()) {
-            state.blogPosts = await apiGetPosts();
+        if(getAdminKey()) {
+            window.AppState.blogPosts = await apiGetPosts();
             renderPostsTable();
         }
-    } catch(e) { console.error(e); }
-  });
-
-})();
+    } catch(e) {
+        console.error("Veri çekilemedi:", e);
+    }
+});
