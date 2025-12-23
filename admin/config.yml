@@ -1,18 +1,22 @@
 backend:
   name: github
-  repo: abdullah-cihan/websitem
-  branch: main
+  repo: abdullah-cihan/websitem # Senin repo adın
+  branch: main # Ana dalın (bazen master olabilir, sende main görünüyor)
+  base_url: https://bold-snowflake-4248.abdullahcihan21.workers.dev # SENİN WORKER LİNKİN
+  auth_endpoint: /auth # Burası sabit kalacak
 
-media_folder: "assets/uploads"
-public_folder: "/assets/uploads"
+media_folder: "static/img"
+public_folder: "/img"
 
 collections:
   - name: "blog"
     label: "Blog Yazıları"
-    folder: "data" 
+    folder: "content/posts" # Yazıların kaydedileceği klasör
     create: true
     slug: "{{slug}}"
     fields:
       - {label: "Başlık", name: "title", widget: "string"}
       - {label: "Yayın Tarihi", name: "date", widget: "datetime"}
+      - {label: "Kapak Resmi", name: "image", widget: "image", required: false}
+      - {label: "Özet", name: "description", widget: "text"}
       - {label: "İçerik", name: "body", widget: "markdown"}
