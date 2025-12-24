@@ -2,7 +2,7 @@
    ADMIN POSTS MANAGER - FINAL (JSONP GET + FORM POST)
    ============================================================ */
 (function () {
-  const API_URL = "const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
 
   // ----------------------------
   // JSONP helper (CORS yok)
