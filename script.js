@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ======================================================
 
   // YENİ API LİNKİNİZ:
-  const API_URL = "const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
 
 
   const blogContainer = document.getElementById("blog-listesi-container");
@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 });
+
 
 
 
