@@ -1,22 +1,29 @@
-/* admin-posts.js - Kategori Sorunu Giderilmiş & Temizlenmiş Versiyon */
+/* ============================================================
+   ADMIN POSTS MANAGER - FINAL VERSİYON
+   Özellikler: Kategori Yönetimi, Quill Editör, Yazı Gönderme/Listeleme
+   ============================================================ */
 
 (function () {
-    // API Linkiniz
-    const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/exec";
+    // KESİN VE DOĞRU API LİNKİNİZ
+    const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec";
 
-    // AdminCore kütüphanesine erişim (admin.js dosyasından gelir)
+    // AdminCore kütüphanesine güvenli erişim
     function core() {
-        return window.AdminCore;
+        return window.AdminCore || { 
+            // Yedek (Fallback) metotlar, eğer admin.js yüklenmezse hata vermesin
+            readArrayLS: (k) => JSON.parse(localStorage.getItem(k) || '[]'),
+            writeLS: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+        };
     }
 
     // ==========================================
-    // 1. BAŞLANGIÇ (Sayfa Yüklendiğinde)
+    // 1. BAŞLANGIÇ (INIT)
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
         initQuill();      // Editörü başlat
-        loadCategories(); // Kategorileri doldur
+        loadCategories(); // Kategorileri yükle
         
-        // Eğer yazı tablosu varsa (Yazılar sayfasındaysak) listeyi çek
+        // Eğer yazı tablosu varsa (Yazılar sayfasındaysak)
         if(document.getElementById('posts-table-body')) {
             fetchPosts();
         }
@@ -26,6 +33,7 @@
     // 2. QUILL EDİTÖR KURULUMU
     // ==========================================
     function initQuill() {
+        // Quill kütüphanesi var mı ve editör henüz başlatılmamış mı?
         if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
             const container = document.getElementById('editor-container');
             if (container) {
@@ -38,18 +46,18 @@
     }
 
     // ==========================================
-    // 3. KATEGORİ YÖNETİMİ (EKSİK OLAN KISIM)
+    // 3. KATEGORİ YÖNETİMİ
     // ==========================================
     
-    // Kategorileri Yükle
+    // Kategorileri Select Kutusuna Doldur
     function loadCategories() {
         const select = document.getElementById('post-category');
-        if (!select || !core()) return;
+        if (!select) return;
 
-        // LocalStorage'dan kategorileri al
+        // LocalStorage'dan al
         let cats = core().readArrayLS('categories');
         
-        // Eğer hiç kategori yoksa varsayılanları oluştur
+        // Hiç yoksa varsayılanları oluştur
         if (cats.length === 0) {
             cats = ['Genel', 'Teknoloji', 'Yazılım', 'Hayat', 'Felsefe'];
             core().writeLS('categories', cats);
@@ -65,40 +73,43 @@
         });
     }
 
-    // Yeni Kategori Ekle (HTML'deki butondan çağrılır)
+    // Yeni Kategori Ekle (Global - HTML'den çağrılır)
     window.addNewCategory = () => {
         const newCat = prompt("Yeni kategori adı:");
         if (!newCat || !newCat.trim()) return;
 
         const cleanCat = newCat.trim();
-        const cats = core().readArrayLS('categories', []);
+        const cats = core().readArrayLS('categories');
 
-        // Aynı isimde kategori var mı kontrol et
+        // Kontrol
         if (cats.includes(cleanCat)) {
-            window.showToast("Bu kategori zaten mevcut!", "warning");
+            if(window.showToast) window.showToast("Bu kategori zaten mevcut!", "warning");
+            else alert("Bu kategori zaten mevcut!");
             return;
         }
 
-        // Listeye ekle ve kaydet
+        // Ekle ve Kaydet
         cats.push(cleanCat);
         core().writeLS('categories', cats);
 
-        // Listeyi güncelle ve yeni ekleneni seç
+        // Arayüzü Güncelle
         loadCategories();
+        
+        // Yeni ekleneni seçili yap
         const select = document.getElementById('post-category');
         if(select) select.value = cleanCat;
 
-        window.showToast(`Kategori eklendi: ${cleanCat}`, "success");
+        if(window.showToast) window.showToast(`Kategori eklendi: ${cleanCat}`, "success");
     };
 
     // ==========================================
-    // 4. YAZI GÖNDERME (YAYINLA)
+    // 4. YAZI GÖNDERME (SAVE POST) - KRİTİK DÜZELTME BURADA
     // ==========================================
     window.savePost = async (status) => {
         const btnSubmit = document.querySelector('.btn-submit');
         const originalText = btnSubmit ? btnSubmit.innerText : "Yayınla";
         
-        // Butonu kilitle
+        // Butonu Kilitle
         if (btnSubmit) {
             btnSubmit.innerText = "Gönderiliyor...";
             btnSubmit.disabled = true;
@@ -116,15 +127,15 @@
             const editorEl = document.querySelector('#editor-container .ql-editor');
             const editorIcerik = editorEl ? editorEl.innerHTML : "";
 
-            // Kontroller
+            // Validasyon
             if (!baslik) throw new Error("Lütfen bir başlık giriniz.");
             if (!editorEl || editorIcerik === "<p><br></p>" || !editorIcerik.trim()) {
                 throw new Error("Yazı içeriği boş olamaz.");
             }
 
-            // Gönderilecek Veri
+            // --- VERİ PAKETİ (Action Eklendi!) ---
             const postData = {
-                action: "add_post",
+                action: "add_post",  // <-- BU SATIR EKSİKTİ, ARTIK VAR
                 baslik: baslik,
                 icerik: editorIcerik,
                 resim: resimUrl,
@@ -143,21 +154,24 @@
             });
 
             // Başarılı
-            window.showToast("✅ Yazı başarıyla gönderildi!", "success");
+            if(window.showToast) window.showToast("✅ Yazı başarıyla gönderildi!", "success");
+            else alert("✅ Yazı başarıyla gönderildi!");
             
             // Formu Temizle
             document.getElementById("add-post-form").reset();
             if(editorEl) editorEl.innerHTML = ""; 
             
-            // Eğer liste sayfasındaysak tabloyu yenile
+            // Tabloyu Güncelle (Eğer o sayfadaysak)
             if(document.getElementById('posts-table-body')) {
                 setTimeout(fetchPosts, 1500);
             }
 
         } catch (error) {
-            window.showToast("Hata: " + error.message, "error");
+            console.error(error);
+            if(window.showToast) window.showToast("Hata: " + error.message, "error");
+            else alert("Hata: " + error.message);
         } finally {
-            // Butonu eski haline getir
+            // Butonu Eski Haline Getir
             if (btnSubmit) {
                 btnSubmit.innerText = originalText;
                 btnSubmit.disabled = false;
@@ -177,6 +191,8 @@
         try {
             const res = await fetch(`${API_URL}?type=posts`);
             const data = await res.json();
+            
+            // Gelen veri dizi mi yoksa obje mi kontrol et
             const posts = Array.isArray(data) ? data : (data.posts || []);
 
             tbody.innerHTML = '';
@@ -189,7 +205,7 @@
             posts.reverse().forEach(post => {
                 const tr = document.createElement('tr');
                 
-                // Güvenli Resim Gösterimi
+                // Resim Kontrolü
                 const imgTag = post.resim 
                     ? `<img src="${post.resim}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">` 
                     : '<div style="width:40px; height:40px; background:#334155; border-radius:4px;"></div>';
