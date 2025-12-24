@@ -1,216 +1,170 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // ============================================
-  // 0) GÜVENLİK KONTROLÜ (Client-side / UX)
-  // ============================================
-  const now = Date.now();
-  const token = sessionStorage.getItem('adminToken');
-  const exp = Number(sessionStorage.getItem('adminTokenExp') || '0');
+/* ============================================================
+   ADMIN CORE - YÖNETİM PANELİ ÇEKİRDEK DOSYASI (GOOGLE SHEET UYUMLU)
+   ============================================================ */
 
-  if (!token || exp <= now) {
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminTokenExp');
-    window.location.href = 'login.html';
-    return;
-  }
+(function () {
+    // 👇 GÜNCEL API LİNKİNİZ (Tüm dosyalarla aynı olmalı)
+    const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
 
-  // ============================================
-  // CORE HELPERS (diğer modüller buradan kullanır)
-  // ============================================
-  function escapeHTML(str) {
-    return String(str ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#039;');
-  }
+    // ==========================================
+    // 1. GÜVENLİK VE BAŞLANGIÇ KONTROLLERİ
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // A) Giriş Kontrolü (login.js ile uyumlu)
+        const isAdmin = localStorage.getItem('isAdmin');
+        if (isAdmin !== 'true') {
+            window.location.href = 'login.html'; // Yetki yoksa at
+            return;
+        }
 
-  function safeHttpUrl(url) {
-    try {
-      const u = new URL(String(url || ''), window.location.origin);
-      if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
-      return '';
-    } catch {
-      return '';
-    }
-  }
+        // B) Kullanıcı Adını Yaz
+        const adminName = localStorage.getItem('adminName') || 'Yönetici';
+        const profileNameEl = document.querySelector('.user-info span');
+        if(profileNameEl) profileNameEl.innerText = adminName;
 
-  function safeIconClass(cls) {
-    const s = String(cls || '').trim();
-    if (!s) return '';
-    const ok = s.split(/\s+/).every(part =>
-      /^fa(-[a-z]+)?$/.test(part) || /^fa-[a-z0-9-]+$/.test(part)
-    );
-    return ok ? s : '';
-  }
+        // C) Dashboard İstatistiklerini Yükle
+        loadDashboardStats();
 
-  function readArrayLS(key, fallback = []) {
-    try {
-      const raw = JSON.parse(localStorage.getItem(key) || 'null');
-      return Array.isArray(raw) ? raw : fallback;
-    } catch {
-      return fallback;
-    }
-  }
-
-  function writeLS(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-
-  // Modüllerin ortak kullanımı için tek namespace
-  window.AdminCore = {
-    escapeHTML,
-    safeHttpUrl,
-    safeIconClass,
-    readArrayLS,
-    writeLS,
-  };
-
-  // ============================================
-  // TOAST - TEK ve XSS-SAFE
-  // ============================================
-  window.showToast = (msg, type = 'success') => {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-
-    toast.style.backgroundColor =
-      type === 'error' ? '#ef4444' :
-      type === 'warning' ? '#f59e0b' :
-      '#10b981';
-
-    toast.textContent = String(msg);
-
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    container.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  };
-
-  // ============================================
-  // PANEL BÖLÜM GEÇİŞİ (MENÜ BUTONLARI)
-  // ============================================
-  window.showSection = (sectionId) => {
-    document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
-
-    const target = document.getElementById(sectionId);
-    if (target) target.classList.add('active');
-
-    document.querySelectorAll('.admin-menu li').forEach(li => {
-      li.classList.remove('active');
-      const oc = li.getAttribute('onclick') || '';
-      if (oc.includes(`showSection('${sectionId}')`) || oc.includes(`showSection("${sectionId}")`)) {
-        li.classList.add('active');
-      }
+        // D) Varsayılan olarak Dashboard'ı aç
+        // (Eğer URL'de hash yoksa)
+        if (!window.location.hash) {
+            showSection('dashboard');
+        }
     });
-  };
 
-  // ============================================
-  // PROFİL / ÇIKIŞ
-  // ============================================
-  window.toggleProfileMenu = () => {
-    const dropdown = document.getElementById('profile-dropdown');
-    if (dropdown) dropdown.classList.toggle('show');
-  };
+    // ==========================================
+    // 2. NAVİGASYON YÖNETİMİ (Show Section)
+    // ==========================================
+    window.showSection = (sectionId) => {
+        // 1. Tüm sectionları gizle
+        document.querySelectorAll('.admin-section').forEach(sec => {
+            sec.classList.remove('active');
+            sec.style.display = 'none'; 
+        });
 
-  document.addEventListener('click', (e) => {
-    const trigger = document.getElementById('user-profile-trigger');
-    const dropdown = document.getElementById('profile-dropdown');
-    if (trigger && !trigger.contains(e.target)) {
-      if (dropdown) dropdown.classList.remove('show');
-    }
-  });
+        // 2. Menüdeki aktif sınıfını temizle
+        document.querySelectorAll('.admin-menu li').forEach(item => {
+            item.classList.remove('active');
+        });
 
-  window.logout = () => {
-    if (confirm('Çıkış yapmak istediğinize emin misiniz?')) {
-      sessionStorage.removeItem('adminToken');
-      sessionStorage.removeItem('adminTokenExp');
-      window.location.href = 'login.html';
-    }
-  };
+        // 3. Seçilen section'ı göster
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+            targetSection.style.display = 'block';
+            
+            // Fade-in efekti
+            setTimeout(() => {
+                targetSection.style.opacity = 1;
+            }, 10);
+        }
 
-  // ============================================
-  // SHA-256 (şifre işlemleri için)
-  // ============================================
-  async function sha256(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest('SHA-256', enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
+        // 4. İlgili menü öğesini aktif yap
+        const menuItems = document.querySelectorAll('.admin-menu li');
+        menuItems.forEach(item => {
+            const onClickAttr = item.getAttribute('onclick');
+            if(onClickAttr && onClickAttr.includes(sectionId)) {
+                item.classList.add('active');
+            }
+        });
 
-  // ============================================
-  // ŞİFRE DEĞİŞTİRME
-  // ============================================
-  window.changePassword = async () => {
-    const u = (document.getElementById('cp-username')?.value || '').trim();
-    const oldP = document.getElementById('cp-old')?.value || '';
-    const newU = (document.getElementById('cp-new-user')?.value || '').trim() || u;
-    const newP = document.getElementById('cp-new')?.value || '';
-
-    if (!u || !oldP || !newP) return showToast("Alanlar boş olamaz", "error");
-    if (newP.length < 8) return showToast("Yeni şifre en az 8 karakter olmalı", "error");
-
-    const stored = localStorage.getItem('ADMIN_CRED_HASH') || '';
-    const oldHash = await sha256(`${u}:${oldP}`);
-    if (oldHash !== stored) return showToast("Mevcut şifre hatalı", "error");
-
-    const newHash = await sha256(`${newU}:${newP}`);
-    localStorage.setItem('ADMIN_CRED_HASH', newHash);
-
-    showToast("✅ Şifre güncellendi", "success");
-
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminTokenExp');
-    setTimeout(() => (window.location.href = 'login.html'), 600);
-  };
-
-  // ============================================
-  // YEDEKLEME (Settings)
-  // ============================================
-  window.exportData = () => {
-    const data = {
-      posts: readArrayLS('posts', []),
-      categories: readArrayLS('categories', []),
-      siteTools: readArrayLS('siteTools', []),
-      customTools: readArrayLS('customTools', []),
-      customPages: readArrayLS('customPages', [])
+        // 5. VERİLERİ TAZELE (Diğer dosyalardaki fonksiyonları tetikle)
+        // Bu sayede sekmeye her tıklandığında veriler güncellenir.
+        
+        if (sectionId === 'posts' && typeof fetchPosts === 'function') {
+            fetchPosts(); // admin-posts.js
+        }
+        if (sectionId === 'tools-manager' && typeof fetchTools === 'function') {
+            fetchTools(); // admin-tools.js
+        }
+        if (sectionId === 'pages-manager' && typeof fetchPages === 'function') {
+            fetchPages(); // admin-pages.js
+        }
+        if (sectionId === 'dashboard') {
+            loadDashboardStats(); // İstatistikleri yenile
+        }
     };
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-    const a = document.createElement('a');
-    a.setAttribute('href', dataStr);
-    a.setAttribute('download', 'blog_full_backup_' + new Date().toISOString().slice(0, 10) + '.json');
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    // ==========================================
+    // 3. DASHBOARD İSTATİSTİKLERİ (CANLI)
+    // ==========================================
+    async function loadDashboardStats() {
+        const postCountEl = document.getElementById('total-posts-count');
+        const catCountEl = document.getElementById('total-cats-count');
 
-    showToast('Tüm veriler indirildi!', 'success');
-  };
+        if(!postCountEl) return;
 
-  window.importData = (input) => {
-    const file = input?.files?.[0];
-    if (!file) return;
+        // Yükleniyor efekti
+        postCountEl.innerText = "...";
+        if(catCountEl) catCountEl.innerText = "...";
+        
+        try {
+            // Google Sheet'ten verileri çek
+            const res = await fetch(`${API_URL}?type=posts`);
+            const data = await res.json();
+            
+            // Backend yapımız: { posts: [...] } veya { ok: true, posts: [...] }
+            const posts = data.posts || (data.ok ? data.posts : []);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
+            if (posts) {
+                // Toplam Yazı Sayısı
+                postCountEl.innerText = posts.length;
 
-        if (data.posts) writeLS('posts', data.posts);
-        if (data.categories) writeLS('categories', data.categories);
-        if (data.siteTools) writeLS('siteTools', data.siteTools);
-        if (data.customTools) writeLS('customTools', data.customTools);
-        if (data.customPages) writeLS('customPages', data.customPages);
+                // Kategorileri Say (Tekrarsız)
+                const categories = new Set();
+                posts.forEach(p => {
+                    if(p.kategori) categories.add(p.kategori);
+                });
+                if(catCountEl) catCountEl.innerText = categories.size;
+            } else {
+                postCountEl.innerText = "0";
+            }
 
-        alert('Yedek başarıyla yüklendi! Sayfa yenileniyor...');
-        location.reload();
-      } catch {
-        alert('Dosya formatı hatalı veya bozuk!');
-      }
+        } catch (error) {
+            console.error("Dashboard Stats Error:", error);
+            postCountEl.innerText = "-";
+        }
+    }
+
+    // ==========================================
+    // 4. PROFİL MENÜSÜ VE ÇIKIŞ
+    // ==========================================
+    
+    // Dropdown menüyü aç/kapa
+    window.toggleProfileMenu = () => {
+        const dropdown = document.getElementById('profile-dropdown');
+        if(dropdown) {
+            dropdown.classList.toggle('show');
+        }
     };
-    reader.readAsText(file);
-  };
 
-  // İlk açılış
-  window.showSection('dashboard');
-});
+    // Sayfanın herhangi bir yerine tıklayınca menüyü kapat
+    document.addEventListener('click', (e) => {
+        const trigger = document.getElementById('user-profile-trigger');
+        const dropdown = document.getElementById('profile-dropdown');
+        
+        if (trigger && dropdown && !trigger.contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+
+    // Çıkış Yapma Fonksiyonu
+    window.logout = () => {
+        if(confirm("Yönetim panelinden çıkış yapmak istiyor musunuz?")) {
+            localStorage.removeItem('isAdmin');
+            localStorage.removeItem('adminName');
+            window.location.href = 'login.html';
+        }
+    };
+
+    // ==========================================
+    // 5. YARDIMCI FONKSİYONLAR (CORE)
+    // ==========================================
+    window.AdminCore = {
+        // LocalStorage işlemleri için güvenli sarmalayıcılar
+        readLS: (key) => localStorage.getItem(key),
+        writeLS: (key, value) => localStorage.setItem(key, value)
+    };
+
+})();
