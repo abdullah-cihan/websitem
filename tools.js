@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // === API URL'İNİZİ BURAYA YAPIŞTIRIN ===
-    const API_URL = "https://script.google.com/macros/s/AKfycbywMO77KzYzCJWFhlyru8_YVaE8QBmOj-7n5FK0m1lL6BCSt4oEBcxOuxedJeNSbUBg7w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
 
     const toolsContainer = document.getElementById('tools-list-container');
     if (!toolsContainer) return;
@@ -29,4 +29,5 @@ document.addEventListener('DOMContentLoaded', () => {
             toolsContainer.innerHTML = '<div class="tool-empty">Yüklenemedi.</div>';
         });
 });
+
 
