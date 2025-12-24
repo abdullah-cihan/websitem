@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', async () => {
   // === API URL'İNİZİ BURAYA YAPIŞTIRIN ===
-  const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbywMO77KzYzCJWFhlyru8_YVaE8QBmOj-7n5FK0m1lL6BCSt4oEBcxOuxedJeNSbUBg7w/exec"; 
 
   const params = new URLSearchParams(window.location.search);
   const targetId = params.get('id');
@@ -65,3 +65,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     showError('Veri sunucudan çekilemedi. İnternet bağlantınızı kontrol edin.');
   }
 });
+
