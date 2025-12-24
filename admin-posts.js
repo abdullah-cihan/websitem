@@ -10,7 +10,7 @@
 // ==========================================
 
 // BURAYA DİKKAT: Google Apps Script Linkini tırnak içine yapıştır:
-const API_URL = "https://script.google.com/macros/s/AKfycbxUGvzYVuU3UG7Q_5jWSUddJ8BzeEWKNNXsyFWk4tQYqyQo36IWphxwVv-NMxg0y5rQLQ/exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/execc"; 
 
 
 // Sayfa Yüklendiğinde Quill Editörü Başlat (Eğer admin.js başlatmıyorsa burası garanti olsun)
