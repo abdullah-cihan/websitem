@@ -5,7 +5,8 @@
   // AYARLAR
   // ==========================================
   // GÜNCEL API LİNKİ:
-  const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbyPvOgB7VtVjjh0ZH2YehO83ZNtMMVMZg6QQTbu-GH2VegmNPiTCIGPDKhmDufL2h8K9w/exec";
+
 
   // ----------------------------
   // Core erişimi
