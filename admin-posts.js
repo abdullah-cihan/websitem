@@ -1,16 +1,15 @@
 /* ============================================================
-   ADMIN POSTS MANAGER - FINAL VERSİYON
-   Özellikler: Kategori Yönetimi, Quill Editör, Yazı Gönderme/Listeleme
+   ADMIN POSTS MANAGER - FINAL VERSİYON (YENİ LİNK İLE)
+   Özellikler: Kategori, Quill, Yeni Alanlar (Etiket, Süre vb.)
    ============================================================ */
 
 (function () {
-    // KESİN VE DOĞRU API LİNKİNİZ
-    const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec";
+    // ✅ GÜNCEL API URL (Sizin verdiğiniz yeni link)
+    const API_URL = "https://script.google.com/macros/s/AKfycbyPvOgB7VtVjjh0ZH2YehO83ZNtMMVMZg6QQTbu-GH2VegmNPiTCIGPDKhmDufL2h8K9w/exec";
 
     // AdminCore kütüphanesine güvenli erişim
     function core() {
         return window.AdminCore || { 
-            // Yedek (Fallback) metotlar, eğer admin.js yüklenmezse hata vermesin
             readArrayLS: (k) => JSON.parse(localStorage.getItem(k) || '[]'),
             writeLS: (k, v) => localStorage.setItem(k, JSON.stringify(v))
         };
@@ -33,7 +32,6 @@
     // 2. QUILL EDİTÖR KURULUMU
     // ==========================================
     function initQuill() {
-        // Quill kütüphanesi var mı ve editör henüz başlatılmamış mı?
         if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
             const container = document.getElementById('editor-container');
             if (container) {
@@ -48,22 +46,17 @@
     // ==========================================
     // 3. KATEGORİ YÖNETİMİ
     // ==========================================
-    
-    // Kategorileri Select Kutusuna Doldur
     function loadCategories() {
         const select = document.getElementById('post-category');
         if (!select) return;
 
-        // LocalStorage'dan al
         let cats = core().readArrayLS('categories');
         
-        // Hiç yoksa varsayılanları oluştur
         if (cats.length === 0) {
             cats = ['Genel', 'Teknoloji', 'Yazılım', 'Hayat', 'Felsefe'];
             core().writeLS('categories', cats);
         }
 
-        // Listeyi temizle ve doldur
         select.innerHTML = '';
         cats.forEach(cat => {
             const opt = document.createElement('option');
@@ -73,7 +66,6 @@
         });
     }
 
-    // Yeni Kategori Ekle (Global - HTML'den çağrılır)
     window.addNewCategory = () => {
         const newCat = prompt("Yeni kategori adı:");
         if (!newCat || !newCat.trim()) return;
@@ -81,71 +73,76 @@
         const cleanCat = newCat.trim();
         const cats = core().readArrayLS('categories');
 
-        // Kontrol
         if (cats.includes(cleanCat)) {
-            if(window.showToast) window.showToast("Bu kategori zaten mevcut!", "warning");
-            else alert("Bu kategori zaten mevcut!");
+            alert("Bu kategori zaten mevcut!");
             return;
         }
 
-        // Ekle ve Kaydet
         cats.push(cleanCat);
         core().writeLS('categories', cats);
 
-        // Arayüzü Güncelle
         loadCategories();
-        
-        // Yeni ekleneni seçili yap
         const select = document.getElementById('post-category');
         if(select) select.value = cleanCat;
-
-        if(window.showToast) window.showToast(`Kategori eklendi: ${cleanCat}`, "success");
     };
 
     // ==========================================
-    // 4. YAZI GÖNDERME (SAVE POST) - KRİTİK DÜZELTME BURADA
+    // 4. YAZI GÖNDERME (SAVE POST) - TÜM ALANLAR DAHİL
     // ==========================================
     window.savePost = async (status) => {
         const btnSubmit = document.querySelector('.btn-submit');
         const originalText = btnSubmit ? btnSubmit.innerText : "Yayınla";
         
-        // Butonu Kilitle
         if (btnSubmit) {
             btnSubmit.innerText = "Gönderiliyor...";
             btnSubmit.disabled = true;
         }
 
         try {
-            // Form verilerini al
+            // --- Temel Veriler ---
             const baslik = document.getElementById("post-title").value.trim();
             const tarih = document.getElementById("post-date").value || new Date().toLocaleDateString('tr-TR');
             const kategori = document.getElementById("post-category").value || "Genel";
             const resimUrl = document.getElementById("post-image").value.trim(); 
             const ozet = document.getElementById("post-desc").value.trim();
             
-            // Editör verisini al
+            // --- Yeni Eklenen Alanlar ---
+            // (Eğer input sayfada yoksa hata vermemesi için kontrol ekledik)
+            const okumaSuresiEl = document.getElementById("post-read-time");
+            const etiketlerEl = document.getElementById("post-tags");
+            const oneCikanEl = document.getElementById("post-featured");
+
+            const okumaSuresi = okumaSuresiEl ? okumaSuresiEl.value.trim() : "";
+            const etiketler = etiketlerEl ? etiketlerEl.value.trim() : "";
+            const oneCikan = oneCikanEl ? oneCikanEl.checked : false;
+
+            // --- Editör Verisi ---
             const editorEl = document.querySelector('#editor-container .ql-editor');
             const editorIcerik = editorEl ? editorEl.innerHTML : "";
 
-            // Validasyon
+            // --- Kontroller ---
             if (!baslik) throw new Error("Lütfen bir başlık giriniz.");
             if (!editorEl || editorIcerik === "<p><br></p>" || !editorIcerik.trim()) {
                 throw new Error("Yazı içeriği boş olamaz.");
             }
 
-            // --- VERİ PAKETİ (Action Eklendi!) ---
+            // --- GÖNDERİLECEK VERİ PAKETİ ---
             const postData = {
-                action: "add_post",  // <-- BU SATIR EKSİKTİ, ARTIK VAR
+                action: "add_post",
                 baslik: baslik,
                 icerik: editorIcerik,
                 resim: resimUrl,
                 tarih: tarih,
                 kategori: kategori,
                 ozet: ozet,
-                durum: status
+                durum: status,
+                // Yeni Sütunlar
+                okuma_suresi: okumaSuresi,
+                etiketler: etiketler,
+                one_cikan: oneCikan
             };
 
-            // API İsteği
+            // --- API İsteği ---
             await fetch(API_URL, {
                 method: "POST",
                 mode: "no-cors",
@@ -153,7 +150,7 @@
                 body: JSON.stringify(postData)
             });
 
-            // Başarılı
+            // --- Başarılı ---
             if(window.showToast) window.showToast("✅ Yazı başarıyla gönderildi!", "success");
             else alert("✅ Yazı başarıyla gönderildi!");
             
@@ -161,7 +158,7 @@
             document.getElementById("add-post-form").reset();
             if(editorEl) editorEl.innerHTML = ""; 
             
-            // Tabloyu Güncelle (Eğer o sayfadaysak)
+            // Eğer liste sayfasındaysak tabloyu yenile
             if(document.getElementById('posts-table-body')) {
                 setTimeout(fetchPosts, 1500);
             }
@@ -171,7 +168,6 @@
             if(window.showToast) window.showToast("Hata: " + error.message, "error");
             else alert("Hata: " + error.message);
         } finally {
-            // Butonu Eski Haline Getir
             if (btnSubmit) {
                 btnSubmit.innerText = originalText;
                 btnSubmit.disabled = false;
@@ -191,8 +187,6 @@
         try {
             const res = await fetch(`${API_URL}?type=posts`);
             const data = await res.json();
-            
-            // Gelen veri dizi mi yoksa obje mi kontrol et
             const posts = Array.isArray(data) ? data : (data.posts || []);
 
             tbody.innerHTML = '';
@@ -201,11 +195,9 @@
                 return;
             }
 
-            // Ters sırala (En yeni en üstte)
             posts.reverse().forEach(post => {
                 const tr = document.createElement('tr');
                 
-                // Resim Kontrolü
                 const imgTag = post.resim 
                     ? `<img src="${post.resim}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">` 
                     : '<div style="width:40px; height:40px; background:#334155; border-radius:4px;"></div>';
