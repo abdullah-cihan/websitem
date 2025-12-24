@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ==========================================
-  // SİTE GÖRÜNÜM AYARLARI (Gerekli Kısım)
-  // ==========================================
+  // ======================================================
+  // BÖLÜM 1: GÖRSEL EFEKTLER (Mevcut Kodlarınız)
+  // ======================================================
 
   // 1. Scroll Reveal (Aşağı indikçe belirme efekti)
   setTimeout(() => {
@@ -93,4 +93,71 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch {}
     }
   }
+
+
+  // ======================================================
+  // BÖLÜM 2: BLOG VERİLERİNİ ÇEKME (Yeni Kısım)
+  // ======================================================
+
+  // Lütfen Google Apps Script'ten aldığınız uzun linki buraya yapıştırın:
+  const API_URL = "https://script.google.com/macros/s/AKfycbxUGvzYVuU3UG7Q_5jWSUddJ8BzeEWKNNXsyFWk4tQYqyQo36IWphxwVv-NMxg0y5rQLQ/exec"; 
+
+  // Blog yazılarının listeleneceği HTML kutusunu seçiyoruz
+  // HTML dosyanızda <div id="blog-listesi-container"></div> gibi bir alan olmalı
+  const blogContainer = document.getElementById("blog-listesi-container") || document.querySelector(".blog-grid");
+
+  if (blogContainer) {
+      // Yükleniyor mesajı göster
+      blogContainer.innerHTML = '<p style="text-align:center; padding:20px;">Yazılar yükleniyor...</p>';
+
+      fetch(API_URL)
+          .then(response => response.json())
+          .then(data => {
+              // Veriler geldi, önce kutuyu temizle
+              blogContainer.innerHTML = "";
+              
+              if (data.length === 0) {
+                  blogContainer.innerHTML = "<p>Henüz yazı eklenmemiş.</p>";
+                  return;
+              }
+
+              // Yazıları tersten sırala (En yeni en üstte)
+              data.reverse().forEach(yazi => {
+                  // Her yazı için bir HTML kartı oluştur
+                  // Sizin CSS sınıflarınıza göre buradaki class isimlerini değiştirebilirsiniz
+                  const yaziKarti = `
+                      <div class="blog-card hidden" style="border:1px solid #333; margin-bottom:20px; border-radius:8px; overflow:hidden; background:#1e1e1e;">
+                          <div class="blog-image" style="height:200px; overflow:hidden;">
+                             <img src="${yazi.resim || 'assets/img/varsayilan.jpg'}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover;">
+                          </div>
+                          <div class="blog-content" style="padding:15px;">
+                              <h3 style="color:#fff; margin-bottom:10px;">${yazi.baslik}</h3>
+                              <p style="color:#ccc; font-size:0.9em;">${yazi.icerik.substring(0, 120)}...</p>
+                              <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
+                                  <small style="color:#777;">${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}</small>
+                                  <a href="#" class="btn-read-more" style="color:#4a90e2; text-decoration:none;">Devamını Oku &rarr;</a>
+                              </div>
+                          </div>
+                      </div>
+                  `;
+                  
+                  blogContainer.innerHTML += yaziKarti;
+              });
+
+              // Sonradan eklenen kartlar için animasyonu tetikle (Scroll Reveal)
+              const hiddenElements = document.querySelectorAll('.hidden');
+              const observer = new IntersectionObserver((entries) => {
+                  entries.forEach(entry => {
+                      if(entry.isIntersecting) entry.target.classList.add('show');
+                  });
+              });
+              hiddenElements.forEach((el) => observer.observe(el));
+
+          })
+          .catch(error => {
+              console.error("Veri çekme hatası:", error);
+              blogContainer.innerHTML = '<p style="text-align:center; color:red;">Yazılar yüklenirken bir hata oluştu.</p>';
+          });
+  }
+
 });
