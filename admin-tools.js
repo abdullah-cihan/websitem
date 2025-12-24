@@ -1,7 +1,7 @@
 /* admin-tools.js - Google Sheets Versiyonu */
 
 (function () {
-  const API_URL = "https://script.google.com/macros/s/AKfycbyu8zJD218qrZoIGX3BmjGml4KhBultnL1oz1X7lgyrxP9vUC6LfvQ8K-IjZvB6XBu89g/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbywMO77KzYzCJWFhlyru8_YVaE8QBmOj-7n5FK0m1lL6BCSt4oEBcxOuxedJeNSbUBg7w/exec"; 
 
   // --- Araçları Listele ---
   async function fetchTools() {
@@ -94,4 +94,5 @@
   // Başlangıçta listele
   document.addEventListener('DOMContentLoaded', fetchTools);
 })();
+
 
