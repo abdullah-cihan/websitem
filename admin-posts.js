@@ -4,15 +4,26 @@
 
 const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
 
-// Sayfa Yüklendiğinde Quill Editörü Başlat
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
-        var quill = new Quill('#editor-container', {
-            theme: 'snow',
-            placeholder: 'Yazı içeriğini buraya giriniz...'
-        });
+    // 1. Quill Editör Kontrolü
+    if (typeof Quill === 'undefined') {
+        alert("HATA: Yazı editörü (Quill.js) yüklenemedi!\n\nLütfen internet bağlantınızı kontrol edin veya admin.html dosyasında Quill scriptlerinin ekli olduğundan emin olun.");
+        return;
     }
-    // Mevcut yazıları listele
+
+    // 2. Editörü Başlat
+    if (!document.querySelector('.ql-editor')) {
+        try {
+            var quill = new Quill('#editor-container', {
+                theme: 'snow',
+                placeholder: 'Yazı içeriğini buraya giriniz...'
+            });
+        } catch (e) {
+            console.error("Editör başlatma hatası:", e);
+        }
+    }
+
+    // 3. Mevcut yazıları listele
     fetchPosts(); 
 });
 
@@ -26,8 +37,6 @@ async function fetchPosts() {
     try {
         const res = await fetch(`${API_URL}?type=posts`);
         const data = await res.json();
-        
-        // Backend'den gelen veri yapısını kontrol et
         const posts = Array.isArray(data) ? data : (data.posts || []);
 
         tbody.innerHTML = '';
@@ -36,11 +45,10 @@ async function fetchPosts() {
             return;
         }
 
-        // Listeyi tersten (yeniden eskiye) sırala
         posts.reverse().forEach(post => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><img src="${post.resim || ''}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"></td>
+                <td><img src="${post.resim || ''}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'"></td>
                 <td style="font-weight:600; color:white;">${post.baslik}</td>
                 <td>${post.kategori}</td>
                 <td><span style="padding:4px 8px; background:#10b981; border-radius:4px; font-size:0.8rem;">${post.durum || 'Yayınlandı'}</span></td>
@@ -60,10 +68,12 @@ async function fetchPosts() {
 // --- YAZI KAYDETME FONKSİYONU ---
 async function savePost(status) {
     const btnSubmit = document.querySelector('.btn-submit');
-    const originalText = btnSubmit.innerText;
+    const originalText = btnSubmit ? btnSubmit.innerText : "Yayınla";
     
-    btnSubmit.innerText = "Gönderiliyor...";
-    btnSubmit.disabled = true;
+    if(btnSubmit) {
+        btnSubmit.innerText = "Gönderiliyor...";
+        btnSubmit.disabled = true;
+    }
 
     try {
         const baslik = document.getElementById("post-title").value;
@@ -71,17 +81,23 @@ async function savePost(status) {
         const kategori = document.getElementById("post-category").value || "Genel";
         const resimUrl = document.getElementById("post-image").value; 
         const ozet = document.getElementById("post-desc").value;
+        
+        // Editör içeriğini al
         const editorElement = document.querySelector('#editor-container .ql-editor');
         const editorIcerik = editorElement ? editorElement.innerHTML : "";
 
-        if (!baslik || editorIcerik.trim() === "" || editorIcerik === "<p><br></p>") {
-            alert("Başlık ve içerik zorunludur!");
+        // Doğrulama: Editör yoksa veya boşsa hata ver
+        if (!baslik) {
+            alert("Lütfen bir başlık giriniz.");
+            throw new Error("Eksik bilgi");
+        }
+        if (!editorElement || editorIcerik.trim() === "" || editorIcerik === "<p><br></p>") {
+            alert("Lütfen yazı içeriğini giriniz.");
             throw new Error("Eksik bilgi");
         }
 
-        // API İÇİN VERİ PAKETİ
         const postData = {
-            action: "add_post", // Backend bu action'ı bekliyor
+            action: "add_post",
             baslik: baslik,
             icerik: editorIcerik,
             resim: resimUrl,
@@ -100,20 +116,17 @@ async function savePost(status) {
 
         alert("✅ Yazı başarıyla gönderildi!");
         
-        // Formu temizle
         document.getElementById("add-post-form").reset();
         if(editorElement) editorElement.innerHTML = ""; 
         
-        // Tabloyu güncelle (biraz bekle ki Sheet güncellensin)
         setTimeout(fetchPosts, 1500);
 
     } catch (error) {
         if(error.message !== "Eksik bilgi") alert("Hata: " + error);
     } finally {
-        btnSave = document.querySelector('.btn-submit'); // Yeniden seç
-        if(btnSave) {
-            btnSave.innerText = "Yayınla";
-            btnSave.disabled = false;
+        if(btnSubmit) {
+            btnSubmit.innerText = originalText;
+            btnSubmit.disabled = false;
         }
     }
 }
