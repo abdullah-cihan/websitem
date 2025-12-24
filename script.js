@@ -93,58 +93,58 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+// ... (Önceki görsel efekt kodları aynen kalabilir) ...
+
   // ======================================================
   // BÖLÜM 2: BLOG SİSTEMİ (Google Sheets Bağlantısı)
   // ======================================================
 
-  // Senin Google Apps Script Linkin:
-  const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/exec"; 
+  // YENİ API LİNKİNİZ:
+  const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
 
   const blogContainer = document.getElementById("blog-listesi-container");
 
   if (blogContainer) {
-      // Yükleniyor mesajı
       blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:#94a3b8;">Veriler yükleniyor...</div>';
 
-      fetch(API_URL)
+      // ÖNEMLİ: ?type=posts ekledik
+      fetch(`${API_URL}?type=posts`)
           .then(response => response.json())
           .then(data => {
-              // Kutuyu temizle
               blogContainer.innerHTML = "";
               
-              if (!data || data.length === 0) {
+              // Veri yapısı kontrolü (direkt array mi yoksa obje içinde array mi)
+              const posts = Array.isArray(data) ? data : (data.posts || []);
+
+              if (posts.length === 0) {
                   blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:20px;">Henüz yazı eklenmemiş.</div>';
                   return;
               }
 
               // En yeni yazı en üstte olsun
-              data.reverse().forEach(yazi => {
+              posts.reverse().forEach(yazi => {
                   
-                  // Resim kontrolü (Yoksa varsayılan resim)
                   const resimUrl = (yazi.resim && yazi.resim.startsWith('http')) 
                       ? yazi.resim 
                       : 'https://placehold.co/600x400/1e293b/FFF?text=A.Cihan';
 
-                  // İçerik temizleme (HTML etiketlerini kaldırıp özet alma)
-                  // Eğer admin panelinden "Özet" girildiyse onu kullan, yoksa içerikten kırp.
-                  const ozetMetni = yazi.ozet 
-                      ? yazi.ozet 
-                      : stripHtml(yazi.icerik).substring(0, 120) + '...';
+                  // İçerik özetini al (HTML taglerini temizle)
+                  const hamIcerik = stripHtml(yazi.icerik || '');
+                  const ozetMetni = yazi.ozet || hamIcerik.substring(0, 120) + '...';
 
-                  // Kart HTML'i (Senin 'glass' tasarımına uygun)
                   const yaziKarti = `
                       <article class="blog-card glass hidden" style="display:flex; flex-direction:column; overflow:hidden; border-radius:12px; margin-bottom:20px;">
                           <div class="blog-img" style="height:200px; width:100%; overflow:hidden; position:relative;">
-                             <img src="${resimUrl}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;">
+                             <img src="${resimUrl}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover;">
                              <span class="category-tag" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:4px 10px; border-radius:4px; font-size:0.8rem;">${yazi.kategori || 'Genel'}</span>
                           </div>
                           <div class="blog-content" style="padding:20px; flex:1; display:flex; flex-direction:column;">
-                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
+                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">
                                   <i class="fa-regular fa-calendar"></i> ${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}
                               </div>
                               <h3 style="color:#fff; margin-bottom:10px; font-size:1.25rem;">${yazi.baslik}</h3>
                               <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.6; flex:1;">${ozetMetni}</p>
-                              <a href="#" class="read-more" style="color:#60a5fa; text-decoration:none; margin-top:15px; font-weight:500; display:inline-flex; align-items:center; gap:5px;">
+                              <a href="blog-detay.html?id=${yazi.id}" class="read-more" style="color:#60a5fa; text-decoration:none; margin-top:15px; font-weight:500; display:inline-flex; align-items:center; gap:5px;">
                                   Devamını Oku <i class="fa-solid fa-arrow-right"></i>
                               </a>
                           </div>
@@ -153,20 +153,20 @@ document.addEventListener('DOMContentLoaded', () => {
                   
                   blogContainer.innerHTML += yaziKarti;
               });
-
-              // Yeni eklenen kartları animasyon sistemine tanıt (Scroll Reveal)
-              // Bu sayede sonradan gelen veriler de efektli açılır.
-              const newHiddenElements = blogContainer.querySelectorAll('.hidden');
-              newHiddenElements.forEach((el) => scrollObserver.observe(el));
+              
+              // Animasyonları tetikle
+              if(typeof scrollObserver !== 'undefined') {
+                 const newHiddenElements = blogContainer.querySelectorAll('.hidden');
+                 newHiddenElements.forEach((el) => scrollObserver.observe(el));
+              }
 
           })
           .catch(error => {
-              console.error("Veri çekme hatası:", error);
-              blogContainer.innerHTML = '<div style="width:100%; text-align:center; color:#ef4444;">Yazılar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</div>';
+              console.error("Hata:", error);
+              blogContainer.innerHTML = '<div style="width:100%; text-align:center; color:#ef4444;">Yükleme hatası.</div>';
           });
   }
 
-  // Yardımcı Fonksiyon: HTML etiketlerini temizler (Quill editörden gelen <p> gibi tagleri temizler)
   function stripHtml(html) {
       let tmp = document.createElement("DIV");
       tmp.innerHTML = html;
@@ -174,4 +174,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 });
+
 
