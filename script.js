@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   // ======================================================
-  // BÖLÜM 1: GÖRSEL EFEKTLER
+  // BÖLÜM 1: GÖRSEL EFEKTLER (Sitenin Tasarım Kodları)
   // ======================================================
 
   // 1. Scroll Reveal (Aşağı indikçe belirme efekti)
@@ -25,13 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 3. İlerleme Çubuğu ve Yukarı Çık Butonu
   window.addEventListener('scroll', () => {
-    // İlerleme çubuğu
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
     const progressBar = document.getElementById('progress-bar');
     if (progressBar && scrollHeight > 0) progressBar.style.width = (scrollTop / scrollHeight) * 100 + "%";
 
-    // Yukarı çık butonu
     const backToTop = document.querySelector('.back-to-top');
     if (backToTop) {
       if (scrollTop > 300) backToTop.classList.add('active');
@@ -96,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ======================================================
-  // BÖLÜM 2: BLOG VERİLERİNİ ÇEKME (Google Sheets API)
+  // BÖLÜM 2: BLOG SİSTEMİ (Google Sheets Bağlantısı)
   // ======================================================
 
   // Senin Google Apps Script Linkin:
@@ -106,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (blogContainer) {
       // Yükleniyor mesajı
-      blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">Veriler yükleniyor...</div>';
+      blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:#94a3b8;">Veriler yükleniyor...</div>';
 
       fetch(API_URL)
           .then(response => response.json())
@@ -115,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
               blogContainer.innerHTML = "";
               
               if (!data || data.length === 0) {
-                  blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center;">Henüz yazı eklenmemiş.</div>';
+                  blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:20px;">Henüz yazı eklenmemiş.</div>';
                   return;
               }
 
@@ -123,25 +121,29 @@ document.addEventListener('DOMContentLoaded', () => {
               data.reverse().forEach(yazi => {
                   
                   // Resim kontrolü (Yoksa varsayılan resim)
-                  const resimUrl = (yazi.resim && yazi.resim.length > 10) 
+                  const resimUrl = (yazi.resim && yazi.resim.startsWith('http')) 
                       ? yazi.resim 
-                      : 'https://placehold.co/600x400/1e293b/FFF?text=Blog';
+                      : 'https://placehold.co/600x400/1e293b/FFF?text=A.Cihan';
 
                   // İçerik temizleme (HTML etiketlerini kaldırıp özet alma)
-                  const temizIcerik = stripHtml(yazi.icerik).substring(0, 120) + '...';
+                  // Eğer admin panelinden "Özet" girildiyse onu kullan, yoksa içerikten kırp.
+                  const ozetMetni = yazi.ozet 
+                      ? yazi.ozet 
+                      : stripHtml(yazi.icerik).substring(0, 120) + '...';
 
                   // Kart HTML'i (Senin 'glass' tasarımına uygun)
                   const yaziKarti = `
-                      <article class="blog-card glass hidden" style="display:flex; flex-direction:column; overflow:hidden;">
-                          <div class="blog-img" style="height:200px; width:100%; overflow:hidden;">
+                      <article class="blog-card glass hidden" style="display:flex; flex-direction:column; overflow:hidden; border-radius:12px; margin-bottom:20px;">
+                          <div class="blog-img" style="height:200px; width:100%; overflow:hidden; position:relative;">
                              <img src="${resimUrl}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;">
+                             <span class="category-tag" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:4px 10px; border-radius:4px; font-size:0.8rem;">${yazi.kategori || 'Genel'}</span>
                           </div>
                           <div class="blog-content" style="padding:20px; flex:1; display:flex; flex-direction:column;">
-                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">
+                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
                                   <i class="fa-regular fa-calendar"></i> ${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}
                               </div>
-                              <h3 style="color:#fff; margin-bottom:10px; font-size:1.2rem;">${yazi.baslik}</h3>
-                              <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.6; flex:1;">${temizIcerik}</p>
+                              <h3 style="color:#fff; margin-bottom:10px; font-size:1.25rem;">${yazi.baslik}</h3>
+                              <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.6; flex:1;">${ozetMetni}</p>
                               <a href="#" class="read-more" style="color:#60a5fa; text-decoration:none; margin-top:15px; font-weight:500; display:inline-flex; align-items:center; gap:5px;">
                                   Devamını Oku <i class="fa-solid fa-arrow-right"></i>
                               </a>
@@ -153,17 +155,18 @@ document.addEventListener('DOMContentLoaded', () => {
               });
 
               // Yeni eklenen kartları animasyon sistemine tanıt (Scroll Reveal)
+              // Bu sayede sonradan gelen veriler de efektli açılır.
               const newHiddenElements = blogContainer.querySelectorAll('.hidden');
               newHiddenElements.forEach((el) => scrollObserver.observe(el));
 
           })
           .catch(error => {
               console.error("Veri çekme hatası:", error);
-              blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#ef4444;">Yazılar yüklenirken bir hata oluştu.</div>';
+              blogContainer.innerHTML = '<div style="width:100%; text-align:center; color:#ef4444;">Yazılar yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</div>';
           });
   }
 
-  // Yardımcı Fonksiyon: HTML etiketlerini temizler (Özetin düzgün görünmesi için)
+  // Yardımcı Fonksiyon: HTML etiketlerini temizler (Quill editörden gelen <p> gibi tagleri temizler)
   function stripHtml(html) {
       let tmp = document.createElement("DIV");
       tmp.innerHTML = html;
