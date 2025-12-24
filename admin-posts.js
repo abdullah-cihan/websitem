@@ -1,23 +1,25 @@
-/* admin-posts.js - SON HAL */
+/* admin-posts.js - Kategori Sorunu Giderilmiş & Temizlenmiş Versiyon */
 
 (function () {
-    // ==========================================
-    // AYARLAR
-    // ==========================================
+    // API Linkiniz
     const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/exec";
 
-    // AdminCore Kütüphanesi Kontrolü
+    // AdminCore kütüphanesine erişim (admin.js dosyasından gelir)
     function core() {
-        return window.AdminCore; 
+        return window.AdminCore;
     }
 
     // ==========================================
-    // 1. BAŞLANGIÇ (INIT)
+    // 1. BAŞLANGIÇ (Sayfa Yüklendiğinde)
     // ==========================================
     document.addEventListener('DOMContentLoaded', () => {
-        initQuill();      // Editörü aç
+        initQuill();      // Editörü başlat
         loadCategories(); // Kategorileri doldur
-        fetchPosts();     // Mevcut yazıları listele
+        
+        // Eğer yazı tablosu varsa (Yazılar sayfasındaysak) listeyi çek
+        if(document.getElementById('posts-table-body')) {
+            fetchPosts();
+        }
     });
 
     // ==========================================
@@ -36,23 +38,24 @@
     }
 
     // ==========================================
-    // 3. KATEGORİ YÖNETİMİ
+    // 3. KATEGORİ YÖNETİMİ (EKSİK OLAN KISIM)
     // ==========================================
     
-    // Kategorileri Select Kutusuna Doldur
+    // Kategorileri Yükle
     function loadCategories() {
         const select = document.getElementById('post-category');
         if (!select || !core()) return;
 
-        // AdminCore ile veriyi çek (Yoksa varsayılanları kullan)
+        // LocalStorage'dan kategorileri al
         let cats = core().readArrayLS('categories');
         
+        // Eğer hiç kategori yoksa varsayılanları oluştur
         if (cats.length === 0) {
             cats = ['Genel', 'Teknoloji', 'Yazılım', 'Hayat', 'Felsefe'];
             core().writeLS('categories', cats);
         }
 
-        // Listeyi temizle ve yeniden doldur
+        // Listeyi temizle ve doldur
         select.innerHTML = '';
         cats.forEach(cat => {
             const opt = document.createElement('option');
@@ -62,7 +65,7 @@
         });
     }
 
-    // Yeni Kategori Ekleme (Global Fonksiyon)
+    // Yeni Kategori Ekle (HTML'deki butondan çağrılır)
     window.addNewCategory = () => {
         const newCat = prompt("Yeni kategori adı:");
         if (!newCat || !newCat.trim()) return;
@@ -70,20 +73,18 @@
         const cleanCat = newCat.trim();
         const cats = core().readArrayLS('categories', []);
 
-        // Aynı isimde kategori var mı?
+        // Aynı isimde kategori var mı kontrol et
         if (cats.includes(cleanCat)) {
             window.showToast("Bu kategori zaten mevcut!", "warning");
             return;
         }
 
-        // Ekle ve Kaydet
+        // Listeye ekle ve kaydet
         cats.push(cleanCat);
         core().writeLS('categories', cats);
 
-        // Arayüzü Güncelle
+        // Listeyi güncelle ve yeni ekleneni seç
         loadCategories();
-        
-        // Yeni ekleneni seçili yap
         const select = document.getElementById('post-category');
         if(select) select.value = cleanCat;
 
@@ -91,12 +92,13 @@
     };
 
     // ==========================================
-    // 4. YAZI GÖNDERME (SAVE POST)
+    // 4. YAZI GÖNDERME (YAYINLA)
     // ==========================================
     window.savePost = async (status) => {
         const btnSubmit = document.querySelector('.btn-submit');
         const originalText = btnSubmit ? btnSubmit.innerText : "Yayınla";
         
+        // Butonu kilitle
         if (btnSubmit) {
             btnSubmit.innerText = "Gönderiliyor...";
             btnSubmit.disabled = true;
@@ -115,9 +117,9 @@
             const editorIcerik = editorEl ? editorEl.innerHTML : "";
 
             // Kontroller
-            if (!baslik) throw new Error("Başlık yazmadınız.");
+            if (!baslik) throw new Error("Lütfen bir başlık giriniz.");
             if (!editorEl || editorIcerik === "<p><br></p>" || !editorIcerik.trim()) {
-                throw new Error("İçerik boş olamaz.");
+                throw new Error("Yazı içeriği boş olamaz.");
             }
 
             // Gönderilecek Veri
@@ -140,18 +142,22 @@
                 body: JSON.stringify(postData)
             });
 
+            // Başarılı
             window.showToast("✅ Yazı başarıyla gönderildi!", "success");
             
             // Formu Temizle
             document.getElementById("add-post-form").reset();
             if(editorEl) editorEl.innerHTML = ""; 
             
-            // Tabloyu Güncelle
-            setTimeout(fetchPosts, 1500);
+            // Eğer liste sayfasındaysak tabloyu yenile
+            if(document.getElementById('posts-table-body')) {
+                setTimeout(fetchPosts, 1500);
+            }
 
         } catch (error) {
             window.showToast("Hata: " + error.message, "error");
         } finally {
+            // Butonu eski haline getir
             if (btnSubmit) {
                 btnSubmit.innerText = originalText;
                 btnSubmit.disabled = false;
@@ -183,12 +189,11 @@
             posts.reverse().forEach(post => {
                 const tr = document.createElement('tr');
                 
-                // Güvenli Resim
+                // Güvenli Resim Gösterimi
                 const imgTag = post.resim 
                     ? `<img src="${post.resim}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">` 
                     : '<div style="width:40px; height:40px; background:#334155; border-radius:4px;"></div>';
 
-                // Güvenli HTML (XSS Koruması için AdminCore escape kullanılabilir ama burada innerHTML gerekli değil)
                 tr.innerHTML = `
                     <td>${imgTag}</td>
                     <td style="font-weight:600; color:white;">${post.baslik}</td>
