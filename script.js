@@ -1,18 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
 
   // ======================================================
-  // BÖLÜM 1: GÖRSEL EFEKTLER (Mevcut Kodlarınız)
+  // BÖLÜM 1: GÖRSEL EFEKTLER
   // ======================================================
 
   // 1. Scroll Reveal (Aşağı indikçe belirme efekti)
-  setTimeout(() => {
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.classList.add('show');
-      });
+  const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('show');
     });
-    document.querySelectorAll('.hidden').forEach((el) => observer.observe(el));
-  }, 100);
+  });
+  
+  // Mevcut gizli elementleri izle
+  document.querySelectorAll('.hidden').forEach((el) => scrollObserver.observe(el));
 
   // 2. Mobil Menü (Hamburger Butonu)
   const hamburger = document.querySelector('.hamburger');
@@ -96,68 +96,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ======================================================
-  // BÖLÜM 2: BLOG VERİLERİNİ ÇEKME (Yeni Kısım)
+  // BÖLÜM 2: BLOG VERİLERİNİ ÇEKME (Google Sheets API)
   // ======================================================
 
-  // Lütfen Google Apps Script'ten aldığınız uzun linki buraya yapıştırın:
+  // Senin Google Apps Script Linkin:
   const API_URL = "https://script.google.com/macros/s/AKfycbxUGvzYVuU3UG7Q_5jWSUddJ8BzeEWKNNXsyFWk4tQYqyQo36IWphxwVv-NMxg0y5rQLQ/exec"; 
 
-  // Blog yazılarının listeleneceği HTML kutusunu seçiyoruz
-  // HTML dosyanızda <div id="blog-listesi-container"></div> gibi bir alan olmalı
-  const blogContainer = document.getElementById("blog-listesi-container") || document.querySelector(".blog-grid");
+  const blogContainer = document.getElementById("blog-listesi-container");
 
   if (blogContainer) {
-      // Yükleniyor mesajı göster
-      blogContainer.innerHTML = '<p style="text-align:center; padding:20px;">Yazılar yükleniyor...</p>';
+      // Yükleniyor mesajı
+      blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#94a3b8;">Veriler yükleniyor...</div>';
 
       fetch(API_URL)
           .then(response => response.json())
           .then(data => {
-              // Veriler geldi, önce kutuyu temizle
+              // Kutuyu temizle
               blogContainer.innerHTML = "";
               
-              if (data.length === 0) {
-                  blogContainer.innerHTML = "<p>Henüz yazı eklenmemiş.</p>";
+              if (!data || data.length === 0) {
+                  blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center;">Henüz yazı eklenmemiş.</div>';
                   return;
               }
 
-              // Yazıları tersten sırala (En yeni en üstte)
+              // En yeni yazı en üstte olsun
               data.reverse().forEach(yazi => {
-                  // Her yazı için bir HTML kartı oluştur
-                  // Sizin CSS sınıflarınıza göre buradaki class isimlerini değiştirebilirsiniz
+                  
+                  // Resim kontrolü (Yoksa varsayılan resim)
+                  const resimUrl = (yazi.resim && yazi.resim.length > 10) 
+                      ? yazi.resim 
+                      : 'https://placehold.co/600x400/1e293b/FFF?text=Blog';
+
+                  // İçerik temizleme (HTML etiketlerini kaldırıp özet alma)
+                  const temizIcerik = stripHtml(yazi.icerik).substring(0, 120) + '...';
+
+                  // Kart HTML'i (Senin 'glass' tasarımına uygun)
                   const yaziKarti = `
-                      <div class="blog-card hidden" style="border:1px solid #333; margin-bottom:20px; border-radius:8px; overflow:hidden; background:#1e1e1e;">
-                          <div class="blog-image" style="height:200px; overflow:hidden;">
-                             <img src="${yazi.resim || 'assets/img/varsayilan.jpg'}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover;">
+                      <article class="blog-card glass hidden" style="display:flex; flex-direction:column; overflow:hidden;">
+                          <div class="blog-img" style="height:200px; width:100%; overflow:hidden;">
+                             <img src="${resimUrl}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;">
                           </div>
-                          <div class="blog-content" style="padding:15px;">
-                              <h3 style="color:#fff; margin-bottom:10px;">${yazi.baslik}</h3>
-                              <p style="color:#ccc; font-size:0.9em;">${yazi.icerik.substring(0, 120)}...</p>
-                              <div style="margin-top:15px; display:flex; justify-content:space-between; align-items:center;">
-                                  <small style="color:#777;">${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}</small>
-                                  <a href="#" class="btn-read-more" style="color:#4a90e2; text-decoration:none;">Devamını Oku &rarr;</a>
+                          <div class="blog-content" style="padding:20px; flex:1; display:flex; flex-direction:column;">
+                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">
+                                  <i class="fa-regular fa-calendar"></i> ${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}
                               </div>
+                              <h3 style="color:#fff; margin-bottom:10px; font-size:1.2rem;">${yazi.baslik}</h3>
+                              <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.6; flex:1;">${temizIcerik}</p>
+                              <a href="#" class="read-more" style="color:#60a5fa; text-decoration:none; margin-top:15px; font-weight:500; display:inline-flex; align-items:center; gap:5px;">
+                                  Devamını Oku <i class="fa-solid fa-arrow-right"></i>
+                              </a>
                           </div>
-                      </div>
+                      </article>
                   `;
                   
                   blogContainer.innerHTML += yaziKarti;
               });
 
-              // Sonradan eklenen kartlar için animasyonu tetikle (Scroll Reveal)
-              const hiddenElements = document.querySelectorAll('.hidden');
-              const observer = new IntersectionObserver((entries) => {
-                  entries.forEach(entry => {
-                      if(entry.isIntersecting) entry.target.classList.add('show');
-                  });
-              });
-              hiddenElements.forEach((el) => observer.observe(el));
+              // Yeni eklenen kartları animasyon sistemine tanıt (Scroll Reveal)
+              const newHiddenElements = blogContainer.querySelectorAll('.hidden');
+              newHiddenElements.forEach((el) => scrollObserver.observe(el));
 
           })
           .catch(error => {
               console.error("Veri çekme hatası:", error);
-              blogContainer.innerHTML = '<p style="text-align:center; color:red;">Yazılar yüklenirken bir hata oluştu.</p>';
+              blogContainer.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:#ef4444;">Yazılar yüklenirken bir hata oluştu.</div>';
           });
+  }
+
+  // Yardımcı Fonksiyon: HTML etiketlerini temizler (Özetin düzgün görünmesi için)
+  function stripHtml(html) {
+      let tmp = document.createElement("DIV");
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || "";
   }
 
 });
