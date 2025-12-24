@@ -1,241 +1,168 @@
-/* admin-pages.js */
-
+/* ============================================================
+   ADMIN PAGES MANAGER - FINAL v2
+   GET  : JSONP (CORS yok)
+   POST : hidden form + iframe (CORS yok)
+   ============================================================ */
 (function () {
-  // ==========================================
-  // AYARLAR
-  // ==========================================
-  // GÜNCEL API LİNKİ:
   const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
 
-
   // ----------------------------
-  // Core erişimi
+  // JSONP helper
   // ----------------------------
-  function core() {
-    return window.AdminCore; // Eğer admin.js içinde tanımlıysa
-  }
+  function jsonp(url) {
+    return new Promise((resolve, reject) => {
+      const cb = "cb_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+      window[cb] = (data) => {
+        resolve(data);
+        try { delete window[cb]; } catch {}
+        script.remove();
+      };
 
-  // ----------------------------
-  // State
-  // ----------------------------
-  let customPages = [];
-  let editPageIndex = null;
+      const script = document.createElement("script");
+      script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
+      script.onerror = () => {
+        reject(new Error("JSONP yüklenemedi"));
+        try { delete window[cb]; } catch {}
+        script.remove();
+      };
 
-  // ----------------------------
-  // Helpers
-  // ----------------------------
-  function getCodeEl() {
-    return document.getElementById('page-content') || document.getElementById('page-code-editor');
-  }
-
-  function getCodeValue() {
-    const el = getCodeEl();
-    return el ? el.value : '';
-  }
-
-  function setCodeValue(val) {
-    const el = getCodeEl();
-    if (el) el.value = val ?? '';
-  }
-
-  function pageLinkForId(id) {
-    // Sayfaları görüntülemek için tool-view.html kullanılıyor
-    const safe = encodeURIComponent(String(id ?? '').trim());
-    return `tool-view.html?id=${safe}`;
-  }
-
-  // ----------------------------
-  // VERİ ÇEKME (FETCH)
-  // ----------------------------
-  async function fetchPages() {
-    const tbody = document.getElementById('pages-table-body');
-    if (!tbody) return;
-
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Yükleniyor...</td></tr>';
-
-    try {
-      // Backend'den sadece 'pages' tipindeki verileri istiyoruz
-      const response = await fetch(`${API_URL}?type=pages`);
-      const data = await response.json();
-
-      // Apps Script "result.pages" veya direkt array dönebilir, kontrol ediyoruz:
-      let pagesData = [];
-      if (Array.isArray(data)) {
-        pagesData = data;
-      } else if (data.pages && Array.isArray(data.pages)) {
-        pagesData = data.pages;
-      } else if (data.message) {
-         // Hata veya boş veri mesajı geldiyse
-         console.log(data.message);
-      }
-
-      // Backend zaten filtrelenmiş yolladığı için tekrar filter yapmaya gerek yok
-      customPages = pagesData.reverse();
-
-      renderPagesTable();
-    } catch (error) {
-      console.error(error);
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Bağlantı hatası!</td></tr>';
-    }
-  }
-
-  // ----------------------------
-  // Render
-  // ----------------------------
-  function renderPagesTable() {
-    const tbody = document.getElementById('pages-table-body');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    if (!customPages.length) {
-      tbody.innerHTML =
-        '<tr><td colspan="4" style="text-align:center; color:#94a3b8; padding:20px;">Henüz oluşturulmuş bir sayfa yok.</td></tr>';
-      return;
-    }
-
-    customPages.forEach((page, index) => {
-      // Google Sheet (Pages) sütunları: id, baslik, code, tarih
-      const link = pageLinkForId(page.id);
-      
-      // XSS Koruması için basit escape
-      const safeTitle = String(page.baslik || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const safeDate = String(page.tarih || '');
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td style="font-weight:600; color:white;">${safeTitle}</td>
-        <td><span style="font-size:0.85rem; color:#94a3b8;">${safeDate}</span></td>
-        <td>
-          <div class="link-box" style="width:fit-content; background:#0f172a; padding:5px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
-            <input type="text" value="${link}" readonly style="background:transparent; border:none; color:#94a3b8; width:180px; font-size:0.8rem;">
-            <button type="button" class="action-btn btn-copy" title="Kopyala">
-              <i class="fa-solid fa-copy"></i>
-            </button>
-          </div>
-        </td>
-        <td style="display:flex; gap:5px;">
-          <a href="${link}" target="_blank" rel="noopener noreferrer"
-            class="action-btn btn-view" title="Görüntüle"
-            style="text-decoration:none; display:flex; align-items:center; justify-content:center;">
-            <i class="fa-solid fa-eye"></i>
-          </a>
-          <button type="button" class="action-btn btn-edit" title="Kopyala ve Yeni Oluştur">
-            <i class="fa-solid fa-clone"></i>
-          </button>
-        </td>
-      `;
-
-      // KOPYALA
-      tr.querySelector('.btn-copy')?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        try {
-          await navigator.clipboard.writeText(link);
-          alert('Link kopyalandı!');
-        } catch {
-          alert('Kopyalama başarısız.');
-        }
-      });
-
-      // DÜZENLE (Aslında veriyi forma çeker)
-      tr.querySelector('.btn-edit')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        window.loadPageToEdit(index);
-      });
-
-      tbody.appendChild(tr);
+      document.body.appendChild(script);
     });
   }
 
   // ----------------------------
-  // Global API (Window Functions)
+  // CORS'suz POST: hidden form + iframe
   // ----------------------------
-  window.savePage = async () => {
-    const title = (document.getElementById('page-title')?.value || '').trim();
-    const code = (getCodeValue() || '').trim();
+  function postViaForm(fields) {
+    return new Promise((resolve) => {
+      const iframeName = "hidden_iframe_" + Date.now();
+      const iframe = document.createElement("iframe");
+      iframe.name = iframeName;
+      iframe.style.display = "none";
 
-    if (!title || !code) {
-      alert('Lütfen başlık ve içerik alanlarını doldurun!');
+      const form = document.createElement("form");
+      form.action = API_URL;
+      form.method = "POST";
+      form.target = iframeName;
+
+      Object.entries(fields).forEach(([k, v]) => {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = k;
+        input.value = v == null ? "" : String(v);
+        form.appendChild(input);
+      });
+
+      iframe.onload = () => {
+        form.remove();
+        iframe.remove();
+        resolve(true);
+      };
+
+      document.body.appendChild(iframe);
+      document.body.appendChild(form);
+      form.submit();
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  // ----------------------------
+  // GET Pages (JSONP)
+  // ----------------------------
+  async function fetchPages() {
+    const tbody = document.getElementById("pages-table-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Yükleniyor...</td></tr>`;
+
+    try {
+      const data = await jsonp(`${API_URL}?type=pages`);
+      const pages = data?.pages || [];
+
+      tbody.innerHTML = "";
+      if (!pages.length) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#94a3b8;">Hiç sayfa yok.</td></tr>`;
+        return;
+      }
+
+      pages.slice().reverse().forEach((p) => {
+        const tr = document.createElement("tr");
+        const link = p.link || "";
+
+        tr.innerHTML = `
+          <td style="color:white; font-weight:500;">${escapeHtml(p.baslik || "")}</td>
+          <td>${link ? `<a href="${escapeHtml(link)}" target="_blank">${escapeHtml(link)}</a>` : "-"}</td>
+          <td>
+            <button class="action-btn" onclick="alert('Düzenleme istersen ekleyelim (update).')">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error("Pages JSONP error:", err);
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ef4444;">Bağlantı hatası!</td></tr>`;
+    }
+  }
+
+  // ----------------------------
+  // POST Add Page (form)
+  // admin.html: savePage() çağrısı varsa onu override ediyoruz
+  // ----------------------------
+  window.savePage = async function () {
+    const titleEl = document.getElementById("page-title");
+    const contentEl = document.getElementById("page-content");
+
+    if (!titleEl || !contentEl) {
+      alert("Sayfa editör alanları bulunamadı (page-title / page-content).");
       return;
     }
 
-    const btnSave = document.getElementById('btn-save-page');
-    const oldText = btnSave.innerHTML;
-    btnSave.innerHTML = "Kaydediliyor...";
-    btnSave.disabled = true;
+    const baslik = titleEl.value.trim();
+    const icerik = contentEl.value;
 
-    // Google Sheet API "add_page" aksiyonuna uygun veri paketi
-    const pageData = {
-      action: "add_page",  // Backend bu action'a göre Pages sayfasına kayıt yapacak
-      baslik: title,
-      code: code,          // 'icerik' yerine 'code' kullanıyoruz
-      tarih: new Date().toLocaleDateString('tr-TR')
-    };
+    if (!baslik) { alert("Sayfa başlığı zorunlu"); return; }
+    if (!icerik || !icerik.trim()) { alert("Sayfa içeriği boş olamaz"); return; }
 
     try {
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(pageData)
-        });
+      await postViaForm({
+        action: "add_page",
+        baslik,
+        icerik
+      });
 
-        alert("✅ Sayfa Oluşturuldu!");
-        window.resetPageForm();
-        
-        // Tabloyu güncellemesi için kısa bir gecikme (Apps Script bazen anında yazmaz)
-        setTimeout(() => fetchPages(), 1500); 
+      alert("✅ Sayfa kaydedildi!");
+      titleEl.value = "";
+      contentEl.value = "";
 
-    } catch (error) {
-        alert("Hata: " + error);
-    } finally {
-        btnSave.innerHTML = oldText;
-        btnSave.disabled = false;
+      // varsa listeyi yenile
+      setTimeout(fetchPages, 1200);
+
+      // varsa sayfalar listesine dön
+      if (typeof window.showSection === "function") {
+        window.showSection("pages-manager");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Kaydedilemedi.");
     }
   };
 
-  window.loadPageToEdit = (index) => {
-    const page = customPages[index];
-    if (!page) return;
-
-    // Formu doldur
-    const titleEl = document.getElementById('page-title');
-    if (titleEl) titleEl.value = page.baslik || '';
-
-    // Backend'den 'code' adıyla geliyor
-    setCodeValue(page.code || page.icerik || ''); 
-
-    const formTitle = document.getElementById('page-form-title');
-    if (formTitle) formTitle.textContent = 'Sayfayı Kopyala/Düzenle';
-    
-    // Kullanıcıyı editör sekmesine götür
-    if(window.showSection) window.showSection('page-editor');
-  };
-
-  window.deletePage = (index) => {
-    // Google Apps Script basit modda silmeyi desteklemiyor.
-    alert("Google Sheet API basit modda çalıştığı için silme işlemi sadece Tablo üzerinden manuel yapılabilir. Lütfen Google Sheet'i açıp 'Pages' sekmesinden ilgili satırı siliniz.");
-  };
-
-  window.resetPageForm = () => {
-    editPageIndex = null;
-    const titleEl = document.getElementById('page-title');
-    if (titleEl) titleEl.value = '';
-    setCodeValue('');
-    const formTitle = document.getElementById('page-form-title');
-    if (formTitle) formTitle.textContent = 'Yeni Sayfa Oluştur';
-  };
-
-  window.openNewPageEditor = () => {
-    window.resetPageForm();
-    if(window.showSection) window.showSection('page-editor');
-  };
-
   // ----------------------------
-  // INIT
+  // Init
   // ----------------------------
-  document.addEventListener('DOMContentLoaded', () => {
-    fetchPages();
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("pages-table-body")) fetchPages();
   });
 
+  window.__fetchPages = fetchPages;
 })();
