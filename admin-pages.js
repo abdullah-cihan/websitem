@@ -4,8 +4,8 @@
   // ==========================================
   // AYARLAR
   // ==========================================
-  // Google Apps Script Linkini BURAYA YAPIŞTIRIN:
-  const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/exec"; 
+  // GÜNCEL API LİNKİ:
+  const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
 
   // ----------------------------
   // Core erişimi
@@ -53,13 +53,23 @@
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Yükleniyor...</td></tr>';
 
     try {
-      const response = await fetch(API_URL);
+      // Backend'den sadece 'pages' tipindeki verileri istiyoruz
+      const response = await fetch(`${API_URL}?type=pages`);
       const data = await response.json();
 
-      // Sadece "kategori"si "Sayfa" olanları veya genel yapıyı filtreleyebiliriz.
-      // Şimdilik tüm veriyi alıp, sadece bizim oluşturduğumuz sayfaları göstermek için
-      // kategorisi "Sayfa" olanları filtreliyoruz.
-      customPages = data.filter(item => item.kategori === 'Sayfa').reverse();
+      // Apps Script "result.pages" veya direkt array dönebilir, kontrol ediyoruz:
+      let pagesData = [];
+      if (Array.isArray(data)) {
+        pagesData = data;
+      } else if (data.pages && Array.isArray(data.pages)) {
+        pagesData = data.pages;
+      } else if (data.message) {
+         // Hata veya boş veri mesajı geldiyse
+         console.log(data.message);
+      }
+
+      // Backend zaten filtrelenmiş yolladığı için tekrar filter yapmaya gerek yok
+      customPages = pagesData.reverse();
 
       renderPagesTable();
     } catch (error) {
@@ -84,7 +94,7 @@
     }
 
     customPages.forEach((page, index) => {
-      // Google Sheet sütunları: id, baslik, icerik, tarih
+      // Google Sheet (Pages) sütunları: id, baslik, code, tarih
       const link = pageLinkForId(page.id);
       
       // XSS Koruması için basit escape
@@ -153,15 +163,12 @@
     btnSave.innerHTML = "Kaydediliyor...";
     btnSave.disabled = true;
 
-    // Google Sheet Yapısına Uygun Veri Paketi
+    // Google Sheet API "add_page" aksiyonuna uygun veri paketi
     const pageData = {
+      action: "add_page",  // Backend bu action'a göre Pages sayfasına kayıt yapacak
       baslik: title,
-      icerik: code,       // Sayfa kodlarını 'icerik' sütununa basıyoruz
-      kategori: 'Sayfa',  // Ayırt etmek için kategori sabit 'Sayfa'
-      resim: '',          // Sayfada resim yok
-      ozet: 'Özel HTML Sayfası',
-      tarih: new Date().toLocaleDateString('tr-TR'),
-      durum: 'published'
+      code: code,          // 'icerik' yerine 'code' kullanıyoruz
+      tarih: new Date().toLocaleDateString('tr-TR')
     };
 
     try {
@@ -174,7 +181,9 @@
 
         alert("✅ Sayfa Oluşturuldu!");
         window.resetPageForm();
-        fetchPages(); // Tabloyu yenile
+        
+        // Tabloyu güncellemesi için kısa bir gecikme (Apps Script bazen anında yazmaz)
+        setTimeout(() => fetchPages(), 1500); 
 
     } catch (error) {
         alert("Hata: " + error);
@@ -192,7 +201,8 @@
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.value = page.baslik || '';
 
-    setCodeValue(page.icerik || '');
+    // Backend'den 'code' adıyla geliyor
+    setCodeValue(page.code || page.icerik || ''); 
 
     const formTitle = document.getElementById('page-form-title');
     if (formTitle) formTitle.textContent = 'Sayfayı Kopyala/Düzenle';
@@ -203,7 +213,7 @@
 
   window.deletePage = (index) => {
     // Google Apps Script basit modda silmeyi desteklemiyor.
-    alert("Google Sheet API basit modda çalıştığı için silme işlemi sadece Tablo üzerinden manuel yapılabilir. Lütfen Google Sheet'i açıp ilgili satırı siliniz.");
+    alert("Google Sheet API basit modda çalıştığı için silme işlemi sadece Tablo üzerinden manuel yapılabilir. Lütfen Google Sheet'i açıp 'Pages' sekmesinden ilgili satırı siliniz.");
   };
 
   window.resetPageForm = () => {
