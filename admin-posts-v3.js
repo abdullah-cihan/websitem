@@ -5,7 +5,7 @@
 
 (function () {
     // ✅ GÜNCEL API URL (Sizin verdiğiniz yeni link)
-    const API_URL = "https://script.google.com/macros/s/AKfycbyPvOgB7VtVjjh0ZH2YehO83ZNtMMVMZg6QQTbu-GH2VegmNPiTCIGPDKhmDufL2h8K9w/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyu8zJD218qrZoIGX3BmjGml4KhBultnL1oz1X7lgyrxP9vUC6LfvQ8K-IjZvB6XBu89g/exec";
 
     // AdminCore kütüphanesine güvenli erişim
     function core() {
