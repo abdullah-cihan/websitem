@@ -16,6 +16,14 @@
         script.remove();
       };
 
+function formatDateTR(d) {
+  if (!d) return "";
+  const dt = new Date(d);
+  if (isNaN(dt.getTime())) return String(d);
+  return dt.toLocaleDateString("tr-TR");
+}
+
+
       const script = document.createElement("script");
       script.src = url + (url.includes("?") ? "&" : "?") + "callback=" + cb;
       script.onerror = () => {
