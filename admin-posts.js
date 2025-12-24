@@ -3,7 +3,7 @@
 // ==========================================
 
 // Kopyaladığınız Google Apps Script Linki:
-const API_URL = "https://script.google.com/macros/s/......./exec"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbxUGvzYVuU3UG7Q_5jWSUddJ8BzeEWKNNXsyFWk4tQYqyQo36IWphxwVv-NMxg0y5rQLQ/exec"; 
 
 // --- Yardımcı: Resmi Metne Çevir ---
 const toBase64 = file => new Promise((resolve, reject) => {
