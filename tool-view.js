@@ -1,120 +1,67 @@
-/* tool-view.js */
+/* tool-view.js - Google Sheets Versiyonu */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // =========================
-  // Helpers
-  // =========================
-  const readArrayLS = (key) => {
-    try {
-      const data = JSON.parse(localStorage.getItem(key) || '[]');
-      return Array.isArray(data) ? data : [];
-    } catch {
-      return [];
-    }
-  };
+document.addEventListener('DOMContentLoaded', async () => {
+  // === API URL'İNİZİ BURAYA YAPIŞTIRIN ===
+  const API_URL = "https://script.google.com/macros/s/AKfycbyfxBUq0d-sj315o5a_tgS76h0hDMvJKwFhrGzdnGJXKHDKp9oabootgeyCn9QQJ_2fdw/exec"; 
 
-  const normalizeId = (v) => {
-    // URL parametresi encode edilmiş olabilir
-    let s = String(v || '');
-    try { s = decodeURIComponent(s); } catch {}
-    s = s.trim();
+  const params = new URLSearchParams(window.location.search);
+  const targetId = params.get('id');
 
-    // basit temizlik (id'ler zaten Date.now() stringi)
-    // harf/rakam/_/- dışında karakterleri at
-    s = s.replace(/[^a-zA-Z0-9_-]/g, '');
-    return s;
-  };
-
+  // Hata gösterme fonksiyonu
   const showError = (msg) => {
     const frame = document.getElementById('tool-frame');
     if (frame) frame.style.display = 'none';
-
-    // aynı hata ekranını 2 kez basma
+    
     if (document.querySelector('.error-container')) return;
-
+    
     const wrap = document.createElement('div');
     wrap.className = 'error-container';
-
-    const icon = document.createElement('div');
-    icon.className = 'error-icon';
-    icon.textContent = '⚠️';
-
-    const title = document.createElement('h1');
-    title.className = 'error-title';
-    title.textContent = 'Sayfa Bulunamadı';
-
-    const text = document.createElement('p');
-    text.className = 'error-text';
-    text.textContent = msg;
-
-    const btn = document.createElement('a');
-    btn.href = 'index.html';
-    btn.className = 'back-home-btn';
-    btn.style.position = 'static';
-    btn.style.display = 'inline-flex';
-    btn.textContent = 'Ana Sayfaya Dön';
-
-    wrap.appendChild(icon);
-    wrap.appendChild(title);
-    wrap.appendChild(text);
-    wrap.appendChild(document.createElement('br'));
-    wrap.appendChild(btn);
-
+    wrap.innerHTML = `
+      <div class="error-icon">⚠️</div>
+      <h1 class="error-title">Sayfa Bulunamadı</h1>
+      <p class="error-text">${msg}</p>
+      <a href="index.html" class="back-home-btn" style="position:static; display:inline-flex;">Ana Sayfaya Dön</a>
+    `;
     document.body.appendChild(wrap);
   };
 
-  const addBackButton = () => {
-    if (document.querySelector('.back-home-btn')) return;
-
+  // Geri butonu ekle
+  if (!document.querySelector('.back-home-btn')) {
     const backBtn = document.createElement('a');
     backBtn.href = 'index.html';
     backBtn.className = 'back-home-btn';
-    backBtn.textContent = '← Siteye Dön';
+    backBtn.innerHTML = '← Siteye Dön';
     document.body.appendChild(backBtn);
-  };
-
-  // =========================
-  // 1) URL parametreleri
-  // =========================
-  const params = new URLSearchParams(window.location.search);
-  const raw = params.get('page') || params.get('id');
-  const targetId = normalizeId(raw);
+  }
 
   if (!targetId) {
-    showError('Geçersiz bağlantı. "page" veya "id" parametresi bulunamadı.');
+    showError('Geçersiz bağlantı ID\'si.');
     return;
   }
-
-  // =========================
-  // 2) verileri çek
-  // =========================
-  const customPages = readArrayLS('customPages');
-  const customTools = readArrayLS('customTools');
-
-  // =========================
-  // 3) kaydı bul
-  // =========================
-  const data =
-    customPages.find(p => String(p?.id) === targetId) ||
-    customTools.find(t => String(t?.id) === targetId);
 
   const frame = document.getElementById('tool-frame');
+  if(!frame) return;
 
-  if (!frame) {
-    showError('Görüntüleyici yüklenemedi. Iframe bulunamadı.');
-    return;
+  try {
+    // 1. Veriyi Çek (Sadece Pages tipi verileri isteyebiliriz veya hepsini çekip filtreleriz)
+    // Hız için sadece pages çekelim: ?type=pages
+    const response = await fetch(`${API_URL}?type=pages`);
+    const pages = await response.json();
+
+    // 2. Eşleşen ID'yi bul
+    // Google Sheet'ten gelen ID number veya string olabilir, stringe çevirip karşılaştır.
+    const pageData = pages.find(p => String(p.id) === String(targetId));
+
+    if (pageData && pageData.code) {
+      document.title = pageData.baslik || 'Araç Görüntüleme';
+      // Iframe içine kodu bas
+      frame.srcdoc = pageData.code;
+    } else {
+      showError('Bu araç veya sayfa bulunamadı.');
+    }
+
+  } catch (error) {
+    console.error(error);
+    showError('Veri sunucudan çekilemedi. İnternet bağlantınızı kontrol edin.');
   }
-
-  if (!data || !data.code) {
-    showError('Aradığınız araç veya sayfa silinmiş olabilir. Lütfen bağlantıyı kontrol edin.');
-    return;
-  }
-
-  // =========================
-  // 4) yükle
-  // =========================
-  document.title = String(data.title || data.name || 'Araç Görüntüleme');
-  frame.srcdoc = String(data.code);
-
-  addBackButton();
 });
