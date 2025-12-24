@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ======================================================
 
   // Senin Google Apps Script Linkin:
-  const API_URL = "https://script.google.com/macros/s/AKfycbxUGvzYVuU3UG7Q_5jWSUddJ8BzeEWKNNXsyFWk4tQYqyQo36IWphxwVv-NMxg0y5rQLQ/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbwIoaGtrRzwpIe0avxruvqzHBiqxco7bz1Yb3mD9RHVyBrpJoLoaF62G4YnTXfOSmhS/exec"; 
 
   const blogContainer = document.getElementById("blog-listesi-container");
 
@@ -174,3 +174,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 });
+
