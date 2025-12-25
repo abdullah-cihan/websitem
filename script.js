@@ -1,20 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  // ======================================================
-  // BÖLÜM 1: GÖRSEL EFEKTLER (Sitenin Tasarım Kodları)
-  // ======================================================
-
-  // 1. Scroll Reveal (Aşağı indikçe belirme efekti)
+  // --- GÖRSEL EFEKTLER (Scroll Reveal) ---
   const scrollObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) entry.target.classList.add('show');
     });
   });
-  
-  // Mevcut gizli elementleri izle
   document.querySelectorAll('.hidden').forEach((el) => scrollObserver.observe(el));
 
-  // 2. Mobil Menü (Hamburger Butonu)
+  // --- MOBİL MENÜ ---
   const hamburger = document.querySelector('.hamburger');
   const navLinks = document.querySelector('.nav-links');
   if (hamburger && navLinks) {
@@ -23,148 +17,55 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. İlerleme Çubuğu ve Yukarı Çık Butonu
-  window.addEventListener('scroll', () => {
-    const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-    const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const progressBar = document.getElementById('progress-bar');
-    if (progressBar && scrollHeight > 0) progressBar.style.width = (scrollTop / scrollHeight) * 100 + "%";
-
-    const backToTop = document.querySelector('.back-to-top');
-    if (backToTop) {
-      if (scrollTop > 300) backToTop.classList.add('active');
-      else backToTop.classList.remove('active');
-    }
-  });
-
-  // 4. Daktilo Efekti (Typewriter)
-  const TxtType = function (el, toRotate, period) {
-    this.toRotate = Array.isArray(toRotate) ? toRotate : [];
-    this.el = el;
-    this.loopNum = 0;
-    this.period = parseInt(period, 10) || 2000;
-    this.txt = '';
-    this.isDeleting = false;
-    this.wrap = document.createElement('span');
-    this.wrap.className = 'wrap';
-    this.el.textContent = '';
-    this.el.appendChild(this.wrap);
-    this.tick();
-  };
-
-  TxtType.prototype.tick = function () {
-    if (!this.toRotate.length) return;
-    const i = this.loopNum % this.toRotate.length;
-    const fullTxt = String(this.toRotate[i] || '');
-
-    if (this.isDeleting) {
-      this.txt = fullTxt.substring(0, this.txt.length - 1);
-    } else {
-      this.txt = fullTxt.substring(0, this.txt.length + 1);
-    }
-
-    this.wrap.textContent = this.txt;
-
-    let delta = 200 - Math.random() * 100;
-    if (this.isDeleting) delta /= 2;
-
-    if (!this.isDeleting && this.txt === fullTxt) {
-      delta = this.period;
-      this.isDeleting = true;
-    } else if (this.isDeleting && this.txt === '') {
-      this.isDeleting = false;
-      this.loopNum++;
-      delta = 500;
-    }
-
-    setTimeout(() => this.tick(), delta);
-  };
-
-  const elements = document.getElementsByClassName('typewrite');
-  for (let i = 0; i < elements.length; i++) {
-    const toRotateStr = elements[i].getAttribute('data-type');
-    const period = elements[i].getAttribute('data-period');
-    if (toRotateStr) {
-      try {
-        const parsed = JSON.parse(toRotateStr);
-        new TxtType(elements[i], parsed, period);
-      } catch {}
-    }
-  }
-
-
-// ... (Önceki görsel efekt kodları aynen kalabilir) ...
-
-  // ======================================================
-  // BÖLÜM 2: BLOG SİSTEMİ (Google Sheets Bağlantısı)
-  // ======================================================
-
-  // YENİ API LİNKİNİZ:
-  const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
-
-
+  // --- BLOG SİSTEMİ (Google Sheets) ---
+  const API_URL = "https://script.google.com/macros/s/AKfycbw7uo2RD9hF1sSBgtGq67w8bc_x2FRVkJeD9V5ZndKyeSLr0ipgIu4XxlX-gT7PlM35ng/exec"; 
   const blogContainer = document.getElementById("blog-listesi-container");
 
   if (blogContainer) {
       blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:40px; color:#94a3b8;">Veriler yükleniyor...</div>';
 
-      // ÖNEMLİ: ?type=posts ekledik
       fetch(`${API_URL}?type=posts`)
           .then(response => response.json())
           .then(data => {
+              const posts = data.posts || (data.ok ? data.posts : []);
               blogContainer.innerHTML = "";
               
-              // Veri yapısı kontrolü (direkt array mi yoksa obje içinde array mi)
-              const posts = Array.isArray(data) ? data : (data.posts || []);
-
-              if (posts.length === 0) {
+              if (!posts || posts.length === 0) {
                   blogContainer.innerHTML = '<div style="width:100%; text-align:center; padding:20px;">Henüz yazı eklenmemiş.</div>';
                   return;
               }
 
-              // En yeni yazı en üstte olsun
+              // En yeni en üstte
               posts.reverse().forEach(yazi => {
-                  
-                  const resimUrl = (yazi.resim && yazi.resim.startsWith('http')) 
+                  const resimUrl = (yazi.resim && yazi.resim.length > 5) 
                       ? yazi.resim 
-                      : 'https://placehold.co/600x400/1e293b/FFF?text=A.Cihan';
+                      : 'https://placehold.co/600x400/1e293b/FFF?text=Blog';
 
-                  // İçerik özetini al (HTML taglerini temizle)
-                  const hamIcerik = stripHtml(yazi.icerik || '');
-                  const ozetMetni = yazi.ozet || hamIcerik.substring(0, 120) + '...';
+                  const ozetMetni = yazi.ozet || stripHtml(yazi.icerik).substring(0, 120) + '...';
 
                   const yaziKarti = `
-                      <article class="blog-card glass hidden" style="display:flex; flex-direction:column; overflow:hidden; border-radius:12px; margin-bottom:20px;">
-                          <div class="blog-img" style="height:200px; width:100%; overflow:hidden; position:relative;">
+                      <article class="blog-card glass hidden">
+                          <div class="blog-thumb">
                              <img src="${resimUrl}" alt="${yazi.baslik}" style="width:100%; height:100%; object-fit:cover;">
-                             <span class="category-tag" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.7); color:white; padding:4px 10px; border-radius:4px; font-size:0.8rem;">${yazi.kategori || 'Genel'}</span>
                           </div>
-                          <div class="blog-content" style="padding:20px; flex:1; display:flex; flex-direction:column;">
-                              <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:10px;">
-                                  <i class="fa-regular fa-calendar"></i> ${yazi.tarih ? yazi.tarih.split(' ')[0] : ''}
-                              </div>
-                              <h3 style="color:#fff; margin-bottom:10px; font-size:1.25rem;">${yazi.baslik}</h3>
-                              <p style="color:#cbd5e1; font-size:0.95rem; line-height:1.6; flex:1;">${ozetMetni}</p>
-                              <a href="blog-detay.html?id=${yazi.id}" class="read-more" style="color:#60a5fa; text-decoration:none; margin-top:15px; font-weight:500; display:inline-flex; align-items:center; gap:5px;">
-                                  Devamını Oku <i class="fa-solid fa-arrow-right"></i>
-                              </a>
+                          <div class="blog-content">
+                              <div class="blog-category">${yazi.kategori || 'Genel'}</div>
+                              <h3 class="blog-title">${yazi.baslik}</h3>
+                              <p class="blog-desc">${ozetMetni}</p>
+                              <a href="blog-detay.html?id=${yazi.id}" class="btn-read">Devamını Oku</a>
                           </div>
                       </article>
                   `;
-                  
                   blogContainer.innerHTML += yaziKarti;
               });
-              
-              // Animasyonları tetikle
-              if(typeof scrollObserver !== 'undefined') {
-                 const newHiddenElements = blogContainer.querySelectorAll('.hidden');
-                 newHiddenElements.forEach((el) => scrollObserver.observe(el));
-              }
 
+              // Animasyonları tetikle
+              const newHiddenElements = blogContainer.querySelectorAll('.hidden');
+              newHiddenElements.forEach((el) => scrollObserver.observe(el));
           })
           .catch(error => {
               console.error("Hata:", error);
-              blogContainer.innerHTML = '<div style="width:100%; text-align:center; color:#ef4444;">Yükleme hatası.</div>';
+              blogContainer.innerHTML = '<div style="width:100%; text-align:center; color:#ef4444;">Veri çekilemedi.</div>';
           });
   }
 
@@ -173,11 +74,4 @@ document.addEventListener('DOMContentLoaded', () => {
       tmp.innerHTML = html;
       return tmp.textContent || tmp.innerText || "";
   }
-
 });
-
-
-
-
-
-
