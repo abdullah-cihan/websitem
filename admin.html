@@ -12,12 +12,13 @@
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
-    
-    <style>
+    <link rel="stylesheet" href="admin-pages.css"> <link rel="stylesheet" href="tools.css"> <style>
         .hidden { display: none; }
         .action-btn { cursor: pointer; border: none; background: none; color: #ef4444; font-size: 1.1rem; }
         .action-btn:hover { color: #dc2626; }
         .btn-submit:disabled, .btn-draft:disabled { opacity: 0.6; cursor: not-allowed; }
+        /* Editörün görünmesi için arka plan ayarı */
+        .ql-editor { min-height: 200px; color: #e2e8f0; }
     </style>
 </head>
 <body>
@@ -88,42 +89,22 @@
                         <button onclick="showSection('new-post')" class="btn-add"><i class="fa-solid fa-plus"></i> Yeni Ekle</button>
                     </div>
                 </div>
-
                 <div class="table-responsive glass">
                     <table class="posts-table">
-                        <thead>
-                            <tr>
-                                <th>Görsel</th>
-                                <th>Başlık</th>
-                                <th>Kategori</th>
-                                <th>Durum</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="posts-table-body">
-                            </tbody>
+                        <thead><tr><th>Görsel</th><th>Başlık</th><th>Kategori</th><th>Durum</th><th>İşlemler</th></tr></thead>
+                        <tbody id="posts-table-body"></tbody>
                     </table>
                 </div>
             </section>
 
             <section id="new-post" class="admin-section">
                 <div class="editor-wrapper glass">
-                    <div class="form-header">
-                        <h2>Yeni Yazı Oluştur</h2>
-                    </div>
-
+                    <div class="form-header"><h2>Yeni Yazı Oluştur</h2></div>
                     <form id="add-post-form" onsubmit="return false;">
                         <div class="form-row">
-                            <div class="form-group flex-2">
-                                <label>Yazı Başlığı</label>
-                                <input type="text" id="post-title" placeholder="Başlık giriniz..." required>
-                            </div>
-                            <div class="form-group flex-1">
-                                <label>Tarih</label>
-                                <input type="date" id="post-date">
-                            </div>
+                            <div class="form-group flex-2"><label>Yazı Başlığı</label><input type="text" id="post-title" placeholder="Başlık giriniz..." required></div>
+                            <div class="form-group flex-1"><label>Tarih</label><input type="date" id="post-date"></div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group flex-1">
                                 <label>Kategori</label>
@@ -132,39 +113,20 @@
                                     <button type="button" onclick="addNewCategory()" class="btn-icon"><i class="fa-solid fa-plus"></i></button>
                                 </div>
                             </div>
-                            <div class="form-group flex-1">
-                                <label>Okuma Süresi</label>
-                                <input type="text" id="read-time" placeholder="Örn: 5 dk">
-                            </div>
+                            <div class="form-group flex-1"><label>Okuma Süresi</label><input type="text" id="read-time" placeholder="Örn: 5 dk"></div>
                         </div>
-
-                        <div class="form-group">
-                            <label>Kapak Görseli / İkon (URL veya FontAwesome)</label>
-                            <input type="text" id="post-image" placeholder="https://... veya fa-solid fa-code">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Kısa Açıklama (Özet)</label>
-                            <textarea id="post-desc" rows="2"></textarea>
-                        </div>
-
+                        <div class="form-group"><label>Kapak Görseli / İkon</label><input type="text" id="post-image" placeholder="URL veya fa-solid fa-code"></div>
+                        <div class="form-group"><label>Özet</label><textarea id="post-desc" rows="2"></textarea></div>
+                        
                         <div class="form-group">
                             <label>İçerik</label>
-                            <div id="editor-container" style="height: 350px;"></div>
+                            <div id="editor-container" style="height: 350px; background-color: #1e293b;"></div>
                         </div>
 
-                        <div class="form-group">
-                            <label>Etiketler</label>
-                            <input type="text" id="tags-input" placeholder="Virgülle ayırarak yazınız...">
-                        </div>
-
-                        <div class="form-group checkbox-group">
-                            <input type="checkbox" id="post-featured">
-                            <label for="post-featured">Öne Çıkanlara Ekle</label>
-                        </div>
-
+                        <div class="form-group"><label>Etiketler</label><input type="text" id="tags-input" placeholder="Virgülle ayırınız..."></div>
+                        <div class="form-group checkbox-group"><input type="checkbox" id="post-featured"><label for="post-featured">Öne Çıkan</label></div>
                         <div class="form-footer">
-                            <button type="button" onclick="savePost('draft')" class="btn-draft">Taslak Kaydet</button>
+                            <button type="button" onclick="savePost('draft')" class="btn-draft">Taslak</button>
                             <button type="button" onclick="savePost('published')" class="btn-submit">Yayınla</button>
                         </div>
                     </form>
@@ -173,100 +135,44 @@
 
             <section id="tools-manager" class="admin-section">
                 <div class="settings-container glass">
-                    <h2><i class="fa-solid fa-toolbox"></i> Hızlı Araçlar Yönetimi</h2>
-                    
-                    <div class="glass" style="padding:20px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:30px;">
-                        <h4 style="margin-bottom:15px; color:white;">Araç Ekle / Düzenle</h4>
+                    <h2>Araç Yönetimi</h2>
+                    <div class="glass" style="padding:20px; margin-bottom:20px;">
                         <div class="form-row">
-                            <div class="form-group flex-1">
-                                <input type="text" id="tool-title" placeholder="Araç Adı (Örn: Hesap Makinesi)">
-                            </div>
-                            <div class="form-group flex-1">
-                                <input type="text" id="tool-icon" placeholder="İkon (Örn: fa-solid fa-calculator)">
-                            </div>
-                            <div class="form-group flex-1">
-                                <input type="text" id="tool-link" placeholder="Link (Örn: tool-view.html?id=...)">
-                            </div>
-                            <button type="button" onclick="addTool()" class="btn-submit" style="height:45px; margin-top:2px;">Ekle</button>
+                            <input type="text" id="tool-title" placeholder="Başlık">
+                            <input type="text" id="tool-icon" placeholder="İkon">
+                            <input type="text" id="tool-link" placeholder="Link">
+                            <button type="button" onclick="addTool()" class="btn-submit">Ekle</button>
                         </div>
                     </div>
-
-                    <h4 style="margin-bottom:15px; color:white;">Mevcut Araçlar</h4>
-                    <div class="table-responsive">
-                        <table class="posts-table">
-                            <thead>
-                                <tr>
-                                    <th width="50">İkon</th>
-                                    <th>Başlık</th>
-                                    <th>Link</th>
-                                    <th width="80">İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tools-table-body"></tbody>
-                        </table>
-                    </div>
+                    <div class="table-responsive"><table class="posts-table"><tbody id="tools-table-body"></tbody></table></div>
                 </div>
             </section>
 
             <section id="pages-manager" class="admin-section">
-                <div class="section-top">
-                    <h2>Oluşturulan Sayfalar</h2>
-                    <button type="button" onclick="openNewPageEditor()" class="btn-add"><i class="fa-solid fa-plus"></i> Sayfa Oluştur</button>
-                </div>
-
-                <div class="table-responsive glass">
-                    <table class="posts-table">
-                        <thead>
-                            <tr>
-                                <th>Sayfa Başlığı</th>
-                                <th>Tarih</th>
-                                <th>Link</th>
-                                <th>İşlemler</th>
-                            </tr>
-                        </thead>
-                        <tbody id="pages-table-body"></tbody>
-                    </table>
-                </div>
+                <div class="section-top"><h2>Sayfalar</h2><button onclick="openNewPageEditor()" class="btn-add">Sayfa Oluştur</button></div>
+                <div class="table-responsive glass"><table class="posts-table"><tbody id="pages-table-body"></tbody></table></div>
             </section>
 
             <section id="page-editor" class="admin-section">
                 <div class="editor-wrapper glass">
                     <div class="form-header">
-                        <h2 id="page-form-title">Yeni Sayfa Oluştur</h2>
-                        <button type="button" onclick="showSection('pages-manager')" class="btn-draft">Vazgeç</button>
+                        <h2 id="page-form-title">Sayfa Oluştur</h2>
+                        <button onclick="showSection('pages-manager')" class="btn-draft">Vazgeç</button>
                     </div>
-
-                    <div class="form-group">
-                        <label>Sayfa Başlığı</label>
-                        <input type="text" id="page-title" placeholder="Örn: Vize Hesaplama Aracı">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Sayfa İçeriği (HTML / CSS / JS)</label>
-                        <textarea id="page-content" rows="14"
-                            style="font-family: monospace; color:#a5b4fc; background:#0b1120; width:100%; padding:15px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);"
-                            placeholder="<!DOCTYPE html><html>... Kodlarını buraya yapıştır ...</html>"></textarea>
-                    </div>
-
-                    <button type="button" onclick="savePage()" id="btn-save-page" class="btn-submit" style="width: 100%;">
-                        <i class="fa-solid fa-floppy-disk"></i> Kaydet
-                    </button>
+                    <div class="form-group"><label>Başlık</label><input type="text" id="page-title"></div>
+                    <div class="form-group"><label>HTML Kod</label><textarea id="page-content" rows="15" style="font-family:monospace; background:#0b1120; width:100%; padding:10px; color:#a5b4fc;"></textarea></div>
+                    <button onclick="savePage()" id="btn-save-page" class="btn-submit" style="width:100%">Kaydet</button>
                 </div>
             </section>
 
             <section id="settings" class="admin-section">
                 <div class="settings-container glass">
                     <div class="backup-card">
-                        <h4><i class="fa-solid fa-key"></i> Yönetici Şifresini Değiştir</h4>
-                        <p style="color:#94a3b8; font-size:0.9rem; margin-bottom:15px;">Local Storage üzerindeki giriş bilgilerini günceller.</p>
-
-                        <input id="cp-username" placeholder="Mevcut Kullanıcı Adı" style="margin-bottom:10px;">
-                        <input id="cp-old" type="password" placeholder="Mevcut Şifre" style="margin-bottom:10px;">
-                        <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
-                        <input id="cp-new-user" placeholder="Yeni Kullanıcı Adı (İsteğe bağlı)" style="margin-bottom:10px;">
-                        <input id="cp-new" type="password" placeholder="Yeni Şifre (En az 4 karakter)" style="margin-bottom:10px;">
-
-                        <button type="button" class="btn-submit" style="width:100%" onclick="changePassword()">Güncelle</button>
+                        <h4>Şifre Değiştir</h4>
+                        <input id="cp-username" placeholder="Kullanıcı Adı" style="margin-bottom:10px;">
+                        <input id="cp-old" type="password" placeholder="Eski Şifre" style="margin-bottom:10px;">
+                        <input id="cp-new" type="password" placeholder="Yeni Şifre" style="margin-bottom:10px;">
+                        <button onclick="changePassword()" class="btn-submit" style="width:100%">Güncelle</button>
                     </div>
                 </div>
             </section>
@@ -276,10 +182,7 @@
 
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-    <script src="admin.js"></script>
-    
-    <script src="admin-posts.js"></script>
-    <script src="admin-tools.js"></script>
+    <script src="admin.js"></script>       <script src="admin-posts.js"></script> <script src="admin-tools.js"></script>
     <script src="admin-pages.js"></script>
 
 </body>
