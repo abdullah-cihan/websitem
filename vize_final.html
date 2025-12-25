@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeCalc | Pro Not Hesaplayıcı</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-main: #2d3436;
+            --text-light: #636e72;
+            --success: #00b894;
+            --danger: #ff7675;
+            --warning: #fdcb6e;
+            --radius: 20px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-main);
+        }
+
+        /* --- Ana Konteyner (Glassmorphism) --- */
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Dekoratif Üst Çizgi */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: var(--primary-gradient);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2d3436;
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+
+        h2 i {
+            color: #0984e3;
+            margin-right: 10px;
+        }
+
+        /* --- Form Alanları --- */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-light);
+            margin-bottom: 8px;
+            margin-left: 5px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #b2bec3;
+            transition: color 0.3s;
+            z-index: 1;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 14px 14px 45px;
+            border: 2px solid #dfe6e9;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            background: #fdfdfd;
+        }
+
+        input:focus {
+            border-color: #0984e3;
+            background: #fff;
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(9, 132, 227, 0.1);
+        }
+
+        input:focus + i {
+            color: #0984e3;
+        }
+
+        /* Disabled Input Stili (Final pasife alınınca) */
+        input:disabled {
+            background-color: #e9ecef;
+            border-color: #d1d8dd;
+            color: #b2bec3;
+            cursor: not-allowed;
+        }
+
+        /* Grid Yapısı */
+        .grid-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        /* --- Toggle Switch --- */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f1f2f6;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+            user-select: none; /* Metin seçimini engelle */
+        }
+
+        .toggle-container:hover {
+            background: #e6e8ec;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #0984e3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Bütünleme Input Animasyonu */
+        #butInput {
+            display: none;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Hesapla Butonu --- */
+        .btn-calc {
+            width: 100%;
+            padding: 16px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-calc:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(9, 132, 227, 0.3);
+        }
+
+        .btn-calc:active {
+            transform: scale(0.98);
+        }
+
+        /* --- Sonuç Alanı --- */
+        #resultCard {
+            margin-top: 30px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid #eee;
+            display: none;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grade-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #f1f2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px auto;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            border: 5px solid #dfe6e9;
+        }
+
+        .result-details {
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* Temalar */
+        .theme-success .grade-circle { border-color: var(--success); color: var(--success); background: #e3fcf7; }
+        .theme-success .status-badge { background: #d4edda; color: #155724; }
+
+        .theme-danger .grade-circle { border-color: var(--danger); color: var(--danger); background: #ffeaea; }
+        .theme-danger .status-badge { background: #f8d7da; color: #721c24; }
+
+        .theme-warning .grade-circle { border-color: var(--warning); color: #d35400; background: #fff3cd; }
+        .theme-warning .status-badge { background: #fff3cd; color: #856404; }
+
+        .error-msg {
+            color: var(--danger);
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            display: none;
+            padding: 10px;
+            background: #fff5f5;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 500px) {
+            .grid-row { grid-template-columns: 1fr; }
+            .container { padding: 25px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2><i class="fas fa-calculator"></i>Not Hesaplayıcı</h2>
+
+        <div class="form-group">
+            <label>Ders Adı</label>
+            <div class="input-wrapper">
+                <i class="fas fa-book"></i>
+                <input id="dersAdi" type="text" placeholder="Örn: Algoritma Analizi" autocomplete="off">
+            </div>
+        </div>
+
+        <div class="grid-row">
+            <div class="form-group">
+                <label>Vize Notu</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-pen"></i>
+                    <input id="vize" type="number" placeholder="0-100" min="0" max="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Etki (%)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-percent"></i>
+                    <input id="vizeYuzde" type="number" value="40">
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-row">
+            <div class="form-group">
+                <label>Final Notu</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-graduation-cap"></i>
+                    <input id="final" type="number" placeholder="0-100" min="0" max="100">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Etki (%)</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-percent"></i>
+                    <input id="finalYuzde" type="number" value="60">
+                </div>
+            </div>
+        </div>
+
+        <div class="toggle-container">
+            <div class="toggle-label">
+                <i class="fas fa-redo-alt" style="color: #e17055;"></i>
+                Bütünleme (Büt) Gir
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="buetCheckbox">
+                <span class="slider round"></span>
+            </label>
+        </div>
+
+        <div class="form-group" id="butInput">
+            <label style="color: #e17055;">Bütünleme Notu</label>
+            <div class="input-wrapper">
+                <i class="fas fa-fire" style="color: #e17055;"></i>
+                <input id="but" type="number" placeholder="Büt notunu girin">
+            </div>
+        </div>
+
+        <button class="btn-calc" id="btnHesapla">
+            HESAPLA <i class="fas fa-arrow-right"></i>
+        </button>
+
+        <div class="error-msg" id="errorMessage"></div>
+
+        <div id="resultCard">
+            <div class="grade-circle" id="gradeCircle">--</div>
+            <h3 id="resultTitle" style="margin: 10px 0;">Ders Adı</h3>
+            <div class="result-details" id="resultDesc">Ortalama: 00.00</div>
+            <div class="status-badge" id="statusBadge">Durum</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Değişkenler ve Seçiciler ---
+        const butCheckbox = document.getElementById("buetCheckbox");
+        const butInputDiv = document.getElementById("butInput");
+        const finalInput = document.getElementById("final");
+        const btnHesapla = document.getElementById("btnHesapla");
+        const inputs = document.querySelectorAll("input");
+
+        // --- Event Listeners (Olay Dinleyicileri) ---
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 1. Checkbox Değişimi
+            butCheckbox.addEventListener('change', function() {
+                toggleUI(this.checked);
+            });
+
+            // 2. Toggle Container Tıklaması (Yazıya tıklayınca da çalışsın)
+            document.querySelector('.toggle-container').addEventListener('click', function(e) {
+                // Eğer tıklanan eleman zaten input değilse (döngüyü kırmak için)
+                if (e.target.tagName !== 'INPUT' && e.target.className !== 'slider round') {
+                    butCheckbox.checked = !butCheckbox.checked;
+                    // Change eventini manuel tetikle
+                    butCheckbox.dispatchEvent(new Event('change'));
+                }
+            });
+
+            // 3. Hesapla Butonu
+            btnHesapla.addEventListener('click', hesapla);
+
+            // 4. Enter Tuşu Desteği
+            inputs.forEach(input => {
+                input.addEventListener("keypress", function(event) {
+                    if (event.key === "Enter") {
+                        event.preventDefault(); // Form submitini engelle
+                        hesapla();
+                    }
+                });
+            });
+        });
+
+        // --- Arayüz Yönetimi ---
+        function toggleUI(isChecked) {
+            if (isChecked) {
+                // Büt AÇIK: Büt kutusunu göster, Final kutusunu kilitle
+                butInputDiv.style.display = "block";
+                finalInput.disabled = true; 
+                finalInput.placeholder = "Büt devrede";
+            } else {
+                // Büt KAPALI: Büt kutusunu gizle, Final kutusunu aç
+                butInputDiv.style.display = "none";
+                document.getElementById("but").value = ""; // Büt değerini temizle
+                finalInput.disabled = false;
+                finalInput.placeholder = "0-100";
+            }
+            hideResults(); // Değişiklik yapıldığında eski sonucu gizle
+        }
+
+        // --- Hesaplama Mantığı ---
+        
+        // Harf Notu Skalası
+        const GradeMap = [
+            { score: 90, harf: "AA", katsayi: 4.0 },
+            { score: 85, harf: "BA", katsayi: 3.5 },
+            { score: 75, harf: "BB", katsayi: 3.0 },
+            { score: 70, harf: "CB", katsayi: 2.5 },
+            { score: 60, harf: "CC", katsayi: 2.0 }, // Geçme Sınırı
+            { score: 50, harf: "DC", katsayi: 1.5 }, // Koşullu
+            { score: 40, harf: "DD", katsayi: 1.0 },
+            { score: 30, harf: "FD", katsayi: 0.5 },
+            { score: 0, harf: "FF", katsayi: 0.0 }
+        ];
+
+        function getGrade(not) {
+            // Notu yukarıdan aşağıya kontrol et, ilk eşleşeni döndür
+            for (const grade of GradeMap) {
+                if (not >= grade.score) return grade;
+            }
+            return GradeMap[GradeMap.length - 1];
+        }
+
+        function hideResults() {
+            document.getElementById("resultCard").style.display = "none";
+            document.getElementById("errorMessage").style.display = "none";
+        }
+
+        function showError(msg) {
+            hideResults();
+            const errDiv = document.getElementById("errorMessage");
+            errDiv.textContent = msg;
+            errDiv.style.display = "block";
+        }
+
+        function hesapla() {
+            // Değerleri al
+            const dersAdi = document.getElementById("dersAdi").value.trim() || "Ders";
+            const vize = parseFloat(document.getElementById("vize").value);
+            const final = parseFloat(document.getElementById("final").value);
+            const vYuzde = parseFloat(document.getElementById("vizeYuzde").value);
+            const fYuzde = parseFloat(document.getElementById("finalYuzde").value);
+            
+            const isBut = butCheckbox.checked;
+            const but = isBut ? parseFloat(document.getElementById("but").value) : NaN;
+
+            // --- Validasyon (Hata Kontrolü) ---
+            
+            // 1. Vize ve Yüzdeler dolu mu?
+            if (isNaN(vize) || isNaN(vYuzde) || isNaN(fYuzde)) {
+                showError("Lütfen vize notunu ve etki yüzdelerini eksiksiz girin.");
+                return;
+            }
+
+            // 2. Final / Büt Mantığı Kontrolü
+            // Eğer Büt kapalıysa Final zorunlu. Büt açıksa Büt zorunlu.
+            if (!isBut && isNaN(final)) {
+                showError("Lütfen final notunu girin.");
+                return;
+            }
+            if (isBut && isNaN(but)) {
+                showError("Bütünleme seçildi, lütfen notunu girin.");
+                return;
+            }
+
+            // 3. 0-100 Aralığı Kontrolü
+            const isInvalidRange = (val) => val < 0 || val > 100;
+            if (isInvalidRange(vize) || 
+               (!isBut && isInvalidRange(final)) || 
+               (isBut && isInvalidRange(but))) {
+                showError("Tüm notlar 0 ile 100 arasında olmalıdır.");
+                return;
+            }
+
+            // 4. Yüzde Toplamı Kontrolü
+            if ((vYuzde + fYuzde) !== 100) {
+                showError(`Yüzdeler toplamı 100 olmalıdır. (Şu an: ${vYuzde + fYuzde})`);
+                return;
+            }
+
+            // Hata yoksa eski uyarıları gizle
+            hideResults();
+
+            // --- Hesaplama ---
+            // Büt seçiliyse final yerine büt notunu kullan
+            const validFinal = isBut ? but : final;
+            
+            const ortalama = (vize * vYuzde / 100) + (validFinal * fYuzde / 100);
+            const gradeData = getGrade(ortalama);
+
+            // --- Sonucu Ekrana Yazma ---
+            const card = document.getElementById("resultCard");
+            const circle = document.getElementById("gradeCircle");
+            const title = document.getElementById("resultTitle");
+            const desc = document.getElementById("resultDesc");
+            const badge = document.getElementById("statusBadge");
+
+            title.textContent = dersAdi;
+            circle.textContent = gradeData.harf;
+            desc.innerHTML = `Ortalama: <strong>${ortalama.toFixed(2)}</strong> <br> Katsayı: ${gradeData.katsayi}`;
+
+            // Renk Teması (Class'ları sıfırla ve yenisini ekle)
+            card.className = ""; 
+            if (gradeData.katsayi >= 2.0) {
+                card.classList.add("theme-success");
+                badge.textContent = "BAŞARILI";
+            } else if (gradeData.katsayi >= 1.0) {
+                card.classList.add("theme-warning");
+                badge.textContent = "KOŞULLU / RİSKLİ";
+            } else {
+                card.classList.add("theme-danger");
+                badge.textContent = "BAŞARISIZ";
+            }
+
+            // Sonucu göster
+            card.style.display = "block";
+        }
+    </script>
+</body>
+</html>
