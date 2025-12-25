@@ -1,7 +1,11 @@
-/* ADMIN CORE */
-const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
-
+/* ============================================================
+   ADMIN CORE - YÖNETİM PANELİ ÇEKİRDEK DOSYASI (V-FINAL)
+   ============================================================ */
 (function () {
+    // ✅ URL'İ BURADA GLOBAL OLARAK TANIMLIYORUZ
+    // Diğer dosyalar buradan okuyacak.
+    window.API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
+
     document.addEventListener('DOMContentLoaded', () => {
         const isAdmin = localStorage.getItem('isAdmin');
         if (isAdmin !== 'true') { window.location.href = 'login.html'; return; }
@@ -18,18 +22,19 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGD
         document.querySelectorAll('.admin-section').forEach(sec => { sec.classList.remove('active'); sec.style.display = 'none'; });
         document.querySelectorAll('.admin-menu li').forEach(item => { item.classList.remove('active'); });
 
-        const target = document.getElementById(sectionId);
-        if (target) {
-            target.classList.add('active');
-            target.style.display = 'block';
-            setTimeout(() => target.style.opacity = 1, 10);
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            targetSection.classList.add('active');
+            targetSection.style.display = 'block';
+            setTimeout(() => targetSection.style.opacity = 1, 10);
         }
-
         const menuItems = document.querySelectorAll('.admin-menu li');
         menuItems.forEach(item => {
-            if(item.getAttribute('onclick')?.includes(sectionId)) item.classList.add('active');
+            const onClickAttr = item.getAttribute('onclick');
+            if(onClickAttr && onClickAttr.includes(sectionId)) item.classList.add('active');
         });
 
+        // Diğer dosyalardaki fonksiyonları tetikle
         if (sectionId === 'posts' && typeof fetchPosts === 'function') fetchPosts();
         if (sectionId === 'tools-manager' && typeof fetchTools === 'function') fetchTools();
         if (sectionId === 'pages-manager' && typeof fetchPages === 'function') fetchPages();
@@ -37,43 +42,50 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGD
     };
 
     async function loadDashboardStats() {
-        const pCount = document.getElementById('total-posts-count');
-        const cCount = document.getElementById('total-cats-count');
-        if(!pCount) return;
-        pCount.innerText = "...";
+        const postCountEl = document.getElementById('total-posts-count');
+        const catCountEl = document.getElementById('total-cats-count');
+        if(!postCountEl) return;
+        postCountEl.innerText = "...";
+        if(catCountEl) catCountEl.innerText = "...";
         
         try {
-            const res = await fetch(`${API_URL}?type=posts`);
+            // window.API_URL kullanıyoruz
+            const res = await fetch(`${window.API_URL}?type=posts`);
             const data = await res.json();
             const posts = data.posts || [];
-            
-            pCount.innerText = posts.length;
-            const cats = new Set(posts.map(p => p.kategori).filter(Boolean));
-            if(cCount) cCount.innerText = cats.size;
-        } catch(e) {
-            pCount.innerText = "-";
+            if (posts) {
+                postCountEl.innerText = posts.length;
+                const categories = new Set();
+                posts.forEach(p => { if(p.kategori) categories.add(p.kategori); });
+                if(catCountEl) catCountEl.innerText = categories.size;
+            } else { postCountEl.innerText = "0"; }
+        } catch (error) {
+            console.error("Dashboard Error:", error);
+            postCountEl.innerText = "-";
         }
     }
 
-    window.toggleProfileMenu = () => document.getElementById('profile-dropdown')?.classList.toggle('show');
-    window.logout = () => { if(confirm("Çıkış?")) { localStorage.removeItem('isAdmin'); window.location.href='login.html'; } };
-    
-    // Şifre değiştirme (LocalStorage)
+    window.toggleProfileMenu = () => { document.getElementById('profile-dropdown')?.classList.toggle('show'); };
+    document.addEventListener('click', (e) => {
+        const trigger = document.getElementById('user-profile-trigger');
+        const dropdown = document.getElementById('profile-dropdown');
+        if (trigger && dropdown && !trigger.contains(e.target)) dropdown.classList.remove('show');
+    });
+    window.logout = () => { if(confirm("Çıkış yapmak istiyor musunuz?")) { localStorage.removeItem('isAdmin'); window.location.href = 'login.html'; } };
+
     window.changePassword = () => {
-        const u = document.getElementById('cp-username').value;
-        const p = document.getElementById('cp-old').value;
-        const nu = document.getElementById('cp-new-user').value;
-        const np = document.getElementById('cp-new').value;
-        
-        const realU = localStorage.getItem('adminUser') || 'admin';
-        const realP = localStorage.getItem('adminPass') || '123456';
-        
-        if(u !== realU || p !== realP) { alert("Eski bilgiler yanlış"); return; }
-        if(np.length < 4) { alert("Şifre çok kısa"); return; }
-        
-        localStorage.setItem('adminUser', nu || realU);
-        localStorage.setItem('adminPass', np);
-        alert("Değiştirildi. Giriş yapın.");
+        const oldUser = document.getElementById('cp-username').value;
+        const oldPass = document.getElementById('cp-old').value;
+        const newUser = document.getElementById('cp-new-user').value;
+        const newPass = document.getElementById('cp-new').value;
+        const storedUser = localStorage.getItem('adminUser') || 'admin';
+        const storedPass = localStorage.getItem('adminPass') || '1234';
+
+        if(oldUser !== storedUser || oldPass !== storedPass) { alert("Mevcut kullanıcı adı veya şifre hatalı!"); return; }
+        if(newPass.length < 4) { alert("Yeni şifre çok kısa."); return; }
+        if(newUser) localStorage.setItem('adminUser', newUser);
+        localStorage.setItem('adminPass', newPass);
+        alert("Bilgiler güncellendi! Lütfen tekrar giriş yapın.");
         logout();
     };
 })();
