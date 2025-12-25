@@ -1,9 +1,5 @@
-/* ============================================================
-   ADMIN TOOLS MANAGER - ARAÇ YÖNETİMİ (V-FINAL CORRECTIONS)
-   ============================================================ */
-
-// ✅ YENİ LİNK
-const API_URL = "https://script.google.com/macros/s/AKfycbxWHYm0AZ7lgq1R1tel5ziBBCFVF7D-20GYEfefj33Fm35tKttOIR8_dymGtB_Z7UYWMA/exec";
+/* ADMIN TOOLS MANAGER */
+const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
 
 let isEditMode = false;
 let currentEditingIndex = null;
@@ -12,28 +8,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if(document.getElementById('tools-table-body')) fetchTools();
 });
 
-// --- ARAÇ EKLE/GÜNCELLE (DÜZELTİLDİ) ---
-async function handleToolSubmit() {
+window.addTool = async () => { // handleToolSubmit
     const btn = document.querySelector('#tools-manager .btn-submit');
-    const title = document.getElementById("tool-title").value.trim();
-    const icon = document.getElementById("tool-icon").value.trim();
-    const link = document.getElementById("tool-link").value.trim();
+    const baslik = document.getElementById("tool-title").value;
+    const ikon = document.getElementById("tool-icon").value;
+    const link = document.getElementById("tool-link").value;
 
-    if (!title || !link) { alert("Başlık ve Link alanları zorunludur."); return; }
-
-    const originalText = btn ? btn.innerText : "Ekle";
-    if(btn) { btn.innerText = "İşleniyor..."; btn.disabled = true; }
+    if(!baslik || !link) { alert("Başlık ve link zorunlu"); return; }
+    
+    const originalText = btn.innerText;
+    btn.innerText = "İşleniyor...";
+    btn.disabled = true;
 
     const toolData = {
         action: isEditMode ? "update_tool" : "add_tool",
         index: currentEditingIndex,
-        baslik: title,
-        ikon: icon || "fa-solid fa-toolbox",
+        baslik: baslik,
+        ikon: ikon || "fa-solid fa-toolbox",
         link: link
     };
 
     try {
-        // ⚠️ DÜZELTME: text/plain
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -41,96 +36,68 @@ async function handleToolSubmit() {
             body: JSON.stringify(toolData)
         });
 
-        alert(isEditMode ? "✅ Güncelleme gönderildi!" : "✅ Ekleme gönderildi!");
+        alert(isEditMode ? "✅ Güncellendi!" : "✅ Eklendi!");
         resetToolForm();
-        document.getElementById('tools-table-body').innerHTML = '<tr><td colspan="4" style="text-align:center;">Liste yenileniyor...</td></tr>';
         setTimeout(fetchTools, 2000);
-
-    } catch (error) {
-        console.error(error);
-        alert("Hata: " + error);
+    } catch(e) {
+        alert("Hata: " + e);
     } finally {
-        if(btn) { btn.innerText = isEditMode ? "Güncelle" : "Ekle"; btn.disabled = false; }
-    }
-}
-window.addTool = handleToolSubmit;
-
-// --- ARAÇ SİLME (DÜZELTİLDİ) ---
-window.deleteTool = async (index, event) => {
-    if(event) event.stopPropagation();
-    if(!confirm("Bu aracı silmek istediğinize emin misiniz?")) return;
-
-    const btn = event.target.closest('button');
-    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-    const formData = { action: "delete_row", type: "tools", id: index };
-
-    try {
-        // ⚠️ DÜZELTME
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(formData)
-        });
-
-        alert("Silme işlemi gönderildi.");
-        setTimeout(fetchTools, 2000);
-
-    } catch (error) {
-        console.error("Silme hatası:", error);
-        alert("Silinemedi: " + error);
-        if(btn) btn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        btn.innerText = isEditMode ? "Güncelle" : "Ekle";
+        btn.disabled = false;
     }
 };
 
 async function fetchTools() {
     const tbody = document.getElementById('tools-table-body');
-    if (!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Yükleniyor...</td></tr>';
-
+    if(!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="4">Yükleniyor...</td></tr>';
+    
     try {
         const res = await fetch(`${API_URL}?type=tools`);
         const data = await res.json();
         const tools = data.tools || [];
-
+        
         tbody.innerHTML = '';
-        if (tools.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Henüz araç yok.</td></tr>';
-            return;
-        }
+        if(tools.length === 0) { tbody.innerHTML = '<tr><td colspan="4">Araç yok.</td></tr>'; return; }
 
-        tools.forEach((tool, index) => {
-            const tr = document.createElement('tr');
-            tr.onclick = (e) => {
-                if(!e.target.closest('.delete-btn')) editTool(index, tool.baslik, tool.ikon, tool.link);
-            };
-            tr.style.cursor = "pointer";
-            tr.innerHTML = `
-                <td style="text-align:center;"><i class="${tool.ikon}"></i></td>
-                <td style="color:white;">${tool.baslik}</td>
-                <td style="font-size:0.8rem; color:#94a3b8;">${tool.link}</td>
-                <td style="text-align:center;">
-                    <button class="action-btn delete-btn" onclick="deleteTool(${index}, event)"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        tools.forEach((t, i) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="text-align:center"><i class="${t.ikon}"></i></td>
+                    <td>${t.baslik}</td>
+                    <td style="font-size:0.8rem">${t.link}</td>
+                    <td style="text-align:center">
+                        <button onclick="editTool(${i}, '${t.baslik}', '${t.ikon}', '${t.link}')" class="action-btn" style="color:#3b82f6"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="deleteTool(${i}, this)" class="action-btn"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
         });
-    } catch (err) {
-        console.error(err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ef4444;">Veri çekilemedi.</td></tr>';
-    }
+    } catch(e) { console.error(e); }
 }
 
-function editTool(index, title, icon, link) {
+window.deleteTool = async (index, btn) => {
+    if(!confirm("Silinsin mi?")) return;
+    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+    await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "delete_row", type: "tools", id: index })
+    });
+    
+    alert("Silindi.");
+    setTimeout(fetchTools, 2000);
+};
+
+window.editTool = (index, title, icon, link) => {
     isEditMode = true;
     currentEditingIndex = index;
     document.getElementById("tool-title").value = title;
     document.getElementById("tool-icon").value = icon;
     document.getElementById("tool-link").value = link;
-    const btn = document.querySelector('#tools-manager .btn-submit');
-    if(btn) btn.innerText = "Güncelle";
-}
+    document.querySelector('#tools-manager .btn-submit').innerText = "Güncelle";
+};
 
 function resetToolForm() {
     isEditMode = false;
@@ -138,6 +105,5 @@ function resetToolForm() {
     document.getElementById("tool-title").value = "";
     document.getElementById("tool-icon").value = "";
     document.getElementById("tool-link").value = "";
-    const btn = document.querySelector('#tools-manager .btn-submit');
-    if(btn) btn.innerText = "Ekle";
+    document.querySelector('#tools-manager .btn-submit').innerText = "Ekle";
 }
