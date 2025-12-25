@@ -4,7 +4,7 @@
 
 (function () {
     // 👇 GÜNCEL API LİNKİNİZ (Backend düzeltmesinden sonraki link)
-    const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
+   const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
     // ==========================================
     // 1. BAŞLANGIÇ (INIT)
     // ==========================================
