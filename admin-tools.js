@@ -1,45 +1,47 @@
-
-
 /* ============================================================
-   ADMIN TOOLS MANAGER - ARAÇ YÖNETİMİ
+   ADMIN TOOLS MANAGER - ARAÇ YÖNETİMİ (GÜNCELLENMİŞ)
    ============================================================ */
 
-// 👇👇 BURAYA YENİ ALDIĞINIZ GÜNCEL LİNKİ YAPIŞTIRIN 👇👇
 const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
+
+let isEditMode = false;
+let currentEditingIndex = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Eğer araçlar tablosu varsa verileri çek
     if(document.getElementById('tools-table-body')) {
         fetchTools();
     }
 });
 
 // ==========================================
-// 1. ARAÇ EKLEME
+// 1. ARAÇ EKLEME VEYA GÜNCELLEME
 // ==========================================
-async function addTool() {
+async function handleToolSubmit() {
     const btn = document.querySelector('#tools-manager .btn-submit');
     const originalText = btn.innerText;
     
-    btn.innerText = "Ekleniyor...";
+    const title = document.getElementById("tool-title").value.trim();
+    const icon = document.getElementById("tool-icon").value.trim();
+    const link = document.getElementById("tool-link").value.trim();
+
+    if (!title || !link) {
+        alert("Başlık ve Link alanları zorunludur.");
+        return;
+    }
+
+    btn.innerText = "İşleniyor...";
     btn.disabled = true;
 
+    const toolData = {
+        action: isEditMode ? "update_tool" : "add_tool",
+        index: currentEditingIndex, // Güncelleme için satır numarası
+        baslik: title,
+        ikon: icon || "fa-solid fa-toolbox",
+        link: link
+    };
+
     try {
-        const title = document.getElementById("tool-title").value;
-        const icon = document.getElementById("tool-icon").value;
-        const link = document.getElementById("tool-link").value;
-
-        if (!title || !link) {
-            alert("Başlık ve Link alanları zorunludur.");
-            return;
-        }
-
-        const toolData = {
-            action: "add_tool",
-            baslik: title,
-            ikon: icon || "fa-solid fa-toolbox",
-            link: link
-        };
-
+        // Not: update_tool fonksiyonu Kod.gs tarafında yoksa eklenmelidir.
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -47,27 +49,54 @@ async function addTool() {
             body: JSON.stringify(toolData)
         });
 
-        alert("✅ Araç başarıyla eklendi!");
-        
-        // Formu temizle
-        document.getElementById("tool-title").value = "";
-        document.getElementById("tool-link").value = "";
-        document.getElementById("tool-icon").value = "";
+        alert(isEditMode ? "✅ Araç güncellendi!" : "✅ Araç başarıyla eklendi!");
+        resetToolForm();
         
         // Listeyi yenile
-        setTimeout(fetchTools, 1000);
+        setTimeout(fetchTools, 1500);
 
     } catch (error) {
         console.error(error);
         alert("Hata: " + error);
     } finally {
-        btn.innerText = originalText;
+        btn.innerText = "Ekle";
         btn.disabled = false;
     }
 }
 
 // ==========================================
-// 2. ARAÇLARI LİSTELEME
+// 2. DÜZENLEME MODUNU AÇMA
+// ==========================================
+function editTool(index, title, icon, link) {
+    isEditMode = true;
+    currentEditingIndex = index;
+
+    // Formu doldur
+    document.getElementById("tool-title").value = title;
+    document.getElementById("tool-icon").value = icon;
+    document.getElementById("tool-link").value = link;
+
+    // Butonu güncelle
+    const btn = document.querySelector('#tools-manager .btn-submit');
+    btn.innerText = "Güncelle";
+    btn.classList.add("edit-mode-btn"); // CSS ile renk değiştirebilirsin
+    
+    // Sayfayı yukarı kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Formu Sıfırla
+function resetToolForm() {
+    isEditMode = false;
+    currentEditingIndex = null;
+    document.getElementById("tool-title").value = "";
+    document.getElementById("tool-icon").value = "";
+    document.getElementById("tool-link").value = "";
+    document.querySelector('#tools-manager .btn-submit').innerText = "Ekle";
+}
+
+// ==========================================
+// 3. ARAÇLARI LİSTELEME
 // ==========================================
 async function fetchTools() {
     const tbody = document.getElementById('tools-table-body');
@@ -86,14 +115,24 @@ async function fetchTools() {
             return;
         }
 
-        tools.forEach(tool => {
+        tools.forEach((tool, index) => {
             const tr = document.createElement('tr');
+            tr.style.cursor = "pointer"; // Tıklanabilir hissi
+            tr.title = "Düzenlemek için tıkla";
+            
+            // Satıra tıklandığında düzenleme modunu aç (Silme butonuna tıklanmadığı sürece)
+            tr.onclick = (e) => {
+                if(!e.target.closest('.action-btn')) {
+                    editTool(index + 1, tool.baslik, tool.ikon, tool.link);
+                }
+            };
+
             tr.innerHTML = `
                 <td style="text-align:center;"><i class="${tool.ikon}"></i></td>
-                <td style="color:white;">${tool.baslik}</td>
-                <td style="font-size:0.8rem; color:#94a3b8; max-width:200px; overflow:hidden; text-overflow:ellipsis;">${tool.link}</td>
+                <td style="color:white; font-weight:500;">${tool.baslik}</td>
+                <td style="font-size:0.8rem; color:#94a3b8;">${tool.link}</td>
                 <td>
-                    <button class="action-btn" onclick="alert('Google Sheet üzerinden siliniz.')">
+                    <button class="action-btn delete-btn" onclick="alert('Google Sheet üzerinden siliniz.')">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </td>
@@ -106,4 +145,3 @@ async function fetchTools() {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ef4444;">Veri çekilemedi.</td></tr>';
     }
 }
-
