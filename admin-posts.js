@@ -1,5 +1,4 @@
 /* ADMIN POSTS MANAGER */
-const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
