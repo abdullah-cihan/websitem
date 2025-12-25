@@ -1,31 +1,23 @@
 document.addEventListener('DOMContentLoaded', async () => {
     const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
-    const container = document.getElementById('tools-list-container');
-    if (!container) return;
+    const id = new URLSearchParams(window.location.search).get('id');
+    const frame = document.getElementById('tool-frame');
+
+    if (!id || !frame) return;
 
     try {
-        const res = await fetch(`${API_URL}?type=tools`);
+        const res = await fetch(`${API_URL}?type=pages`);
         const data = await res.json();
-        const tools = data.tools || [];
+        const pages = data.pages || [];
+        const page = pages.find(p => String(p.id) === String(id));
 
-        if (tools.length === 0) {
-            container.innerHTML = '<div class="tool-empty">Araç yok.</div>';
-            return;
+        if (page && page.icerik) {
+            document.title = page.baslik;
+            frame.srcdoc = page.icerik;
+        } else {
+            document.body.innerHTML = "<h1 style='color:white;text-align:center;margin-top:50px'>Sayfa Bulunamadı (404)</h1>";
         }
-
-        let html = '<div class="tools-list">';
-        tools.forEach(tool => {
-            const target = tool.link.startsWith('#') || tool.link.includes('tool-view.html') ? '_self' : '_blank';
-            html += `
-            <a href="${tool.link}" class="tool-item" target="${target}">
-                <i class="${tool.ikon || 'fa-solid fa-link'}"></i>
-                <span>${tool.baslik}</span>
-            </a>`;
-        });
-        html += '</div>';
-        container.innerHTML = html;
     } catch (e) {
         console.error(e);
-        container.innerHTML = '<div class="tool-empty">Hata.</div>';
     }
 });
