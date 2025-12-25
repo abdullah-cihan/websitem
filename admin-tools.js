@@ -1,6 +1,4 @@
 /* ADMIN TOOLS MANAGER */
-const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
-
 let isEditMode = false;
 let currentEditingIndex = null;
 
@@ -107,3 +105,4 @@ function resetToolForm() {
     document.getElementById("tool-link").value = "";
     document.querySelector('#tools-manager .btn-submit').innerText = "Ekle";
 }
+
