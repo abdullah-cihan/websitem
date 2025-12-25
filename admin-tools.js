@@ -1,8 +1,8 @@
 /* ============================================================
-   ADMIN TOOLS MANAGER - ARAÇ YÖNETİMİ (GÜNCELLENMİŞ)
+   ADMIN TOOLS MANAGER - ARAÇ YÖNETİMİ (V-FINAL)
    ============================================================ */
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw7uo2RD9hF1sSBgtGq67w8bc_x2FRVkJeD9V5ZndKyeSLr0ipgIu4XxlX-gT7PlM35ng/exec";
 
 let isEditMode = false;
 let currentEditingIndex = null;
@@ -13,9 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ==========================================
-// 1. ARAÇ EKLEME VEYA GÜNCELLEME
-// ==========================================
+// --- ARAÇ KAYDET / GÜNCELLE ---
 async function handleToolSubmit() {
     const btn = document.querySelector('#tools-manager .btn-submit');
     const originalText = btn.innerText;
@@ -34,14 +32,13 @@ async function handleToolSubmit() {
 
     const toolData = {
         action: isEditMode ? "update_tool" : "add_tool",
-        index: currentEditingIndex, // Güncelleme için satır numarası
+        index: currentEditingIndex,
         baslik: title,
         ikon: icon || "fa-solid fa-toolbox",
         link: link
     };
 
     try {
-        // Not: update_tool fonksiyonu Kod.gs tarafında yoksa eklenmelidir.
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -49,43 +46,30 @@ async function handleToolSubmit() {
             body: JSON.stringify(toolData)
         });
 
-        alert(isEditMode ? "✅ Araç güncellendi!" : "✅ Araç başarıyla eklendi!");
+        alert(isEditMode ? "✅ Araç güncellendi!" : "✅ Araç eklendi!");
         resetToolForm();
-        
-        // Listeyi yenile
         setTimeout(fetchTools, 1500);
 
     } catch (error) {
         console.error(error);
         alert("Hata: " + error);
     } finally {
-        btn.innerText = "Ekle";
+        btn.innerText = "Ekle / Güncelle";
         btn.disabled = false;
     }
 }
 
-// ==========================================
-// 2. DÜZENLEME MODUNU AÇMA
-// ==========================================
+// --- DÜZENLEME MODU ---
 function editTool(index, title, icon, link) {
     isEditMode = true;
     currentEditingIndex = index;
-
-    // Formu doldur
     document.getElementById("tool-title").value = title;
     document.getElementById("tool-icon").value = icon;
     document.getElementById("tool-link").value = link;
-
-    // Butonu güncelle
-    const btn = document.querySelector('#tools-manager .btn-submit');
-    btn.innerText = "Güncelle";
-    btn.classList.add("edit-mode-btn"); // CSS ile renk değiştirebilirsin
-    
-    // Sayfayı yukarı kaydır
+    document.querySelector('#tools-manager .btn-submit').innerText = "Güncelle";
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Formu Sıfırla
 function resetToolForm() {
     isEditMode = false;
     currentEditingIndex = null;
@@ -95,9 +79,7 @@ function resetToolForm() {
     document.querySelector('#tools-manager .btn-submit').innerText = "Ekle";
 }
 
-// ==========================================
-// 3. ARAÇLARI LİSTELEME
-// ==========================================
+// --- LİSTELEME ---
 async function fetchTools() {
     const tbody = document.getElementById('tools-table-body');
     if (!tbody) return;
@@ -111,37 +93,28 @@ async function fetchTools() {
 
         tbody.innerHTML = '';
         if (tools.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#94a3b8;">Henüz araç eklenmedi.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Henüz araç yok.</td></tr>';
             return;
         }
 
         tools.forEach((tool, index) => {
             const tr = document.createElement('tr');
-            tr.style.cursor = "pointer"; // Tıklanabilir hissi
-            tr.title = "Düzenlemek için tıkla";
-            
-            // Satıra tıklandığında düzenleme modunu aç (Silme butonuna tıklanmadığı sürece)
             tr.onclick = (e) => {
-                if(!e.target.closest('.action-btn')) {
-                    editTool(index + 1, tool.baslik, tool.ikon, tool.link);
-                }
+                if(!e.target.closest('.action-btn')) editTool(index, tool.baslik, tool.ikon, tool.link);
             };
+            tr.style.cursor = "pointer";
 
             tr.innerHTML = `
                 <td style="text-align:center;"><i class="${tool.ikon}"></i></td>
-                <td style="color:white; font-weight:500;">${tool.baslik}</td>
+                <td style="color:white;">${tool.baslik}</td>
                 <td style="font-size:0.8rem; color:#94a3b8;">${tool.link}</td>
-                <td>
-                    <button class="action-btn delete-btn" onclick="alert('Google Sheet üzerinden siliniz.')">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>
+                <td><button class="action-btn"><i class="fa-solid fa-trash"></i></button></td>
             `;
             tbody.appendChild(tr);
         });
 
     } catch (err) {
         console.error(err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#ef4444;">Veri çekilemedi.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Veri çekilemedi.</td></tr>';
     }
 }
