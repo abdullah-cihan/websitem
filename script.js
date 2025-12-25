@@ -22,9 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Yazı yoksa uyarı ver
     if(activePosts.length === 0 && container) {
         container.innerHTML = "<p style='color:#94a3b8;text-align:center'>Henüz yazı yok.</p>";
-        // Veri olmasa bile statik elementleri (sidebar vb.) göstermek için return yapmadan önce observer'ı çalıştırmalıyız,
-        // ancak akışı bozmamak için burada return kalsa bile aşağıda observer'ı try/catch dışına veya catch sonrasına da alabiliriz.
-        // Ancak en temiz yöntem, statik elemanları her halükarda tetiklemektir.
     }
 
     // Kartları Oluştur
@@ -67,33 +64,45 @@ document.addEventListener('DOMContentLoaded', async () => {
       target.innerHTML += html;
     });
 
-    // --- DÜZELTME BURADA YAPILDI ---
-    // Scroll Animasyonu: Hem yeni eklenen '.blog-card'ları HEM DE sayfadaki statik '.hidden' (sidebar vb.) öğeleri yakalar.
+    // --- ANIMASYON GÖZLEMCİSİ (SIDEBAR DÜZELTMESİ DAHİL) ---
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => { 
             if(entry.isIntersecting) {
                 entry.target.classList.add('show');
-                entry.target.classList.remove('hidden'); // Garanti olsun diye hidden'ı siliyoruz
-                observer.unobserve(entry.target); // Performans için: Görüneni bir daha izleme
+                entry.target.classList.remove('hidden'); 
+                observer.unobserve(entry.target); 
             }
         });
     });
 
-    // 1. Dinamik oluşturulan blog kartlarını seç
+    // Hem kartları hem de gizli sidebarları izle
     const blogCards = document.querySelectorAll('.blog-card');
-    // 2. Statik olarak HTML'de gizli olan sidebar, header vb. seç
     const hiddenStaticElements = document.querySelectorAll('.hidden');
 
-    // Hepsini gözlemciye ekle
     blogCards.forEach(el => observer.observe(el));
     hiddenStaticElements.forEach(el => observer.observe(el));
-    // -------------------------------
 
   } catch(e) {
     console.error(e);
     if(container) container.innerHTML = "<p style='color:red;text-align:center'>Veriler yüklenemedi.</p>";
-    
-    // Hata olsa bile sidebarların görünmesi için yedeği buraya da ekliyoruz
     document.querySelectorAll('.hidden').forEach(el => el.classList.add('show'));
   }
+
+  // --- YENİ EKLENEN KISIM: SCROLL PROGRESS BAR ---
+  // Sayfa aşağı kaydırıldıkça üstteki barın dolmasını sağlar.
+  window.addEventListener('scroll', () => {
+      const progressBar = document.getElementById("progress-bar");
+      if(progressBar) {
+          // Sayfanın toplam kaydırılabilir yüksekliğini hesapla
+          const scrollTop = document.body.scrollTop || document.documentElement.scrollTop;
+          const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          
+          // Yüzdeyi hesapla
+          const scrolled = (scrollTop / scrollHeight) * 100;
+          
+          // CSS genişliğini güncelle
+          progressBar.style.width = scrolled + "%";
+      }
+  });
+  // ------------------------------------------------
 });
