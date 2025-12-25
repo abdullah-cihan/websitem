@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('standard-container');
   const featuredContainer = document.getElementById('featured-container');
 
+  // Yükleniyor mesajı
   if(container) container.innerHTML = "<p style='color:white;text-align:center'>Yükleniyor...</p>";
 
   try {
@@ -14,14 +15,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Sadece Yayında olanlar
     const activePosts = posts.filter(p => p.durum === "Yayında");
     
+    // Konteynerleri temizle
     if(container) container.innerHTML = "";
     if(featuredContainer) featuredContainer.innerHTML = "";
     
+    // Yazı yoksa uyarı ver
     if(activePosts.length === 0 && container) {
         container.innerHTML = "<p style='color:#94a3b8;text-align:center'>Henüz yazı yok.</p>";
-        return;
+        // Veri olmasa bile statik elementleri (sidebar vb.) göstermek için return yapmadan önce observer'ı çalıştırmalıyız,
+        // ancak akışı bozmamak için burada return kalsa bile aşağıda observer'ı try/catch dışına veya catch sonrasına da alabiliriz.
+        // Ancak en temiz yöntem, statik elemanları her halükarda tetiklemektir.
     }
 
+    // Kartları Oluştur
     activePosts.forEach(post => {
       const isFeatured = (String(post.one_cikan).toLowerCase() === "true");
       const target = isFeatured && featuredContainer ? featuredContainer : container;
@@ -44,7 +50,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const html = `
         <article class="blog-card glass ${!isFeatured ? '' : 'featured-card'}">
-            <div class="blog-thumb" style="${post.resim.startsWith('http')?'padding:0; background:none':''}">
+            <div class="blog-thumb" style="${post.resim && post.resim.startsWith('http')?'padding:0; background:none':''}">
                 ${mediaHtml}
             </div>
             <div class="blog-content">
@@ -61,14 +67,33 @@ document.addEventListener('DOMContentLoaded', async () => {
       target.innerHTML += html;
     });
 
-    // Scroll Animasyonu
+    // --- DÜZELTME BURADA YAPILDI ---
+    // Scroll Animasyonu: Hem yeni eklenen '.blog-card'ları HEM DE sayfadaki statik '.hidden' (sidebar vb.) öğeleri yakalar.
     const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('show'); });
+        entries.forEach(entry => { 
+            if(entry.isIntersecting) {
+                entry.target.classList.add('show');
+                entry.target.classList.remove('hidden'); // Garanti olsun diye hidden'ı siliyoruz
+                observer.unobserve(entry.target); // Performans için: Görüneni bir daha izleme
+            }
+        });
     });
-    document.querySelectorAll('.blog-card').forEach(el => observer.observe(el));
+
+    // 1. Dinamik oluşturulan blog kartlarını seç
+    const blogCards = document.querySelectorAll('.blog-card');
+    // 2. Statik olarak HTML'de gizli olan sidebar, header vb. seç
+    const hiddenStaticElements = document.querySelectorAll('.hidden');
+
+    // Hepsini gözlemciye ekle
+    blogCards.forEach(el => observer.observe(el));
+    hiddenStaticElements.forEach(el => observer.observe(el));
+    // -------------------------------
 
   } catch(e) {
     console.error(e);
     if(container) container.innerHTML = "<p style='color:red;text-align:center'>Veriler yüklenemedi.</p>";
+    
+    // Hata olsa bile sidebarların görünmesi için yedeği buraya da ekliyoruz
+    document.querySelectorAll('.hidden').forEach(el => el.classList.add('show'));
   }
 });
