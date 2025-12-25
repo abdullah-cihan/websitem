@@ -1,7 +1,10 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+
+  // ✅ SENİN YENİ API URL'İN
+  const API_URL = "https://script.google.com/macros/s/AKfycbxWHYm0AZ7lgq1R1tel5ziBBCFVF7D-20GYEfefj33Fm35tKttOIR8_dymGtB_Z7UYWMA/exec";
 
   // ==========================================
-  // 0. XSS azaltmak için yardımcılar
+  // 0. GÜVENLİK VE YARDIMCILAR
   // ==========================================
   const escapeHTML = (str) => {
     return String(str ?? '')
@@ -32,28 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return ok ? s : '';
   };
 
-  // ==========================================
-  // 1. VERİLERİ ÇEK VE FİLTRELE
-  // ==========================================
-  let allPosts = [];
-  try {
-    allPosts = JSON.parse(localStorage.getItem('posts') || '[]');
-    if (!Array.isArray(allPosts)) allPosts = [];
-  } catch {
-    allPosts = [];
-  }
-
-  // Sadece "published" olanlar (status yoksa eski veri => published say)
-  const blogPosts = allPosts.filter(post =>
-    post && (post.status === 'published' || post.status === undefined)
-  );
-
-  // ==========================================
-  // 2. HTML RENDER (Güvenli)
-  // ==========================================
-  const featuredContainer = document.getElementById('featured-container');
-  const standardContainer = document.getElementById('standard-container');
-
   const getCatColor = (cat) => {
     if (cat === 'Python' || cat === 'Yazılım' || cat === 'OOP') return 'cat-blue';
     if (cat === 'Felsefe') return 'cat-purple';
@@ -68,8 +49,53 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   };
 
-  const createPostCard = (post, realIndex) => {
-    const isFeatured = !!post.isFeatured;
+  // ==========================================
+  // 1. HTML ELEMENTLERİ VE YÜKLENİYOR DURUMU
+  // ==========================================
+  const featuredContainer = document.getElementById('featured-container');
+  const standardContainer = document.getElementById('standard-container');
+
+  if (standardContainer) {
+    standardContainer.innerHTML = '<div style="text-align:center; color:white; padding:20px; opacity:0.8;">Veriler yükleniyor...</div>';
+  }
+
+  // ==========================================
+  // 2. VERİLERİ API'DEN ÇEK
+  // ==========================================
+  let blogPosts = [];
+  
+  try {
+    const response = await fetch(`${API_URL}?type=posts`);
+    const data = await response.json();
+    const rawPosts = data.posts || [];
+
+    // Veritabanı anahtarlarını (baslik, ozet vs.) önyüz formatına çevir
+    // Ve sadece yayında olanları filtrele
+    blogPosts = rawPosts
+      .filter(p => !p.durum || p.durum === 'Yayında' || p.durum === 'published')
+      .map(p => ({
+        id: p.id,
+        title: p.baslik,
+        desc: p.ozet,
+        date: p.tarih ? new Date(p.tarih).toLocaleDateString('tr-TR') : '',
+        category: p.kategori,
+        icon: p.resim, // Resim URL veya İkon sınıfı burada
+        isFeatured: p.one_cikan === true || String(p.one_cikan).toLowerCase() === 'true',
+        linkType: 'internal' // İleride dış link eklersen burayı güncellersin
+      }));
+
+  } catch (error) {
+    console.error("Veri çekme hatası:", error);
+    if (standardContainer) {
+      standardContainer.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">Veriler yüklenemedi. İnternet bağlantınızı kontrol edin.</div>';
+    }
+  }
+
+  // ==========================================
+  // 3. KARTLARI OLUŞTUR VE YERLEŞTİR
+  // ==========================================
+  const createPostCard = (post) => {
+    const isFeatured = post.isFeatured;
 
     const card = document.createElement('article');
     card.className = isFeatured ? 'blog-card featured-card glass hidden' : 'blog-card glass hidden';
@@ -85,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (iconUrl) {
       thumb.style.background = 'none';
       thumb.style.padding = '0';
-
       const img = document.createElement('img');
       img.src = iconUrl;
       img.alt = 'thumbnail';
@@ -96,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       thumb.appendChild(img);
     } else {
       const i = document.createElement('i');
-      i.className = iconCls || 'fa-solid fa-pen';
+      i.className = iconCls || 'fa-solid fa-pen'; // Varsayılan ikon
       thumb.appendChild(i);
     }
 
@@ -108,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const catSpan = document.createElement('span');
     catSpan.className = `category ${getCatColor(post.category)}`;
-    catSpan.textContent = String(post.category || '');
+    catSpan.textContent = String(post.category || 'Genel');
 
     const dateSpan = document.createElement('span');
     dateSpan.className = 'date';
@@ -123,38 +148,25 @@ document.addEventListener('DOMContentLoaded', () => {
     content.appendChild(meta);
     content.appendChild(h3);
 
-    // Featured ise desc göster
+    // Featured ise özet göster
     if (post.desc && isFeatured) {
       const p = document.createElement('p');
       p.textContent = String(post.desc || '');
       content.appendChild(p);
     }
 
-    // Buton (external / internal)
-    if (post.linkType === 'external') {
-      const safeUrl = safeHttpUrl(post.url);
-      if (safeUrl) {
-        const a = document.createElement('a');
-        a.href = safeUrl;
-        a.target = '_blank';
-        a.rel = 'noopener noreferrer';
-        a.className = 'btn-read-modern';
-        a.textContent = 'İzle ';
-        const icon = document.createElement('i');
-        icon.className = 'fa-solid fa-play';
-        a.appendChild(icon);
-        content.appendChild(a);
-      }
-    } else {
-      const a = document.createElement('a');
-      a.href = `blog-detay.html?id=${encodeURIComponent(String(realIndex))}`;
-      a.className = 'btn-read-modern';
-      a.textContent = isFeatured ? 'Devamını Oku ' : 'Oku ';
-      const icon = document.createElement('i');
-      icon.className = 'fa-solid fa-arrow-right';
-      a.appendChild(icon);
-      content.appendChild(a);
-    }
+    // Buton
+    const a = document.createElement('a');
+    // ID ile linkleme
+    a.href = `blog-detay.html?id=${encodeURIComponent(post.id)}`;
+    a.className = 'btn-read-modern';
+    a.textContent = isFeatured ? 'Devamını Oku ' : 'Oku ';
+    
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-arrow-right';
+    a.appendChild(icon);
+    
+    content.appendChild(a);
 
     card.appendChild(thumb);
     card.appendChild(content);
@@ -163,36 +175,36 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   if (featuredContainer && standardContainer) {
-    featuredContainer.textContent = '';
-    standardContainer.textContent = '';
+    // İçerikleri temizle (Loading yazısını kaldır)
+    featuredContainer.innerHTML = '';
+    standardContainer.innerHTML = '';
 
     if (blogPosts.length === 0) {
-      const p = document.createElement('p');
-      p.style.color = 'white';
-      p.style.opacity = '0.7';
-      p.textContent = 'Henüz yayınlanmış bir yazı yok.';
-      standardContainer.appendChild(p);
+      standardContainer.innerHTML = '<p style="color:white; opacity:0.7; text-align:center;">Henüz yayınlanmış bir yazı yok.</p>';
     } else {
       blogPosts.forEach((post) => {
-        const realIndex = allPosts.indexOf(post);
-        const card = createPostCard(post, realIndex);
-
-        if (post.isFeatured) featuredContainer.appendChild(card);
-        else standardContainer.appendChild(card);
+        const card = createPostCard(post);
+        if (post.isFeatured) {
+          featuredContainer.appendChild(card);
+        } else {
+          standardContainer.appendChild(card);
+        }
       });
     }
   }
 
   // ==========================================
-  // 3. STANDART ÖZELLİKLER (Menu, Scroll vb.)
+  // 4. EFEKTLER (Scroll, Menu, Typewriter)
   // ==========================================
-  // Scroll Reveal
+  
+  // Scroll Reveal (Animasyon)
   setTimeout(() => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) entry.target.classList.add('show');
       });
-    });
+    }, { threshold: 0.1 });
+    
     document.querySelectorAll('.hidden').forEach((el) => observer.observe(el));
   }, 100);
 
@@ -209,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('scroll', () => {
     const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
     const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    
     const progressBar = document.getElementById('progress-bar');
     if (progressBar && scrollHeight > 0) progressBar.style.width = (scrollTop / scrollHeight) * 100 + "%";
 
@@ -219,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Daktilo Efekti (XSS-safe)
+  // Daktilo Efekti
   const TxtType = function (el, toRotate, period) {
     this.toRotate = Array.isArray(toRotate) ? toRotate : [];
     this.el = el;
@@ -227,19 +240,15 @@ document.addEventListener('DOMContentLoaded', () => {
     this.period = parseInt(period, 10) || 2000;
     this.txt = '';
     this.isDeleting = false;
-
-    // güvenli span
     this.wrap = document.createElement('span');
     this.wrap.className = 'wrap';
     this.el.textContent = '';
     this.el.appendChild(this.wrap);
-
     this.tick();
   };
 
   TxtType.prototype.tick = function () {
     if (!this.toRotate.length) return;
-
     const i = this.loopNum % this.toRotate.length;
     const fullTxt = String(this.toRotate[i] || '');
 
@@ -249,7 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
       this.txt = fullTxt.substring(0, this.txt.length + 1);
     }
 
-    // ✅ innerHTML yok
     this.wrap.textContent = this.txt;
 
     let delta = 200 - Math.random() * 100;
@@ -271,14 +279,11 @@ document.addEventListener('DOMContentLoaded', () => {
   for (let i = 0; i < elements.length; i++) {
     const toRotateStr = elements[i].getAttribute('data-type');
     const period = elements[i].getAttribute('data-period');
-
     if (!toRotateStr) continue;
-
     try {
       const parsed = JSON.parse(toRotateStr);
       new TxtType(elements[i], parsed, period);
-    } catch {
-      // data-type bozuksa hiçbir şey yapma
-    }
+    } catch (e) {}
   }
+
 });
