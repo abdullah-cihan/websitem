@@ -1,8 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
-    // YENİ API LİNKİ
-const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrjMP3j4AffrrCPEuS7MytAx1tTsQYwYtcnzsFgrSMQLScSuA/exec";
-
+    // ✅ YENİ LİNK
+    const API_URL = "https://script.google.com/macros/s/AKfycbw7uo2RD9hF1sSBgtGq67w8bc_x2FRVkJeD9V5ZndKyeSLr0ipgIu4XxlX-gT7PlM35ng/exec"; 
 
     const params = new URLSearchParams(window.location.search);
     const targetId = params.get('id');
@@ -18,13 +17,10 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrj
         if(titleEl) titleEl.textContent = "Yükleniyor...";
 
         try {
-            // ?type=posts ile sadece yazıları çekiyoruz
             const response = await fetch(`${API_URL}?type=posts`);
             const data = await response.json();
-            
-            const posts = Array.isArray(data) ? data : (data.posts || []);
+            const posts = data.posts || (data.ok ? data.posts : []);
 
-            // ID'si eşleşen yazıyı bul
             const post = posts.find(p => String(p.id) === String(targetId));
 
             if (post) {
@@ -39,20 +35,16 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrj
     }
 
     function renderPost(post) {
-        document.title = `${post.baslik} | A. Cihan`;
+        document.title = `${post.baslik} | Blog`;
         if (titleEl) titleEl.textContent = post.baslik;
         if (dateEl) dateEl.textContent = post.tarih || '';
         if (catEl) catEl.textContent = post.kategori || 'Genel';
 
         if (imgEl) {
-            if (post.resim && post.resim.startsWith('http')) {
+            if (post.resim && post.resim.length > 5) {
                 imgEl.src = post.resim;
                 imgEl.style.display = 'block';
-                // İkonu gizle
-                const iconPlace = document.querySelector('.cover-placeholder');
-                if(iconPlace) iconPlace.style.display = 'none';
-            } else {
-                imgEl.style.display = 'none';
+                document.querySelector('.cover-placeholder')?.style.setProperty('display', 'none');
             }
         }
 
@@ -61,12 +53,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbyZ-HXJTkmTALCdnyOvTkrj
 
     function show404() {
         if(titleEl) titleEl.textContent = "Yazı Bulunamadı";
-        if(contentEl) contentEl.innerHTML = "<p style='text-align:center;'>Aradığınız içerik mevcut değil veya silinmiş.</p>";
+        if(contentEl) contentEl.innerHTML = "<p style='text-align:center;'>İçerik silinmiş veya taşınmış olabilir.</p>";
     }
 
     fetchPostDetail();
 });
-
-
-
-
