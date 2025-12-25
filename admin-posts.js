@@ -1,99 +1,64 @@
-/* ============================================================
-   ADMIN POSTS MANAGER - YAZI YÖNETİMİ (V-FINAL CORRECTIONS)
-   ============================================================ */
+/* ADMIN POSTS MANAGER */
+const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
 
-// ✅ YENİ LİNK
-const API_URL = "https://script.google.com/macros/s/AKfycbxWHYm0AZ7lgq1R1tel5ziBBCFVF7D-20GYEfefj33Fm35tKttOIR8_dymGtB_Z7UYWMA/exec";
-
-// --- BAŞLANGIÇ ---
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
     loadCategories();
-    if(document.getElementById('posts-table-body')) {
-        fetchPosts();
-    }
+    if(document.getElementById('posts-table-body')) fetchPosts();
 });
 
 function initQuill() {
     if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
-        window.myQuill = new Quill('#editor-container', { 
-            theme: 'snow', 
-            placeholder: 'Yazı içeriğini buraya giriniz...' 
-        });
+        window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik...' });
     }
 }
 
 function loadCategories() {
     const select = document.getElementById('post-category');
-    if (!select) return;
-    let cats = JSON.parse(localStorage.getItem('categories') || '[]');
-    if (cats.length === 0) {
-        cats = ['Genel', 'Teknoloji', 'Yazılım', 'Hayat', 'Felsefe'];
-        localStorage.setItem('categories', JSON.stringify(cats));
-    }
+    if(!select) return;
+    let cats = JSON.parse(localStorage.getItem('categories') || '["Genel","Teknoloji","Yazılım"]');
     select.innerHTML = '';
-    cats.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat;
-        opt.textContent = cat;
-        select.appendChild(opt);
-    });
+    cats.forEach(c => { const o = document.createElement('option'); o.value=c; o.innerText=c; select.appendChild(o); });
 }
 
 window.addNewCategory = () => {
-    const newCat = prompt("Yeni kategori adı:");
-    if (!newCat || !newCat.trim()) return;
-    const cleanCat = newCat.trim();
-    let cats = JSON.parse(localStorage.getItem('categories') || '[]');
-    if (cats.includes(cleanCat)) { alert("Bu kategori zaten mevcut!"); return; }
-    cats.push(cleanCat);
-    localStorage.setItem('categories', JSON.stringify(cats));
-    loadCategories();
-    const select = document.getElementById('post-category');
-    if(select) select.value = cleanCat;
+    const n = prompt("Kategori adı:");
+    if(n) {
+        let cats = JSON.parse(localStorage.getItem('categories')||'[]');
+        cats.push(n); localStorage.setItem('categories', JSON.stringify(cats));
+        loadCategories();
+        document.getElementById('post-category').value = n;
+    }
 };
 
-// --- YAZI KAYDETME (DÜZELTİLDİ) ---
 window.savePost = async (status) => {
-    const btnSubmit = status === 'published' ? document.querySelector('.btn-submit') : document.querySelector('.btn-draft');
-    const originalText = btnSubmit ? btnSubmit.innerText : "Yayınla";
+    const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
+    const oldText = btn ? btn.innerText : "";
+    if(btn) { btn.innerText = "Gönderiliyor..."; btn.disabled = true; }
     
-    if (btnSubmit) { 
-        btnSubmit.innerText = "Gönderiliyor..."; 
-        btnSubmit.disabled = true; 
-    }
-
     try {
-        const baslik = document.getElementById("post-title").value.trim();
-        const tarih = document.getElementById("post-date").value || new Date().toISOString().slice(0, 10);
-        const kategori = document.getElementById("post-category").value || "Genel";
-        const resimUrl = document.getElementById("post-image").value.trim(); 
-        const ozet = document.getElementById("post-desc").value.trim();
-        const okumaSuresi = document.getElementById("read-time") ? document.getElementById("read-time").value : "";
-        const etiketler = document.getElementById("tags-input") ? document.getElementById("tags-input").value : "";
-        const elFeatured = document.getElementById("post-featured");
-        const oneCikan = elFeatured ? elFeatured.checked : false;
-
-        let editorIcerik = window.myQuill ? window.myQuill.root.innerHTML : "";
-
-        if (!baslik) throw new Error("Lütfen bir başlık giriniz.");
-        if (!editorIcerik || editorIcerik === "<p><br></p>" || !editorIcerik.trim()) throw new Error("Yazı içeriği boş olamaz.");
+        const baslik = document.getElementById("post-title").value;
+        const editorContent = window.myQuill ? window.myQuill.root.innerHTML : "";
+        
+        if(!baslik || !editorContent || editorContent === "<p><br></p>") { 
+            throw new Error("Başlık ve içerik zorunlu."); 
+        }
 
         const postData = {
             action: "add_post",
             baslik: baslik,
-            icerik: editorIcerik,
-            resim: resimUrl,
-            tarih: tarih,
-            kategori: kategori,
-            ozet: ozet,
+            icerik: editorContent,
+            resim: document.getElementById("post-image").value,
+            tarih: document.getElementById("post-date").value,
+            kategori: document.getElementById("post-category").value,
+            ozet: document.getElementById("post-desc").value,
             durum: status === 'published' ? 'Yayında' : 'Taslak',
-            okuma_suresi: okumaSuresi,
-            etiketler: etiketler,
-            one_cikan: oneCikan
+            okuma_suresi: document.getElementById("read-time").value,
+            etiketler: document.getElementById("tags-input").value,
+            one_cikan: document.getElementById("post-featured").checked
         };
 
-        // ⚠️ DÜZELTME: no-cors ve text/plain kullanıyoruz
+        // ✅ CORS ÇÖZÜMÜ: text/plain
         await fetch(API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -101,115 +66,65 @@ window.savePost = async (status) => {
             body: JSON.stringify(postData)
         });
 
-        alert("✅ İşlem Google Sheets'e iletildi! (Listenin güncellenmesi 1-2 sn sürebilir)");
-        
+        alert("✅ İşlem Google Sheets'e iletildi!");
         document.getElementById("add-post-form").reset();
-        if(window.myQuill) window.myQuill.setContents([]); 
-        
-        if(document.getElementById('posts-table-body')) {
-            setTimeout(fetchPosts, 2000); // Google sheet gecikmesi için süreyi artırdık
-        }
+        window.myQuill.setContents([]);
+        if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 2000);
 
-    } catch (error) {
-        console.error(error);
-        alert("Hata: " + error.message);
+    } catch (e) {
+        alert("Hata: " + e.message);
     } finally {
-        if (btnSubmit) { 
-            btnSubmit.innerText = originalText; 
-            btnSubmit.disabled = false; 
-        }
+        if(btn) { btn.innerText = oldText || "Kaydet"; btn.disabled = false; }
     }
 };
 
-// --- YAZILARI LİSTELEME ---
 async function fetchPosts() {
     const tbody = document.getElementById('posts-table-body');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Yükleniyor...</td></tr>';
+    if(!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
     
     try {
         const res = await fetch(`${API_URL}?type=posts`);
         const data = await res.json();
-        const posts = Array.isArray(data) ? data : (data.posts || []);
-
-        tbody.innerHTML = '';
-        if (posts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#94a3b8;">Henüz yazı yok.</td></tr>';
-            return;
-        }
+        const posts = data.posts || [];
         
-        posts.reverse().forEach(post => {
-            const tr = document.createElement('tr');
-            let imgTag = '<div style="width:40px; height:40px; background:#334155; border-radius:4px;"></div>';
-            if(post.resim) {
-                if(post.resim.startsWith('fa-')) {
-                    imgTag = `<div style="width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:#1e293b; border-radius:4px;"><i class="${post.resim}" style="color:white;"></i></div>`;
-                } else {
-                    imgTag = `<img src="${post.resim}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;" onerror="this.style.display='none'">`;
-                }
-            }
-            
-            tr.innerHTML = `
-                <td>${imgTag}</td>
-                <td style="color:white; font-weight:500;">${post.baslik}</td>
-                <td>${post.kategori}</td>
-                <td><span style="padding:4px 8px; background:${post.durum === 'Taslak' ? '#f59e0b' : '#10b981'}; border-radius:4px; font-size:0.8rem; color:white;">${post.durum || 'Yayında'}</span></td>
-                <td>
-                    <button class="action-btn delete-btn" onclick="deletePost('${post.id}', this)">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </td>`;
-            tbody.appendChild(tr);
+        tbody.innerHTML = '';
+        if(posts.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Kayıt yok.</td></tr>'; return; }
+
+        posts.reverse().forEach(p => {
+            let img = p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="${p.resim}"></i>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${img}</td>
+                    <td>${p.baslik}</td>
+                    <td>${p.kategori}</td>
+                    <td>${p.durum}</td>
+                    <td><button onclick="deletePost('${p.id}', this)" class="action-btn"><i class="fa-solid fa-trash"></i></button></td>
+                </tr>`;
         });
-    } catch (err) {
-        console.error("Fetch Hatası:", err);
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444;">Veri çekilemedi.</td></tr>';
-    }
+    } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="5" style="color:red">Veri çekilemedi.</td></tr>'; }
 }
 
-// --- YAZI SİLME (DÜZELTİLDİ) ---
-window.deletePost = async (id, btnElement) => {
-    if(!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
+window.deletePost = async (id, btn) => {
+    if(!confirm("Silmek istediğine emin misin?")) return;
+    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     
-    const icon = btnElement.querySelector('i');
-    const oldClass = icon.className;
-    icon.className = "fa-solid fa-spinner fa-spin";
-    btnElement.disabled = true;
-
-    const formData = { action: "delete_row", type: "posts", id: id };
-
-    try {
-        // ⚠️ DÜZELTME
-        await fetch(API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(formData)
-        });
-
-        alert("Silme isteği gönderildi.");
-        setTimeout(fetchPosts, 2000);
-
-    } catch (error) {
-        console.error("Silme hatası:", error);
-        alert("Hata: " + error);
-        icon.className = oldClass;
-        btnElement.disabled = false;
-    }
+    await fetch(API_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ action: "delete_row", type: "posts", id: id })
+    });
+    
+    alert("Silme isteği gönderildi.");
+    setTimeout(fetchPosts, 2000);
 };
 
 window.filterPosts = () => {
-    const input = document.getElementById('search-posts');
-    const filter = input.value.toLowerCase();
-    const table = document.querySelector('.posts-table');
-    const tr = table.getElementsByTagName('tr');
-    for (let i = 1; i < tr.length; i++) {
-        const td = tr[i].getElementsByTagName('td')[1];
-        if (td) {
-            const txtValue = td.textContent || td.innerText;
-            if (txtValue.toLowerCase().indexOf(filter) > -1) tr[i].style.display = "";
-            else tr[i].style.display = "none";
-        }       
-    }
+    const filter = document.getElementById('search-posts').value.toLowerCase();
+    const rows = document.querySelectorAll('#posts-table-body tr');
+    rows.forEach(row => {
+        const txt = row.innerText.toLowerCase();
+        row.style.display = txt.includes(filter) ? "" : "none";
+    });
 };
