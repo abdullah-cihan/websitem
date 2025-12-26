@@ -2,8 +2,8 @@
    ADMIN CORE - YÖNETİM PANELİ ÇEKİRDEK DOSYASI (V-FINAL)
    ============================================================ */
 (function () {
-    // ✅ URL'İ BURADA GLOBAL OLARAK TANIMLIYORUZ
-    // Diğer dosyalar buradan okuyacak.
+    // ✅ URL VE GÜVENLİK ANAHTARI
+    // Diğer dosyalar (posts, pages, tools) buradan okuyacak.
     window.API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
     window.API_KEY = "Sifre2025"; // Code.gs'deki şifrenin AYNISI olmalı
 
@@ -72,21 +72,71 @@
         const dropdown = document.getElementById('profile-dropdown');
         if (trigger && dropdown && !trigger.contains(e.target)) dropdown.classList.remove('show');
     });
-    window.logout = () => { if(confirm("Çıkış yapmak istiyor musunuz?")) { localStorage.removeItem('isAdmin'); window.location.href = 'login.html'; } };
+    
+    window.logout = () => { 
+        if(confirm("Çıkış yapmak istiyor musunuz?")) { 
+            localStorage.removeItem('isAdmin'); 
+            window.location.href = 'login.html'; 
+        } 
+    };
 
-    window.changePassword = () => {
-        const oldUser = document.getElementById('cp-username').value;
-        const oldPass = document.getElementById('cp-old').value;
-        const newUser = document.getElementById('cp-new-user').value;
-        const newPass = document.getElementById('cp-new').value;
-        const storedUser = localStorage.getItem('adminUser') || 'admin';
-        const storedPass = localStorage.getItem('adminPass') || '1234';
+    // 👇 YENİ EKLENEN ŞİFRE GÜNCELLEME FONKSİYONU 👇
+    window.updateAdminCredentials = async () => {
+        const oldUser = document.getElementById('old-user').value;
+        const oldPass = document.getElementById('old-pass').value;
+        const newUser = document.getElementById('new-user').value;
+        const newPass = document.getElementById('new-pass').value;
+        
+        // Butonu bul (Settings bölümündeki buton)
+        const btn = document.querySelector('#settings-section .btn-submit');
 
-        if(oldUser !== storedUser || oldPass !== storedPass) { alert("Mevcut kullanıcı adı veya şifre hatalı!"); return; }
-        if(newPass.length < 4) { alert("Yeni şifre çok kısa."); return; }
-        if(newUser) localStorage.setItem('adminUser', newUser);
-        localStorage.setItem('adminPass', newPass);
-        alert("Bilgiler güncellendi! Lütfen tekrar giriş yapın.");
-        logout();
+        if(!oldUser || !oldPass || !newUser || !newPass) {
+            alert("Lütfen tüm alanları doldurunuz.");
+            return;
+        }
+
+        const originalText = btn ? btn.innerText : "Güncelle";
+        if(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+            btn.disabled = true;
+        }
+
+        try {
+            await fetch(window.API_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify({
+                    auth: window.API_KEY, // 🔑 Güvenlik anahtarı
+                    action: "update_admin",
+                    old_user: oldUser,
+                    old_pass: oldPass,
+                    new_user: newUser,
+                    new_pass: newPass
+                })
+            });
+
+            alert("✅ Bilgiler Google Sheets üzerinde güncellendi! Lütfen yeni bilgilerle tekrar giriş yapın.");
+            
+            // Tarayıcı hafızasını da güncelle ki login.js tanısın
+            localStorage.setItem('adminUser', newUser);
+            localStorage.setItem('adminPass', newPass);
+
+            // Formu temizle ve çıkış yap
+            document.getElementById('old-user').value = "";
+            document.getElementById('old-pass').value = "";
+            document.getElementById('new-user').value = "";
+            document.getElementById('new-pass').value = "";
+            
+            logout(); // Çıkışa zorla
+
+        } catch (error) {
+            alert("Hata oluştu: " + error);
+        } finally {
+            if(btn) {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
     };
 })();
