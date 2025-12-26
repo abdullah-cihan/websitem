@@ -44,6 +44,7 @@ window.savePost = async (status) => {
         }
 
         const postData = {
+            auth: window.API_KEY, // 🔑 GÜVENLİK
             action: "add_post",
             baslik: baslik,
             icerik: editorContent,
@@ -58,7 +59,8 @@ window.savePost = async (status) => {
         };
 
         // ✅ CORS ÇÖZÜMÜ: text/plain
-        await fetch(API_URL, {
+        // Düzeltme: window.API_URL kullanıldı
+        await fetch(window.API_URL, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -83,7 +85,8 @@ async function fetchPosts() {
     tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
     
     try {
-        const res = await fetch(`${API_URL}?type=posts`);
+        // Düzeltme: window.API_URL kullanıldı
+        const res = await fetch(`${window.API_URL}?type=posts`);
         const data = await res.json();
         const posts = data.posts || [];
         
@@ -104,19 +107,34 @@ async function fetchPosts() {
     } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="5" style="color:red">Veri çekilemedi.</td></tr>'; }
 }
 
+// 👇 EKSİK OLAN FONKSİYON TANIMI BURAYA EKLENDİ VE DÜZELTİLDİ
 window.deletePost = async (id, btn) => {
-    if(!confirm("Silmek istediğine emin misin?")) return;
+    if(!confirm("Silmek istediğinize emin misiniz?")) return;
+    
+    // Butona efekt verelim
     if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    
-    await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "delete_row", type: "posts", id: id })
-    });
-    
-    alert("Silme isteği gönderildi.");
-    setTimeout(fetchPosts, 2000);
+
+    try {
+        // Düzeltme: window.API_URL ve window.API_KEY kullanıldı
+        await fetch(window.API_URL, { 
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+                auth: window.API_KEY, // 👈 KİLİT
+                action: "delete_row",
+                type: "posts",
+                id: id
+            })
+        });
+        
+        alert("Silme isteği gönderildi.");
+        setTimeout(fetchPosts, 2000);
+
+    } catch (e) {
+        alert("Hata: " + e);
+        if(btn) btn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+    }
 };
 
 window.filterPosts = () => {
