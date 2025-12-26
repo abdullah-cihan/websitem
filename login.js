@@ -1,18 +1,12 @@
 /* ============================================================
-   GELİŞMİŞ LOGIN JS (localStorage Destekli)
+   REAL-TIME LOGIN JS (Google Sheets Bağlantılı)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 👇 ŞİFRE YÖNETİMİ 👇
-    // Varsayılan şifreler (Hiç değiştirilmediyse bunlar geçerlidir)
-    const DEFAULT_USER = "admin";
-    const DEFAULT_PASS = "123456";
-
-    // Admin panelinden değiştirilen şifreyi hafızadan alıyoruz
-    // Eğer hafızada yoksa, varsayılanları kullanıyoruz.
-    const REAL_USER = localStorage.getItem('adminUser') || DEFAULT_USER;
-    const REAL_PASS = localStorage.getItem('adminPass') || DEFAULT_PASS;
+    // ⚠️ BURAYI KENDİ BİLGİLERİNLE DOLDUR
+    const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec"; 
+    const API_KEY = "Sifre2025"; 
 
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
@@ -21,12 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMsg = document.getElementById('error-msg');
     const togglePassword = document.getElementById('togglePassword');
 
-    // 1. Şifre Göster/Gizle Özelliği
+    // 1. Şifre Göster/Gizle
     if(togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            // İkonu değiştir
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
@@ -34,50 +27,55 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Form Gönderilince
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault(); // Sayfa yenilenmesin
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
             const userInput = usernameInput.value.trim();
             const passInput = passwordInput.value.trim();
 
-            // Mesajı gizle
             errorMsg.style.display = 'none';
-
-            // Butonu yükleniyor yap
             const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
-            // Ufak bir bekleme efekti
-            setTimeout(() => {
-                // GİRİŞ KONTROLÜ
-                // Girilen bilgileri, hafızadaki (veya varsayılan) bilgilerle kıyaslıyoruz
-                if (userInput === REAL_USER && passInput === REAL_PASS) {
+            try {
+                // 🚀 ADIM 1: Google Sheets'ten güncel şifreyi çek
+                // (GET isteği olduğu için 'no-cors' kullanmıyoruz, veriyi okuyabiliriz)
+                const response = await fetch(`${API_URL}?type=settings&auth=${API_KEY}`);
+                const data = await response.json();
+
+                if (!data.ok) {
+                    throw new Error(data.error || "Sunucu hatası");
+                }
+
+                const realUser = data.user; // Sheet'teki güncel kullanıcı adı
+                const realPass = data.pass; // Sheet'teki güncel şifre
+
+                // 🚀 ADIM 2: Karşılaştırma Yap
+                if (userInput === realUser && passInput === realPass) {
                     
                     // ✅ GİRİŞ BAŞARILI
                     localStorage.setItem('isAdmin', 'true');
+                    localStorage.setItem('adminName', realUser); // İsmi güncelle
+                    localStorage.setItem('adminUser', realUser); // Yedekle
+                    localStorage.setItem('adminPass', realPass); // Yedekle
                     
-                    // Eğer kullanıcı adını admin panelinden değiştirdiyse onu kaydet
-                    // Değiştirmediyse varsayılanı göster
-                    const displayName = localStorage.getItem('adminUser') || 'Yönetici';
-                    localStorage.setItem('adminName', displayName);
-                    
-                    // Admin paneline git
                     window.location.href = "admin.html";
 
                 } else {
-                    
-                    // ❌ HATA
-                    errorMsg.style.display = 'block';
-                    errorMsg.innerText = "Kullanıcı adı veya şifre hatalı!";
-                    
-                    loginBtn.innerHTML = originalText;
-                    loginBtn.disabled = false;
-                    
-                    // Şifreyi temizle
-                    passwordInput.value = "";
+                    throw new Error("Kullanıcı adı veya şifre hatalı!");
                 }
-            }, 800); // Biraz daha gerçekçi olması için süreyi artırdım
+
+            } catch (error) {
+                // ❌ HATA
+                console.error(error);
+                errorMsg.style.display = 'block';
+                errorMsg.innerText = error.message === "Failed to fetch" ? "Bağlantı hatası!" : "Giriş başarısız: Bilgiler yanlış.";
+                
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+                passwordInput.value = "";
+            }
         });
     }
 });
