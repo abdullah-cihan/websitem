@@ -19,6 +19,7 @@ window.addTool = async () => { // handleToolSubmit
     btn.disabled = true;
 
     const toolData = {
+        auth: window.API_KEY,
         action: isEditMode ? "update_tool" : "add_tool",
         index: currentEditingIndex,
         baslik: baslik,
@@ -77,11 +78,17 @@ window.deleteTool = async (index, btn) => {
     if(!confirm("Silinsin mi?")) return;
     if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
-    await fetch(API_URL, {
+    // Düzeltme: API_URL yerine window.API_URL kullanıldı
+    await fetch(window.API_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "delete_row", type: "tools", id: index })
+        body: JSON.stringify({ 
+            auth: window.API_KEY, // 👈 KİLİT (AUTH) BURAYA EKLENDİ
+            action: "delete_row", 
+            type: "tools", 
+            id: index 
+        })
     });
     
     alert("Silindi.");
@@ -105,4 +112,5 @@ function resetToolForm() {
     document.getElementById("tool-link").value = "";
     document.querySelector('#tools-manager .btn-submit').innerText = "Ekle";
 }
+
 
