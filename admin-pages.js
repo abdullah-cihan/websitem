@@ -10,7 +10,9 @@ window.savePage = async () => {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor...';
     btn.disabled = true;
     
+    // GÜNCELLEME 1: auth eklendi
     const pageData = {
+        auth: window.API_KEY, // 👈 KİLİT
         action: "add_page",
         baslik: document.getElementById("page-title").value,
         icerik: document.getElementById("page-content").value
@@ -24,7 +26,8 @@ window.savePage = async () => {
     }
 
     try {
-        await fetch(API_URL, {
+        // GÜNCELLEME 2: window.API_URL kullanıldı
+        await fetch(window.API_URL, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -50,7 +53,8 @@ async function fetchPages() {
     tbody.innerHTML = '<tr><td colspan="4">Yükleniyor...</td></tr>';
     
     try {
-        const res = await fetch(`${API_URL}?type=pages`);
+        // GÜNCELLEME 3: window.API_URL kullanıldı
+        const res = await fetch(`${window.API_URL}?type=pages`);
         const data = await res.json();
         const pages = data.pages || [];
         
@@ -75,11 +79,17 @@ window.deletePage = async (id, btn) => {
     if(!confirm("Silinsin mi?")) return;
     if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     
-    await fetch(API_URL, {
+    // GÜNCELLEME 4: window.API_URL ve auth eklendi
+    await fetch(window.API_URL, {
         method: "POST",
         mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ action: "delete_row", type: "pages", id: id })
+        body: JSON.stringify({ 
+            auth: window.API_KEY, // 👈 KİLİT
+            action: "delete_row", 
+            type: "pages", 
+            id: id 
+        })
     });
     
     alert("Silindi.");
