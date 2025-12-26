@@ -12,13 +12,21 @@
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="admin-pages.css"> <link rel="stylesheet" href="tools.css"> <style>
+    <link rel="stylesheet" href="admin-pages.css"> <link rel="stylesheet" href="tools.css"> 
+    <style>
         .hidden { display: none; }
         .action-btn { cursor: pointer; border: none; background: none; color: #ef4444; font-size: 1.1rem; }
         .action-btn:hover { color: #dc2626; }
         .btn-submit:disabled, .btn-draft:disabled { opacity: 0.6; cursor: not-allowed; }
         /* Editörün görünmesi için arka plan ayarı */
         .ql-editor { min-height: 200px; color: #e2e8f0; }
+        
+        /* Ayarlar Formu İçin Ek Stiller */
+        .settings-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; max-width: 500px; margin: 0 auto; }
+        .settings-label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.9rem; }
+        .settings-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; outline: none; transition: 0.3s; }
+        .settings-input:focus { border-color: #3b82f6; }
+        .settings-divider { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0; }
     </style>
 </head>
 <body>
@@ -167,12 +175,32 @@
 
             <section id="settings" class="admin-section">
                 <div class="settings-container glass">
-                    <div class="backup-card">
-                        <h4>Şifre Değiştir</h4>
-                        <input id="cp-username" placeholder="Kullanıcı Adı" style="margin-bottom:10px;">
-                        <input id="cp-old" type="password" placeholder="Eski Şifre" style="margin-bottom:10px;">
-                        <input id="cp-new" type="password" placeholder="Yeni Şifre" style="margin-bottom:10px;">
-                        <button onclick="changePassword()" class="btn-submit" style="width:100%">Güncelle</button>
+                    <h2 style="margin-bottom: 20px; text-align: center;">Sistem Ayarları</h2>
+                    
+                    <div class="settings-card" id="settings-section">
+                        <h3 style="margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Yönetici Bilgilerini Güncelle</h3>
+                        
+                        <label class="settings-label">Mevcut Kullanıcı Adı</label>
+                        <input class="settings-input" id="old-user" type="text" placeholder="Şu anki kullanıcı adınız">
+                        
+                        <label class="settings-label">Mevcut Şifre</label>
+                        <input class="settings-input" id="old-pass" type="password" placeholder="Şu anki şifreniz">
+                        
+                        <hr class="settings-divider">
+                        
+                        <label class="settings-label" style="color:#3b82f6;">Yeni Kullanıcı Adı</label>
+                        <input class="settings-input" id="new-user" type="text" placeholder="Yeni kullanıcı adı">
+                        
+                        <label class="settings-label" style="color:#3b82f6;">Yeni Şifre</label>
+                        <input class="settings-input" id="new-pass" type="password" placeholder="Yeni şifre">
+                        
+                        <button onclick="updateAdminCredentials()" class="btn-submit" style="width:100%; margin-top: 10px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Bilgileri Güncelle
+                        </button>
+                        
+                        <p style="margin-top: 15px; font-size: 0.8rem; color: #64748b; text-align: center;">
+                            <i class="fa-solid fa-circle-info"></i> Bu işlem Google Sheets veritabanını günceller.
+                        </p>
                     </div>
                 </div>
             </section>
