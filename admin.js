@@ -5,6 +5,7 @@
     // ✅ URL'İ BURADA GLOBAL OLARAK TANIMLIYORUZ
     // Diğer dosyalar buradan okuyacak.
     window.API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
+    window.API_KEY = "Sifre2025"; // Code.gs'deki şifrenin AYNISI olmalı
 
     document.addEventListener('DOMContentLoaded', () => {
         const isAdmin = localStorage.getItem('isAdmin');
