@@ -1,13 +1,18 @@
 /* ============================================================
-   BASİT LOGIN JS
+   GELİŞMİŞ LOGIN JS (localStorage Destekli)
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 👇 AYARLAR: KULLANICI ADI VE ŞİFREYİ BURADAN BELİRLE 👇
-    const ADMIN_USER = "admin";
-    const ADMIN_PASS = "123456"; 
-    // 👆 Burayı değiştirebilirsin 👆
+    // 👇 ŞİFRE YÖNETİMİ 👇
+    // Varsayılan şifreler (Hiç değiştirilmediyse bunlar geçerlidir)
+    const DEFAULT_USER = "admin";
+    const DEFAULT_PASS = "123456";
+
+    // Admin panelinden değiştirilen şifreyi hafızadan alıyoruz
+    // Eğer hafızada yoksa, varsayılanları kullanıyoruz.
+    const REAL_USER = localStorage.getItem('adminUser') || DEFAULT_USER;
+    const REAL_PASS = localStorage.getItem('adminPass') || DEFAULT_PASS;
 
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
@@ -32,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault(); // Sayfa yenilenmesin
 
-            const user = usernameInput.value.trim();
-            const pass = passwordInput.value.trim();
+            const userInput = usernameInput.value.trim();
+            const passInput = passwordInput.value.trim();
 
             // Mesajı gizle
             errorMsg.style.display = 'none';
@@ -43,25 +48,36 @@ document.addEventListener('DOMContentLoaded', () => {
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
-            // Ufak bir bekleme efekti (0.5 saniye)
+            // Ufak bir bekleme efekti
             setTimeout(() => {
-                if (user === ADMIN_USER && pass === ADMIN_PASS) {
+                // GİRİŞ KONTROLÜ
+                // Girilen bilgileri, hafızadaki (veya varsayılan) bilgilerle kıyaslıyoruz
+                if (userInput === REAL_USER && passInput === REAL_PASS) {
+                    
                     // ✅ GİRİŞ BAŞARILI
                     localStorage.setItem('isAdmin', 'true');
-                    localStorage.setItem('adminName', user);
+                    
+                    // Eğer kullanıcı adını admin panelinden değiştirdiyse onu kaydet
+                    // Değiştirmediyse varsayılanı göster
+                    const displayName = localStorage.getItem('adminUser') || 'Yönetici';
+                    localStorage.setItem('adminName', displayName);
                     
                     // Admin paneline git
                     window.location.href = "admin.html";
+
                 } else {
+                    
                     // ❌ HATA
                     errorMsg.style.display = 'block';
+                    errorMsg.innerText = "Kullanıcı adı veya şifre hatalı!";
+                    
                     loginBtn.innerHTML = originalText;
                     loginBtn.disabled = false;
                     
                     // Şifreyi temizle
                     passwordInput.value = "";
                 }
-            }, 500);
+            }, 800); // Biraz daha gerçekçi olması için süreyi artırdım
         });
     }
 });
