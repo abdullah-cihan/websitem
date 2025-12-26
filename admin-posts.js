@@ -1,14 +1,21 @@
-/* ADMIN POSTS MANAGER */
+/* ADMIN POSTS MANAGER (FIXED) */
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
     loadCategories();
+    // Eğer tablo varsa yazıları çek
     if(document.getElementById('posts-table-body')) fetchPosts();
+    
+    // Tarih alanına bugünün tarihini otomatik ver (Boş kalmasın)
+    const dateInput = document.getElementById('post-date');
+    if(dateInput && !dateInput.value) {
+        dateInput.valueAsDate = new Date();
+    }
 });
 
 function initQuill() {
     if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
-        window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik...' });
+        window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
     }
 }
 
@@ -32,7 +39,8 @@ window.addNewCategory = () => {
 
 window.savePost = async (status) => {
     const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
-    const oldText = btn ? btn.innerText : "";
+    const oldText = btn ? btn.innerText : "Kaydet";
+    
     if(btn) { btn.innerText = "Gönderiliyor..."; btn.disabled = true; }
     
     try {
@@ -43,13 +51,20 @@ window.savePost = async (status) => {
             throw new Error("Başlık ve içerik zorunlu."); 
         }
 
+        // Tarih kontrolü: Boşsa bugünü seç
+        let tarihVal = document.getElementById("post-date").value;
+        if(!tarihVal) {
+            const now = new Date();
+            tarihVal = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+
         const postData = {
-            auth: window.API_KEY, // 🔑 GÜVENLİK
+            auth: window.API_KEY, // 🔑 GÜVENLİK ANAHTARI
             action: "add_post",
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
-            tarih: document.getElementById("post-date").value,
+            tarih: tarihVal,
             kategori: document.getElementById("post-category").value,
             ozet: document.getElementById("post-desc").value,
             durum: status === 'published' ? 'Yayında' : 'Taslak',
@@ -58,8 +73,7 @@ window.savePost = async (status) => {
             one_cikan: document.getElementById("post-featured").checked
         };
 
-        // ✅ CORS ÇÖZÜMÜ: text/plain
-        // Düzeltme: window.API_URL kullanıldı
+        // window.API_URL kullandığımızdan emin olalım
         await fetch(window.API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -67,15 +81,22 @@ window.savePost = async (status) => {
             body: JSON.stringify(postData)
         });
 
-        alert("✅ İşlem Google Sheets'e iletildi!");
+        alert("✅ Yazı başarıyla gönderildi!");
+        
+        // Formu temizle
         document.getElementById("add-post-form").reset();
         window.myQuill.setContents([]);
+        
+        // Tarihi tekrar bugüne ayarla
+        document.getElementById("post-date").valueAsDate = new Date();
+
+        // Eğer liste sayfasındaysak listeyi yenile
         if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 2000);
 
     } catch (e) {
         alert("Hata: " + e.message);
     } finally {
-        if(btn) { btn.innerText = oldText || "Kaydet"; btn.disabled = false; }
+        if(btn) { btn.innerText = oldText; btn.disabled = false; }
     }
 };
 
@@ -85,7 +106,7 @@ async function fetchPosts() {
     tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
     
     try {
-        // Düzeltme: window.API_URL kullanıldı
+        // window.API_URL kullanıyoruz
         const res = await fetch(`${window.API_URL}?type=posts`);
         const data = await res.json();
         const posts = data.posts || [];
@@ -94,46 +115,64 @@ async function fetchPosts() {
         if(posts.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Kayıt yok.</td></tr>'; return; }
 
         posts.reverse().forEach(p => {
-            let img = p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="${p.resim}"></i>`;
+            let img = p.resim && p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="fa-solid fa-image"></i>`;
+            
+            // Tarihi düzgün göster
+            let tarihGoster = p.tarih;
+            try {
+                if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0];
+            } catch(err){}
+
             tbody.innerHTML += `
                 <tr>
                     <td>${img}</td>
                     <td>${p.baslik}</td>
                     <td>${p.kategori}</td>
                     <td>${p.durum}</td>
-                    <td><button onclick="deletePost('${p.id}', this)" class="action-btn"><i class="fa-solid fa-trash"></i></button></td>
+                    <td>
+                        <button onclick="deletePost('${p.id}', this)" class="action-btn" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 </tr>`;
         });
-    } catch(e) { console.error(e); tbody.innerHTML = '<tr><td colspan="5" style="color:red">Veri çekilemedi.</td></tr>'; }
+    } catch(e) { 
+        console.error(e); 
+        tbody.innerHTML = '<tr><td colspan="5" style="color:red">Veri çekilemedi. Bağlantıyı kontrol edin.</td></tr>'; 
+    }
 }
 
-// 👇 EKSİK OLAN FONKSİYON TANIMI BURAYA EKLENDİ VE DÜZELTİLDİ
 window.deletePost = async (id, btn) => {
-    if(!confirm("Silmek istediğinize emin misiniz?")) return;
+    if(!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
     
-    // Butona efekt verelim
-    if(btn) btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    btn.disabled = true;
 
     try {
-        // Düzeltme: window.API_URL ve window.API_KEY kullanıldı
         await fetch(window.API_URL, { 
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
-                auth: window.API_KEY, // 👈 KİLİT
+                auth: window.API_KEY, // 🔑 GÜVENLİK
                 action: "delete_row",
                 type: "posts",
                 id: id
             })
         });
         
-        alert("Silme isteği gönderildi.");
-        setTimeout(fetchPosts, 2000);
+        // İşlem başarılı kabul edip satırı silelim (UX için)
+        const row = btn.closest('tr');
+        if(row) row.style.opacity = "0.3";
+        
+        setTimeout(() => {
+            fetchPosts(); // Listeyi yenile
+            alert("Silme işlemi tamamlandı.");
+        }, 1500);
 
     } catch (e) {
         alert("Hata: " + e);
-        if(btn) btn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        btn.innerHTML = originalIcon;
+        btn.disabled = false;
     }
 };
 
