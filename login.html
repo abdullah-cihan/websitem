@@ -1,46 +1,269 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Giriş Yap | Admin Paneli</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="login.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap - Google Sheets Auth</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
 </head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
 
-<body class="login-page">
-  <div class="login-wrapper">
-    <div class="login-card glass">
-      <div class="login-header">
-        <h2>Admin<span>.</span></h2>
-        <p>Yönetim paneline giriş</p>
-      </div>
-
-      <form id="login-form" autocomplete="off">
-        <div class="input-group-login">
-          <i class="fa-solid fa-user"></i>
-          <input type="text" id="username" placeholder="Kullanıcı Adı" required>
+    <!-- Login Container -->
+    <div id="login-container" class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all hover:shadow-2xl duration-300">
+        
+        <!-- Header -->
+        <div class="bg-indigo-600 p-8 text-center">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-500 text-white mb-4 shadow-lg">
+                <i class="fa-solid fa-user-lock text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white tracking-wide">Yönetici Girişi</h2>
+            <p class="text-indigo-200 text-sm mt-2">Lütfen kimliğinizi doğrulayın</p>
         </div>
 
-        <div class="input-group-login relative">
-          <i class="fa-solid fa-lock"></i>
-          <input type="password" id="password" placeholder="Şifre" required>
-          <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
+        <!-- Form Section -->
+        <div class="p-8">
+            <form id="login-form" class="space-y-6">
+                
+                <!-- Error Message -->
+                <div id="error-msg" class="hidden bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded text-sm flex items-center" role="alert">
+                    <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                    <span id="error-text">Hatalı giriş</span>
+                </div>
+
+                <!-- Username Input -->
+                <div class="relative">
+                    <label for="username" class="text-sm font-medium text-gray-700 mb-1 block">Kullanıcı Adı</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <input type="text" id="username" class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors outline-none text-gray-700 bg-gray-50 focus:bg-white" placeholder="Kullanıcı adınızı girin" required>
+                    </div>
+                </div>
+
+                <!-- Password Input -->
+                <div class="relative">
+                    <label for="password" class="text-sm font-medium text-gray-700 mb-1 block">Şifre</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <input type="password" id="password" class="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors outline-none text-gray-700 bg-gray-50 focus:bg-white" placeholder="••••••••" required>
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                            <i id="togglePassword" class="fa-solid fa-eye text-gray-400 hover:text-indigo-600 cursor-pointer transition-colors p-2"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn-login w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md hover:shadow-lg transform transition-all duration-200 active:scale-95 flex items-center justify-center gap-2">
+                    <span>Giriş Yap</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
         </div>
-
-        <button type="submit" class="btn-login">
-          Giriş Yap <i class="fa-solid fa-arrow-right"></i>
-        </button>
-
-        <p id="error-msg" class="login-msg login-msg-error" style="display:none;">
-          <i class="fa-solid fa-circle-exclamation"></i> Kullanıcı adı veya şifre hatalı!
-        </p>
-      </form>
+        
+        <!-- Footer -->
+        <div class="bg-gray-50 px-8 py-4 border-t border-gray-100 text-center">
+            <p class="text-xs text-gray-500">Google Sheets ile Güvenli Bağlantı</p>
+        </div>
     </div>
-  </div>
 
-  <script src="login.js"></script>
+    <!-- Dashboard / Success Container (Hidden by default) -->
+    <div id="admin-dashboard" class="hidden w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in-up">
+        <div class="bg-green-600 p-6 flex justify-between items-center text-white">
+            <h1 class="text-xl font-bold"><i class="fa-solid fa-chart-line mr-2"></i>Admin Paneli</h1>
+            <button id="logout-btn" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+                <i class="fa-solid fa-right-from-bracket mr-2"></i>Çıkış
+            </button>
+        </div>
+        <div class="p-12 text-center">
+            <div class="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Hoşgeldin, <span id="admin-name-display" class="text-green-600">Yönetici</span>!</h2>
+            <p class="text-gray-600 mb-8">Giriş başarıyla doğrulandı. Yönlendirme simülasyonu aktif.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left max-w-3xl mx-auto">
+                <div class="p-6 border border-gray-200 rounded-xl hover:border-green-500 hover:shadow-md transition-all cursor-pointer">
+                    <div class="text-green-600 mb-2 text-xl"><i class="fa-solid fa-users"></i></div>
+                    <h3 class="font-bold text-gray-800">Kullanıcılar</h3>
+                    <p class="text-sm text-gray-500">Kullanıcı listesini görüntüle</p>
+                </div>
+                <div class="p-6 border border-gray-200 rounded-xl hover:border-green-500 hover:shadow-md transition-all cursor-pointer">
+                    <div class="text-green-600 mb-2 text-xl"><i class="fa-solid fa-file-invoice"></i></div>
+                    <h3 class="font-bold text-gray-800">Raporlar</h3>
+                    <p class="text-sm text-gray-500">Aylık raporları incele</p>
+                </div>
+                <div class="p-6 border border-gray-200 rounded-xl hover:border-green-500 hover:shadow-md transition-all cursor-pointer">
+                    <div class="text-green-600 mb-2 text-xl"><i class="fa-solid fa-gears"></i></div>
+                    <h3 class="font-bold text-gray-800">Ayarlar</h3>
+                    <p class="text-sm text-gray-500">Sistem ayarlarını yapılandır</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // API Konfigürasyonu
+            const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec"; 
+            const API_KEY = "Sifre2025"; 
+
+            // DOM Elementleri
+            const loginContainer = document.getElementById('login-container');
+            const dashboardContainer = document.getElementById('admin-dashboard');
+            const loginForm = document.getElementById('login-form');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const loginBtn = document.querySelector('.btn-login');
+            const errorMsg = document.getElementById('error-msg');
+            const errorText = document.getElementById('error-text');
+            const togglePassword = document.getElementById('togglePassword');
+            const adminNameDisplay = document.getElementById('admin-name-display');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            // Daha önce giriş yapılmış mı kontrol et
+            if(localStorage.getItem('isAdmin') === 'true') {
+                showDashboard(localStorage.getItem('adminName'));
+            }
+
+            // 1. Şifre Göster/Gizle
+            if(togglePassword) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    if (type === 'text') {
+                        this.classList.remove('fa-eye');
+                        this.classList.add('fa-eye-slash');
+                        this.classList.add('text-indigo-600');
+                    } else {
+                        this.classList.remove('fa-eye-slash');
+                        this.classList.add('fa-eye');
+                        this.classList.remove('text-indigo-600');
+                    }
+                });
+            }
+
+            // 2. Form Gönderilince
+            if (loginForm) {
+                loginForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+
+                    const userInput = usernameInput.value.trim();
+                    const passInput = passwordInput.value.trim();
+
+                    // UI Reset
+                    errorMsg.classList.add('hidden');
+                    usernameInput.classList.remove('border-red-500');
+                    passwordInput.classList.remove('border-red-500');
+
+                    // Buton Loading Durumu
+                    const originalHTML = loginBtn.innerHTML;
+                    loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
+                    loginBtn.disabled = true;
+                    loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
+
+                    try {
+                        // 🚀 ADIM 1: Google Sheets'ten güncel şifreyi çek
+                        const response = await fetch(`${API_URL}?type=settings&auth=${API_KEY}`);
+                        const data = await response.json();
+
+                        if (!data.ok && !data.user) { // data.user kontrolü ekledim çünkü bazen ok:false dönebilir ama veri gelebilir
+                            throw new Error(data.error || "Sunucu veri hatası");
+                        }
+
+                        const realUser = data.user; // Sheet'teki güncel kullanıcı adı
+                        const realPass = data.pass; // Sheet'teki güncel şifre
+
+                        // 🚀 ADIM 2: Karşılaştırma Yap
+                        if (userInput === realUser && passInput === realPass) {
+                            
+                            // ✅ GİRİŞ BAŞARILI
+                            localStorage.setItem('isAdmin', 'true');
+                            localStorage.setItem('adminName', realUser);
+                            localStorage.setItem('adminUser', realUser);
+                            localStorage.setItem('adminPass', realPass);
+                            
+                            // Başarılı giriş animasyonu için kısa bekleme
+                            loginBtn.innerHTML = '<i class="fa-solid fa-check"></i> Başarılı!';
+                            loginBtn.classList.replace('bg-indigo-600', 'bg-green-600');
+                            
+                            setTimeout(() => {
+                                showDashboard(realUser);
+                            }, 800);
+
+                        } else {
+                            throw new Error("Kullanıcı adı veya şifre hatalı!");
+                        }
+
+                    } catch (error) {
+                        // ❌ HATA
+                        console.error(error);
+                        
+                        // Hata UI Gösterimi
+                        errorMsg.classList.remove('hidden');
+                        errorText.innerText = error.message === "Failed to fetch" ? "Sunucuya bağlanılamadı!" : "Kullanıcı adı veya şifre yanlış.";
+                        
+                        // Inputları kırmızı yap
+                        usernameInput.classList.add('border-red-500');
+                        passwordInput.classList.add('border-red-500');
+                        
+                        // Butonu eski haline getir
+                        loginBtn.innerHTML = originalHTML;
+                        loginBtn.disabled = false;
+                        loginBtn.classList.remove('opacity-75', 'cursor-not-allowed', 'bg-green-600');
+                        loginBtn.classList.add('bg-indigo-600');
+                        
+                        passwordInput.value = "";
+                        
+                        // Şifre alanına odaklan
+                        passwordInput.focus();
+                    }
+                });
+            }
+
+            // Çıkış Yap Butonu
+            if(logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('adminName');
+                    
+                    // Dashboard'ı gizle, Logini göster
+                    dashboardContainer.classList.add('hidden');
+                    loginContainer.classList.remove('hidden');
+                    
+                    // Formu temizle
+                    loginForm.reset();
+                    loginBtn.innerHTML = '<span>Giriş Yap</span><i class="fa-solid fa-arrow-right"></i>';
+                    loginBtn.classList.replace('bg-green-600', 'bg-indigo-600');
+                    loginBtn.disabled = false;
+                    loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                });
+            }
+
+            // Ekran değiştirme fonksiyonu
+            function showDashboard(username) {
+                adminNameDisplay.innerText = username;
+                loginContainer.classList.add('hidden');
+                dashboardContainer.classList.remove('hidden');
+            }
+        });
+    </script>
 </body>
 </html>
