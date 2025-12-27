@@ -1,4 +1,4 @@
-/* ADMIN POSTS MANAGER (FIXED) */
+/* ADMIN POSTS MANAGER (UPDATED - AUTO READING TIME) */
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Eğer tablo varsa yazıları çek
     if(document.getElementById('posts-table-body')) fetchPosts();
     
-    // Tarih alanına bugünün tarihini otomatik ver (Boş kalmasın)
+    // Tarih alanına bugünün tarihini otomatik ver
     const dateInput = document.getElementById('post-date');
     if(dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
@@ -16,6 +16,21 @@ document.addEventListener('DOMContentLoaded', () => {
 function initQuill() {
     if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
         window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
+
+        // --- YENİ EKLENEN KISIM: OTOMATİK OKUMA SÜRESİ ---
+        window.myQuill.on('text-change', function() {
+            const text = window.myQuill.getText(); // HTML etiketleri olmadan saf metni al
+            const wordCount = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length; // Boşluklara göre bölüp say
+            const wpm = 200; // Ortalama okuma hızı (kelime/dakika)
+            const minutes = Math.ceil(wordCount / wpm);
+            
+            const timeInput = document.getElementById('read-time');
+            if(timeInput) {
+                // En az 1 dk olarak göster, boşsa boş bırakma
+                timeInput.value = (minutes < 1 ? 1 : minutes) + " dk";
+            }
+        });
+        // -------------------------------------------------
     }
 }
 
@@ -58,6 +73,10 @@ window.savePost = async (status) => {
             tarihVal = now.toISOString().split('T')[0]; // YYYY-MM-DD
         }
 
+        // Okuma süresi elle girilmemişse veya hesaplanmamışsa varsayılan ata
+        let okumaSuresi = document.getElementById("read-time").value;
+        if(!okumaSuresi) okumaSuresi = "1 dk";
+
         const postData = {
             auth: window.API_KEY, // 🔑 GÜVENLİK ANAHTARI
             action: "add_post",
@@ -68,7 +87,7 @@ window.savePost = async (status) => {
             kategori: document.getElementById("post-category").value,
             ozet: document.getElementById("post-desc").value,
             durum: status === 'published' ? 'Yayında' : 'Taslak',
-            okuma_suresi: document.getElementById("read-time").value,
+            okuma_suresi: okumaSuresi,
             etiketler: document.getElementById("tags-input").value,
             one_cikan: document.getElementById("post-featured").checked
         };
@@ -183,4 +202,4 @@ window.filterPosts = () => {
         const txt = row.innerText.toLowerCase();
         row.style.display = txt.includes(filter) ? "" : "none";
     });
-}; 
+};
