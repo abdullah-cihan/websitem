@@ -86,8 +86,14 @@ window.resetForm = () => {
 
 // Tıklanan yazıyı forma doldurur (Database güncellemesi için ID set edilir)
 window.loadPostIntoEditor = (id) => {
-    const post = allFetchedPosts.find(p => p.id === id);
-    if(!post) return;
+    // FIX: ID tipi uyumsuzluğunu (string vs number) önlemek için String() çevrimi yapıyoruz
+    const post = allFetchedPosts.find(p => String(p.id) === String(id));
+    
+    if(!post) {
+        console.error("Yazı bulunamadı ID:", id, "Mevcut Veriler:", allFetchedPosts);
+        alert("Düzenlenecek yazı verisi bulunamadı!");
+        return;
+    }
 
     currentEditingId = post.id; // Kritik nokta: ID hafızaya alınır
 
@@ -119,8 +125,6 @@ window.loadPostIntoEditor = (id) => {
 
     // Yukarı kaydır
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Kullanıcıya bilgi ver (isteğe bağlı alert kaldırılabilir)
-    // alert("Yazı düzenleme moduna alındı. Değişiklikleri yaptıktan sonra 'Güncelle' butonuna basın.");
 };
 
 window.savePost = async (status) => {
@@ -197,8 +201,8 @@ window.setQuickDraft = async (id, btn) => {
     btn.disabled = true;
 
     try {
-        // Mevcut veriyi hafızadan bul
-        const currentPost = allFetchedPosts.find(p => p.id === id);
+        // Mevcut veriyi hafızadan bul: String/Number farkını yoksayarak
+        const currentPost = allFetchedPosts.find(p => String(p.id) === String(id));
         
         const postData = {
             auth: window.API_KEY,
@@ -252,7 +256,6 @@ async function fetchPosts() {
             return; 
         }
 
-        // Performans için HTML'i önce bir değişkende topla
         let htmlBuffer = "";
         
         posts.reverse().forEach(p => {
@@ -273,13 +276,14 @@ async function fetchPosts() {
                 ? `<button onclick="setQuickDraft('${p.id}', this)" class="action-btn" title="Taslağa Çek" style="color:#e67e22"><i class="fa-solid fa-file-pen"></i></button>` 
                 : '';
 
+            // FIX: Başlık rengini koyu siyah (#000) ve kalın (600) yaparak silik görünümü düzelttik
             htmlBuffer += `
                 <tr class="post-row">
                     <td>${img}</td>
                     <!-- Başlığa tıklayınca düzenleme fonksiyonunu çağırır -->
                     <td style="cursor:pointer;" onclick="loadPostIntoEditor('${p.id}')" title="Düzenlemek için tıkla">
-                        <span style="color:#2c3e50; font-weight:500;">${p.baslik}</span>
-                        <i class="fa-solid fa-pencil" style="font-size:0.7em; margin-left:5px; color:#3498db; opacity:0.6;"></i>
+                        <span style="color:#000; font-weight:600; font-size:1.05em;">${p.baslik}</span>
+                        <i class="fa-solid fa-pencil" style="font-size:0.8em; margin-left:8px; color:#3498db; opacity:0.8;"></i>
                     </td>
                     <td>${p.kategori}</td>
                     <td>${statusBadge}</td>
