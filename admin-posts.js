@@ -1,4 +1,4 @@
-/* ADMIN POSTS MANAGER (FIXED: DRAFT LOGIC, EDIT BTN & COLORS) */
+/* ADMIN POSTS MANAGER (FIXED: NEW POST BUTTON & RESET LOGIC) */
 
 let currentEditingId = null; // Düzenlenen yazının ID'sini tutar
 let allFetchedPosts = [];    // Çekilen tüm yazıları hafızada tutar
@@ -16,27 +16,35 @@ document.addEventListener('DOMContentLoaded', () => {
         dateInput.valueAsDate = new Date();
     }
 
-    // Düzenleme iptal butonunu ekle
-    addCancelButton();
+    // Düzenleme/Yeni Ekle butonlarını ayarla
+    setupFormButtons();
 });
 
-// Düzenleme modundan çıkmak için iptal butonu oluşturur
-function addCancelButton() {
+// "Yeni Yazı Ekle / Vazgeç" butonunu oluşturur
+function setupFormButtons() {
     const actionDiv = document.querySelector('.form-actions');
     if(actionDiv && !document.getElementById('btn-cancel-edit')) {
         const cancelBtn = document.createElement('button');
         cancelBtn.id = 'btn-cancel-edit';
-        cancelBtn.innerText = "Düzenlemeyi İptal Et";
-        // Stil: Koyu gri arka plan, beyaz yazı
+        cancelBtn.innerText = "Yeni Yazı Ekle (Vazgeç)";
+        // Stil: Koyu gri arka plan, beyaz yazı, başlangıçta gizli
         cancelBtn.style.cssText = "display:none; margin-left:10px; background-color:#6c757d; color:white; padding:10px 15px; border:none; border-radius:4px; cursor:pointer;";
         
         cancelBtn.onclick = (e) => {
             e.preventDefault();
-            resetForm();
+            startNewPost(); // Formu sıfırlar ve yeni moda geçer
         };
         actionDiv.appendChild(cancelBtn);
     }
 }
+
+// Global "Yeni Yazı Başlat" fonksiyonu (HTML'den de çağrılabilir)
+window.startNewPost = () => {
+    resetForm();
+    // Kullanıcıya hissettirmek için ufak bir bildirim veya odaklanma
+    document.getElementById("post-title").focus();
+    // alert("Yeni yazı modu aktif. Alanlar temizlendi."); // İstenirse açılabilir
+};
 
 function initQuill() {
     if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
@@ -68,16 +76,29 @@ window.addNewCategory = () => {
     }
 };
 
-// Formu temizler ve düzenleme modundan çıkar
+// Formu tamamen temizler ve "Yeni Ekle" moduna alır
 window.resetForm = () => {
-    currentEditingId = null;
-    document.getElementById("add-post-form").reset();
+    currentEditingId = null; // ID'yi sıfırla (Artık yeni kayıt modu)
     
+    // HTML Formunu sıfırla (Inputlar, Selectler vb.)
+    const form = document.getElementById("add-post-form");
+    if(form) form.reset();
+    
+    // Quill Editörü sıfırla
     if(window.myQuill) window.myQuill.setContents([]);
-    document.getElementById("post-date").valueAsDate = new Date();
     
-    // Butonları eski haline getir
-    document.querySelector('.btn-submit').innerText = "Yayımla";
+    // Tarihi tekrar bugüne ayarla
+    const dateInput = document.getElementById("post-date");
+    if(dateInput) dateInput.valueAsDate = new Date();
+    
+    // Buton metnini "Yayımla" yap
+    const submitBtn = document.querySelector('.btn-submit');
+    if(submitBtn) {
+        submitBtn.innerText = "Yayımla";
+        submitBtn.disabled = false;
+    }
+    
+    // Vazgeç butonunu gizle (Zaten yeni moddayız)
     const cancelBtn = document.getElementById('btn-cancel-edit');
     if(cancelBtn) cancelBtn.style.display = "none";
     
@@ -87,12 +108,11 @@ window.resetForm = () => {
 
 // Tıklanan yazıyı forma doldurur (Düzenleme Modu)
 window.loadPostIntoEditor = (id) => {
-    // ID karşılaştırmasını string'e çevirerek yapıyoruz (tip uyumsuzluğunu önlemek için)
     const post = allFetchedPosts.find(p => String(p.id) === String(id));
     
     if(!post) {
         console.error("Yazı bulunamadı ID:", id);
-        alert("Düzenlenecek yazı verisi hafızada bulunamadı! Sayfayı yenileyip tekrar deneyin.");
+        alert("Veri bulunamadı! Sayfayı yenileyin.");
         return;
     }
 
@@ -116,14 +136,18 @@ window.loadPostIntoEditor = (id) => {
 
     // Editör içeriğini doldur
     if(window.myQuill) {
-        // Delta değilse HTML olarak yapıştır
         window.myQuill.root.innerHTML = post.icerik || "";
     }
 
-    // Buton metnini değiştir ve İptal butonunu göster
-    document.querySelector('.btn-submit').innerText = "Güncelle";
+    // Buton metnini değiştir ve "Yeni Yazı Ekle" butonunu göster
+    const submitBtn = document.querySelector('.btn-submit');
+    if(submitBtn) submitBtn.innerText = "Güncelle";
+    
     const cancelBtn = document.getElementById('btn-cancel-edit');
-    if(cancelBtn) cancelBtn.style.display = "inline-block";
+    if(cancelBtn) {
+        cancelBtn.style.display = "inline-block";
+        cancelBtn.innerText = "Yeni Yazı Ekle (Temizle)"; // Metni güncelle
+    }
 
     // Sayfayı yukarı form alanına kaydır
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -157,11 +181,10 @@ window.savePost = async (status) => {
         // Backend işlemi: ID varsa 'edit_post', yoksa 'add_post'
         const actionType = isEdit ? "edit_post" : "add_post";
 
-        // Backend'in beklediği veri yapısı
         const postData = {
             auth: window.API_KEY, 
             action: actionType,
-            id: currentEditingId, // Yeni eklemede null gider
+            id: currentEditingId, // Yeni eklemede null, düzenlemede ID
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
@@ -184,9 +207,8 @@ window.savePost = async (status) => {
         const successMsg = isEdit ? "✅ Yazı başarıyla güncellendi!" : "✅ Yazı başarıyla eklendi!";
         alert(successMsg);
         
-        resetForm(); // Formu temizle
+        startNewPost(); // İşlem bitince formu temizle ve yeni moda geç
 
-        // Listeyi yenile
         if(document.getElementById('posts-table-body')) {
             setTimeout(fetchPosts, 1500); 
         }
@@ -207,31 +229,26 @@ window.setQuickDraft = async (id, btn) => {
     btn.disabled = true;
 
     try {
-        // 1. Önce hafızadaki veriyi bulalım
         const currentPost = allFetchedPosts.find(p => String(p.id) === String(id));
         
-        if (!currentPost) {
-            throw new Error("Yazı verisi bulunamadı. Lütfen sayfayı yenileyin.");
-        }
+        if (!currentPost) throw new Error("Yazı verisi bulunamadı.");
 
-        // 2. Veriyi 'edit_post' formatında hazırla, durumu 'Taslak' yap
         const postData = {
             auth: window.API_KEY,
             action: "edit_post",
-            id: currentPost.id, // Orijinal ID
+            id: currentPost.id,
             baslik: currentPost.baslik,
             icerik: currentPost.icerik,
             resim: currentPost.resim,
             tarih: currentPost.tarih,
             kategori: currentPost.kategori,
             ozet: currentPost.ozet,
-            durum: "Taslak", // <-- DEĞİŞEN KISIM
+            durum: "Taslak",
             okuma_suresi: currentPost.okuma_suresi,
             etiketler: currentPost.etiketler,
             one_cikan: currentPost.one_cikan
         };
 
-        // 3. Sunucuya gönder
         await fetch(window.API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -239,10 +256,7 @@ window.setQuickDraft = async (id, btn) => {
             body: JSON.stringify(postData)
         });
 
-        // 4. Kullanıcıya bildirim
         alert("Yazı başarıyla taslağa çekildi.");
-        
-        // 5. Listeyi yenile
         setTimeout(fetchPosts, 1500);
 
     } catch(e) {
@@ -263,7 +277,7 @@ async function fetchPosts() {
         const data = await res.json();
         const posts = data.posts || [];
         
-        allFetchedPosts = posts; // Global hafızayı güncelle
+        allFetchedPosts = posts; 
 
         if(posts.length === 0) { 
             tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px;">Kayıt yok.</td></tr>'; 
@@ -277,7 +291,6 @@ async function fetchPosts() {
                 ? `<img src="${p.resim}" width="40" height="40" style="object-fit:cover; border-radius:4px">` 
                 : `<i class="fa-solid fa-image" style="color:#ccc; font-size:1.5em;"></i>`;
             
-            // Tarihi düzgün formatla
             let tarihGoster = p.tarih;
             if(p.tarih && p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0];
 
@@ -285,26 +298,19 @@ async function fetchPosts() {
                 ? `<span style="color:#155724; background-color:#d4edda; padding:4px 8px; border-radius:12px; font-size:0.85em; font-weight:600;">Yayında</span>` 
                 : `<span style="color:#856404; background-color:#fff3cd; padding:4px 8px; border-radius:12px; font-size:0.85em; font-weight:600;">Taslak</span>`;
 
-            // Taslak butonu sadece yayındaysa görünsün
             const draftBtn = p.durum === 'Yayında' 
                 ? `<button onclick="setQuickDraft('${p.id}', this)" class="action-btn" title="Taslağa Çek" style="color:#e67e22; margin-right:5px;"><i class="fa-solid fa-file-pen"></i></button>` 
                 : '';
 
-            // RENK VE ARKA PLAN DÜZENLEMESİ:
-            // Satıra beyaz arka plan (#fff) ve koyu metin (#333) verdik.
             htmlBuffer += `
                 <tr class="post-row" style="background-color: #ffffff; border-bottom: 1px solid #e9ecef; color: #333;">
                     <td style="padding:12px;">${img}</td>
-                    
-                    <!-- Başlığa tıklayınca düzenleme fonksiyonunu çağırır -->
                     <td style="cursor:pointer; padding:12px;" onclick="loadPostIntoEditor('${p.id}')" title="Düzenlemek için tıkla">
                         <span style="color:#212529; font-weight:600; font-size:1em;">${p.baslik}</span>
                         <i class="fa-solid fa-pencil" style="font-size:0.75em; margin-left:8px; color:#0d6efd; opacity:0.7;"></i>
                     </td>
-                    
                     <td style="padding:12px;">${p.kategori}</td>
                     <td style="padding:12px;">${statusBadge}</td>
-                    
                     <td style="padding:12px; white-space:nowrap;">
                         <button onclick="loadPostIntoEditor('${p.id}')" class="action-btn" title="Düzenle" style="color:#0d6efd; margin-right:5px;"><i class="fa-solid fa-edit"></i></button>
                         ${draftBtn}
@@ -323,11 +329,9 @@ async function fetchPosts() {
 
 window.deletePost = async (id, btn) => {
     if(!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
-    
     const originalIcon = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     btn.disabled = true;
-
     try {
         await fetch(window.API_URL, { 
             method: "POST",
@@ -340,16 +344,9 @@ window.deletePost = async (id, btn) => {
                 id: id
             })
         });
-        
-        // Satırı görsel olarak soluklaştır
         const row = btn.closest('tr');
         if(row) row.style.opacity = "0.3";
-        
-        setTimeout(() => {
-            fetchPosts(); 
-            alert("Silme işlemi tamamlandı.");
-        }, 1500);
-
+        setTimeout(() => { fetchPosts(); alert("Silme işlemi tamamlandı."); }, 1500);
     } catch (e) {
         alert("Hata: " + e);
         btn.innerHTML = originalIcon;
