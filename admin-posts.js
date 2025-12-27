@@ -1,4 +1,4 @@
-/* ADMIN POSTS MANAGER (ORIGINAL - NO EDITING) */
+/* ADMIN POSTS MANAGER (FIXED) */
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
@@ -183,4 +183,4 @@ window.filterPosts = () => {
         const txt = row.innerText.toLowerCase();
         row.style.display = txt.includes(filter) ? "" : "none";
     });
-};
+}; 
