@@ -1,4 +1,8 @@
-/* ADMIN POSTS MANAGER (UPDATED - AUTO READING TIME) */
+/* ADMIN POSTS MANAGER (UPDATED - EDIT & UPDATE SUPPORT) */
+
+// Düzenleme işlemi için global değişkenler
+let allPostsData = []; // Tüm yazıları burada tutacağız
+let editingPostId = null; // Şu an düzenlenen yazının ID'si (null ise yeni yazı)
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
@@ -11,26 +15,40 @@ document.addEventListener('DOMContentLoaded', () => {
     if(dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
     }
+
+    // "Vazgeç" butonunu oluştur (Formun altına dinamik ekleyebiliriz veya HTML'de varsa kullanırız)
+    // Ancak burada JS ile yönetmek daha pratik.
+    const formActions = document.querySelector('.form-actions');
+    if(formActions && !document.getElementById('btn-cancel')) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.id = 'btn-cancel';
+        cancelBtn.innerText = 'Vazgeç';
+        cancelBtn.className = 'btn-secondary'; // CSS class'ı varsayıyoruz
+        cancelBtn.style.display = 'none'; // Başlangıçta gizli
+        cancelBtn.style.marginLeft = '10px';
+        cancelBtn.style.cursor = 'pointer';
+        cancelBtn.onclick = (e) => { e.preventDefault(); cancelEdit(); };
+        formActions.appendChild(cancelBtn);
+    }
 });
 
 function initQuill() {
     if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
         window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
 
-        // --- YENİ EKLENEN KISIM: OTOMATİK OKUMA SÜRESİ ---
+        // --- OTOMATİK OKUMA SÜRESİ ---
         window.myQuill.on('text-change', function() {
-            const text = window.myQuill.getText(); // HTML etiketleri olmadan saf metni al
-            const wordCount = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length; // Boşluklara göre bölüp say
-            const wpm = 200; // Ortalama okuma hızı (kelime/dakika)
+            const text = window.myQuill.getText();
+            const wordCount = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
+            const wpm = 200; 
             const minutes = Math.ceil(wordCount / wpm);
             
             const timeInput = document.getElementById('read-time');
             if(timeInput) {
-                // En az 1 dk olarak göster, boşsa boş bırakma
                 timeInput.value = (minutes < 1 ? 1 : minutes) + " dk";
             }
         });
-        // -------------------------------------------------
+        // -----------------------------
     }
 }
 
@@ -52,11 +70,64 @@ window.addNewCategory = () => {
     }
 };
 
+// Düzenleme Modunu Başlat
+window.startEdit = (id) => {
+    const post = allPostsData.find(p => p.id == id);
+    if(!post) return;
+
+    editingPostId = id; // ID'yi kaydet
+    
+    // Formu Doldur
+    document.getElementById("post-title").value = post.baslik || "";
+    document.getElementById("post-image").value = post.resim || "";
+    document.getElementById("post-category").value = post.kategori || "";
+    document.getElementById("post-desc").value = post.ozet || "";
+    document.getElementById("read-time").value = post.okuma_suresi || "";
+    document.getElementById("tags-input").value = post.etiketler || "";
+    document.getElementById("post-featured").checked = post.one_cikan === true || post.one_cikan === "true";
+    
+    // Tarih formatını ayarla (YYYY-MM-DD)
+    if(post.tarih) {
+        try {
+            document.getElementById("post-date").value = post.tarih.split('T')[0];
+        } catch(e) {}
+    }
+
+    // Editör içeriğini doldur
+    if(window.myQuill) {
+        window.myQuill.root.innerHTML = post.icerik || "";
+    }
+
+    // UI Değişiklikleri
+    const submitBtn = document.querySelector('.btn-submit');
+    if(submitBtn) submitBtn.innerText = "Güncelle";
+    
+    const cancelBtn = document.getElementById('btn-cancel');
+    if(cancelBtn) cancelBtn.style.display = 'inline-block';
+
+    // Sayfayı yukarı kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Düzenlemeyi İptal Et
+window.cancelEdit = () => {
+    editingPostId = null;
+    document.getElementById("add-post-form").reset();
+    if(window.myQuill) window.myQuill.setContents([]);
+    document.getElementById("post-date").valueAsDate = new Date();
+
+    const submitBtn = document.querySelector('.btn-submit');
+    if(submitBtn) submitBtn.innerText = "Yazıyı Yayınla"; // Veya orijinal metniniz
+    
+    const cancelBtn = document.getElementById('btn-cancel');
+    if(cancelBtn) cancelBtn.style.display = 'none';
+};
+
 window.savePost = async (status) => {
     const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
     const oldText = btn ? btn.innerText : "Kaydet";
     
-    if(btn) { btn.innerText = "Gönderiliyor..."; btn.disabled = true; }
+    if(btn) { btn.innerText = "İşleniyor..."; btn.disabled = true; }
     
     try {
         const baslik = document.getElementById("post-title").value;
@@ -66,20 +137,23 @@ window.savePost = async (status) => {
             throw new Error("Başlık ve içerik zorunlu."); 
         }
 
-        // Tarih kontrolü: Boşsa bugünü seç
         let tarihVal = document.getElementById("post-date").value;
         if(!tarihVal) {
             const now = new Date();
-            tarihVal = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            tarihVal = now.toISOString().split('T')[0];
         }
 
-        // Okuma süresi elle girilmemişse veya hesaplanmamışsa varsayılan ata
         let okumaSuresi = document.getElementById("read-time").value;
         if(!okumaSuresi) okumaSuresi = "1 dk";
 
+        // --- ACTION BELİRLEME ---
+        // Eğer editingPostId doluysa 'edit_post', boşsa 'add_post' gönderiyoruz.
+        const actionType = editingPostId ? "edit_post" : "add_post";
+
         const postData = {
-            auth: window.API_KEY, // 🔑 GÜVENLİK ANAHTARI
-            action: "add_post",
+            auth: window.API_KEY,
+            action: actionType, // Dinamik action
+            id: editingPostId,  // Düzenliyorsak ID'yi gönder
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
@@ -92,7 +166,6 @@ window.savePost = async (status) => {
             one_cikan: document.getElementById("post-featured").checked
         };
 
-        // window.API_URL kullandığımızdan emin olalım
         await fetch(window.API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -100,16 +173,11 @@ window.savePost = async (status) => {
             body: JSON.stringify(postData)
         });
 
-        alert("✅ Yazı başarıyla gönderildi!");
+        alert(editingPostId ? "✅ Yazı güncellendi!" : "✅ Yazı başarıyla oluşturuldu!");
         
-        // Formu temizle
-        document.getElementById("add-post-form").reset();
-        window.myQuill.setContents([]);
-        
-        // Tarihi tekrar bugüne ayarla
-        document.getElementById("post-date").valueAsDate = new Date();
+        // İşlem bitince formu ve düzenleme modunu sıfırla
+        cancelEdit(); 
 
-        // Eğer liste sayfasındaysak listeyi yenile
         if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 2000);
 
     } catch (e) {
@@ -125,23 +193,17 @@ async function fetchPosts() {
     tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
     
     try {
-        // window.API_URL kullanıyoruz
         const res = await fetch(`${window.API_URL}?type=posts`);
         const data = await res.json();
-        const posts = data.posts || [];
+        allPostsData = data.posts || []; // Verileri global değişkene kaydet
         
         tbody.innerHTML = '';
-        if(posts.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Kayıt yok.</td></tr>'; return; }
+        if(allPostsData.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Kayıt yok.</td></tr>'; return; }
 
-        posts.reverse().forEach(p => {
+        // Diziyi ters çevirip (en yeni en üstte) listele
+        [...allPostsData].reverse().forEach(p => {
             let img = p.resim && p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="fa-solid fa-image"></i>`;
             
-            // Tarihi düzgün göster
-            let tarihGoster = p.tarih;
-            try {
-                if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0];
-            } catch(err){}
-
             tbody.innerHTML += `
                 <tr>
                     <td>${img}</td>
@@ -149,7 +211,12 @@ async function fetchPosts() {
                     <td>${p.kategori}</td>
                     <td>${p.durum}</td>
                     <td>
-                        <button onclick="deletePost('${p.id}', this)" class="action-btn" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                        <button onclick="startEdit('${p.id}')" class="action-btn edit-btn" title="Düzenle" style="margin-right:5px; color:#3498db;">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deletePost('${p.id}', this)" class="action-btn" title="Sil" style="color:#e74c3c;">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
                 </tr>`;
         });
@@ -172,19 +239,18 @@ window.deletePost = async (id, btn) => {
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
-                auth: window.API_KEY, // 🔑 GÜVENLİK
+                auth: window.API_KEY, 
                 action: "delete_row",
                 type: "posts",
                 id: id
             })
         });
         
-        // İşlem başarılı kabul edip satırı silelim (UX için)
         const row = btn.closest('tr');
         if(row) row.style.opacity = "0.3";
         
         setTimeout(() => {
-            fetchPosts(); // Listeyi yenile
+            fetchPosts();
             alert("Silme işlemi tamamlandı.");
         }, 1500);
 
