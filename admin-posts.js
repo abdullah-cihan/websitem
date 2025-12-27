@@ -1,4 +1,4 @@
-/* ADMIN POSTS MANAGER (UPDATED - EDIT & UPDATE SUPPORT) */
+/* ADMIN POSTS MANAGER (UPDATED - EDIT MODE UI ENHANCED) */
 
 // Düzenleme işlemi için global değişkenler
 let allPostsData = []; // Tüm yazıları burada tutacağız
@@ -16,19 +16,25 @@ document.addEventListener('DOMContentLoaded', () => {
         dateInput.valueAsDate = new Date();
     }
 
-    // "Vazgeç" butonunu oluştur (Formun altına dinamik ekleyebiliriz veya HTML'de varsa kullanırız)
-    // Ancak burada JS ile yönetmek daha pratik.
+    // "Vazgeç" butonunu oluştur
     const formActions = document.querySelector('.form-actions');
-    if(formActions && !document.getElementById('btn-cancel')) {
+    // Eğer .form-actions yoksa formun sonuna eklemeyi dene
+    const targetContainer = formActions || document.getElementById('add-post-form');
+    
+    if(targetContainer && !document.getElementById('btn-cancel')) {
         const cancelBtn = document.createElement('button');
         cancelBtn.id = 'btn-cancel';
         cancelBtn.innerText = 'Vazgeç';
-        cancelBtn.className = 'btn-secondary'; // CSS class'ı varsayıyoruz
+        cancelBtn.className = 'btn-secondary'; // CSS class varsayımı
         cancelBtn.style.display = 'none'; // Başlangıçta gizli
         cancelBtn.style.marginLeft = '10px';
         cancelBtn.style.cursor = 'pointer';
+        // Buton tipini button yapalım ki formu submit etmesin
+        cancelBtn.type = 'button';
         cancelBtn.onclick = (e) => { e.preventDefault(); cancelEdit(); };
-        formActions.appendChild(cancelBtn);
+        
+        if(formActions) formActions.appendChild(cancelBtn);
+        else targetContainer.appendChild(cancelBtn);
     }
 });
 
@@ -98,15 +104,34 @@ window.startEdit = (id) => {
         window.myQuill.root.innerHTML = post.icerik || "";
     }
 
-    // UI Değişiklikleri
+    // UI Değişiklikleri - GÜNCELLEME MODU GÖRSELLİĞİ
+    const form = document.getElementById("add-post-form");
+    if(form) {
+        form.style.border = "2px solid #3498db"; // Mavi çerçeve ile edit modunu vurgula
+        form.style.padding = "15px";
+        form.style.borderRadius = "8px";
+        
+        // Form başlığını bulup değiştir (Opsiyonel, eğer h2 varsa)
+        const formHeader = form.querySelector('h2') || document.querySelector('.card-header h2');
+        if(formHeader) {
+            if(!formHeader.dataset.original) formHeader.dataset.original = formHeader.innerText;
+            formHeader.innerText = "Yazıyı Düzenle: " + post.baslik;
+            formHeader.style.color = "#3498db";
+        }
+    }
+
     const submitBtn = document.querySelector('.btn-submit');
-    if(submitBtn) submitBtn.innerText = "Güncelle";
+    if(submitBtn) {
+        submitBtn.innerText = "Güncelle";
+        submitBtn.classList.add('btn-warning'); // Varsa renk değiştir
+    }
     
     const cancelBtn = document.getElementById('btn-cancel');
     if(cancelBtn) cancelBtn.style.display = 'inline-block';
 
-    // Sayfayı yukarı kaydır
+    // Sayfayı yukarı kaydır ve başlığa odaklan
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => document.getElementById("post-title").focus(), 500);
 };
 
 // Düzenlemeyi İptal Et
@@ -116,8 +141,24 @@ window.cancelEdit = () => {
     if(window.myQuill) window.myQuill.setContents([]);
     document.getElementById("post-date").valueAsDate = new Date();
 
+    // UI Değişikliklerini Geri Al
+    const form = document.getElementById("add-post-form");
+    if(form) {
+        form.style.border = "none";
+        form.style.padding = "0"; // Orijinal padding'e döner (CSS'ten geliyorsa sorun olmaz ama inline siliyoruz)
+        
+        const formHeader = form.querySelector('h2') || document.querySelector('.card-header h2');
+        if(formHeader && formHeader.dataset.original) {
+            formHeader.innerText = formHeader.dataset.original;
+            formHeader.style.color = "";
+        }
+    }
+
     const submitBtn = document.querySelector('.btn-submit');
-    if(submitBtn) submitBtn.innerText = "Yazıyı Yayınla"; // Veya orijinal metniniz
+    if(submitBtn) {
+        submitBtn.innerText = "Yazıyı Yayınla";
+        submitBtn.classList.remove('btn-warning');
+    }
     
     const cancelBtn = document.getElementById('btn-cancel');
     if(cancelBtn) cancelBtn.style.display = 'none';
