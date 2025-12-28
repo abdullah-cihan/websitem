@@ -2,7 +2,7 @@
  * ==========================================
  * MODERN ADMIN POST MANAGER (BUTONLU LİSTE VERSİYONU)
  * Backend: Google Apps Script (Code.gs)
- * Özellikler: Satır içi Silme, Durum Değiştirme, Düzenleme
+ * Özellikler: Satır içi Silme, Durum Değiştirme, Düzenleme, TAB GEÇİŞİ
  * ==========================================
  */
 
@@ -18,11 +18,11 @@ class PostManager {
         // --- 2. DOM ELEMENTLERİNİ SEÇ ---
         this.dom = {
             listContainer: document.getElementById('post-list-container'),
-            tableBody: document.getElementById('posts-table-body'), // Eski tabloyu gizlemek için
+            tableBody: document.getElementById('posts-table-body'),
             
             // Form Alanları
             form: document.getElementById('add-post-form'),
-            formTitle: document.querySelector('#add-post-form h2'),
+            formTitle: document.querySelector('#add-post-form h2'), // Bu bazen null olabilir, kontrol edeceğiz
             
             // Inputlar
             title: document.getElementById('post-title'),
@@ -81,15 +81,18 @@ class PostManager {
         const btn = document.createElement('button');
         btn.type = "button";
         btn.className = "cancel-edit-btn"; 
-        btn.style.cssText = "display:none; margin-bottom:15px; padding:8px 15px; background:#64748b; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;";
+        btn.style.cssText = "display:none; margin-bottom:15px; padding:8px 15px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;";
         btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç / Yeni Ekleme Moduna Dön';
         btn.onclick = () => this.disableEditMode();
-        this.dom.form.insertBefore(btn, this.dom.form.firstChild);
-        this.dom.cancelBtn = btn;
+        
+        if(this.dom.form) {
+            this.dom.form.insertBefore(btn, this.dom.form.firstChild);
+            this.dom.cancelBtn = btn;
+        }
     }
 
     // ============================================================
-    // 2. OLAY DİNLEYİCİLERİ (GÜNCELLENDİ)
+    // 2. OLAY DİNLEYİCİLERİ
     // ============================================================
 
     bindEvents() {
@@ -101,7 +104,9 @@ class PostManager {
         if (!this.dom.listContainer) this.setupListContainer();
 
         // LİSTE TIKLAMA OLAYLARI (Delegation)
-        this.dom.listContainer.addEventListener('click', (e) => this.handleListClick(e));
+        if(this.dom.listContainer) {
+            this.dom.listContainer.addEventListener('click', (e) => this.handleListClick(e));
+        }
     }
 
     setupListContainer() {
@@ -109,6 +114,13 @@ class PostManager {
             const parentTable = this.dom.tableBody.closest('table');
             if (parentTable) parentTable.style.display = 'none';
         }
+        
+        // Eğer zaten varsa tekrar oluşturma
+        if(document.getElementById('post-list-container')) {
+             this.dom.listContainer = document.getElementById('post-list-container');
+             return;
+        }
+
         const wrapper = document.createElement('div');
         wrapper.id = 'post-list-container';
         wrapper.className = 'post-list-container';
@@ -139,7 +151,7 @@ class PostManager {
             this.deletePost(postId, btn);
         }
 
-        // 2. DÜZENLEME (EDIT)
+        // 2. DÜZENLEME (EDIT) -> BURASI KRİTİK
         else if (btn.classList.contains('btn-edit')) {
             this.enableEditMode(postData);
         }
@@ -151,10 +163,12 @@ class PostManager {
     }
 
     // ============================================================
-    // 3. LİSTELEME (BUTONLAR EKLENDİ)
+    // 3. LİSTELEME
     // ============================================================
 
     async fetchPosts() {
+        if(!this.dom.listContainer) return;
+
         this.dom.listContainer.style.display = 'block';
         this.dom.listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#9ca3af;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br>Yükleniyor...</div>';
 
@@ -175,8 +189,6 @@ class PostManager {
             return;
         }
 
-        // --- CSS STİLLERİ (JS İçinde) ---
-        // Bu stilleri dilerseniz style.css dosyanıza taşıyabilirsiniz.
         const btnStyle = "border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; margin-left:5px;";
 
         const html = this.state.posts.slice().reverse().map(post => {
@@ -184,42 +196,41 @@ class PostManager {
             const isPublished = post.durum === 'Yayında';
             const statusColor = isPublished ? '#10b981' : '#f59e0b';
             
-            // Yıldız ikonu
             const starIcon = (String(post.one_cikan) === "true") 
                 ? '<i class="fa-solid fa-star" style="color:#fbbf24; margin-left:5px;"></i>' : '';
 
             return `
                 <div class="post-item" data-id="${post.id}" 
-                     style="background:white; border:1px solid #e5e7eb; border-radius:8px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                     style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
                     
                     <div class="post-info" style="flex:1;">
-                        <div style="font-weight:600; font-size:1.05rem; color:#1f2937; margin-bottom:4px;">
+                        <div style="font-weight:600; font-size:1.05rem; color:#f1f5f9; margin-bottom:4px;">
                             ${post.baslik} ${starIcon}
                         </div>
-                        <div style="font-size:0.85rem; color:#6b7280; display:flex; gap:15px; align-items:center;">
+                        <div style="font-size:0.85rem; color:#94a3b8; display:flex; gap:15px; align-items:center;">
                             <span style="display:flex; align-items:center;">
                                 <span style="width:8px; height:8px; border-radius:50%; background:${statusColor}; margin-right:6px;"></span>
                                 ${post.durum}
                             </span>
                             <span><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> ${dateDisplay}</span>
-                            <span style="background:#f3f4f6; padding:2px 8px; border-radius:4px; font-weight:500; font-size:0.8rem;">${post.kategori}</span>
+                            <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-weight:500; font-size:0.8rem;">${post.kategori}</span>
                         </div>
                     </div>
 
                     <div class="post-actions" style="display:flex; align-items:center;">
                         
                         <button class="btn-status" title="${isPublished ? 'Taslağa Al' : 'Yayınla'}"
-                                style="${btnStyle} background:${isPublished ? '#eff6ff' : '#fff7ed'}; color:${isPublished ? '#3b82f6' : '#f97316'};">
+                                style="${btnStyle} background:rgba(59, 130, 246, 0.1); color:#60a5fa;">
                             <i class="${isPublished ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash'}"></i>
                         </button>
 
                         <button class="btn-edit" title="Düzenle"
-                                style="${btnStyle} background:#f0fdf4; color:#16a34a;">
+                                style="${btnStyle} background:rgba(16, 185, 129, 0.1); color:#34d399;">
                             <i class="fa-solid fa-pen"></i>
                         </button>
 
                         <button class="btn-delete" title="Sil"
-                                style="${btnStyle} background:#fef2f2; color:#ef4444;">
+                                style="${btnStyle} background:rgba(239, 68, 68, 0.1); color:#f87171;">
                             <i class="fa-solid fa-trash"></i>
                         </button>
 
@@ -235,21 +246,30 @@ class PostManager {
     // 4. İŞLEM FONKSİYONLARI
     // ============================================================
 
-    // --- DÜZENLEME MODU ---
+    // --- DÜZENLEME MODU (BURASI DEĞİŞTİ: TAB GEÇİŞİ EKLENDİ) ---
     enableEditMode(post) {
         console.log("Düzenleniyor:", post.baslik);
         this.state.currentEditId = post.id;
 
-        // Formu Doldur
-        this.dom.title.value = post.baslik || "";
-        this.dom.image.value = post.resim || "";
-        this.dom.category.value = post.kategori || "Genel";
-        this.dom.desc.value = post.ozet || "";
-        this.dom.readTime.value = post.okuma_suresi || "";
-        this.dom.tags.value = post.etiketler || "";
-        this.dom.featured.checked = (String(post.one_cikan) === "true");
+        // 1. EKRANI "YENİ EKLE" SEKMESİNE GEÇİR (KÖPRÜ)
+        // admin.html'de tanımladığımız global fonksiyonu çağırıyoruz
+        if (window.switchToEditorTab) {
+            window.switchToEditorTab();
+        } else if (typeof showSection === 'function') {
+            // Eğer bridge yoksa manuel dene
+            showSection('new-post');
+        }
 
-        if (post.tarih) {
+        // 2. Formu Doldur
+        if(this.dom.title) this.dom.title.value = post.baslik || "";
+        if(this.dom.image) this.dom.image.value = post.resim || "";
+        if(this.dom.category) this.dom.category.value = post.kategori || "Genel";
+        if(this.dom.desc) this.dom.desc.value = post.ozet || "";
+        if(this.dom.readTime) this.dom.readTime.value = post.okuma_suresi || "";
+        if(this.dom.tags) this.dom.tags.value = post.etiketler || "";
+        if(this.dom.featured) this.dom.featured.checked = (String(post.one_cikan) === "true");
+
+        if (post.tarih && this.dom.date) {
             let isoDate = post.tarih.includes('T') ? post.tarih.split('T')[0] : post.tarih;
             this.dom.date.value = isoDate;
         }
@@ -259,44 +279,56 @@ class PostManager {
             this.quill.setContents(delta, 'silent');
         }
 
-        // UI Güncelle
-        this.dom.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
+        // 3. UI Güncelle (Başlık ve Buton)
+        if(this.dom.formTitle) {
+            // Başlığı sakla
+            if (!this.dom.formTitle.dataset.original) {
+                this.dom.formTitle.dataset.original = this.dom.formTitle.innerHTML;
+            }
+            this.dom.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
+        }
+        
         if (this.dom.submitBtn) {
             this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
             this.dom.submitBtn.style.background = '#f59e0b';
         }
         if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'inline-block';
 
-        // Yukarı Kaydır
+        // 4. Yukarı Kaydır
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     disableEditMode() {
         this.state.currentEditId = null;
-        this.dom.form.reset();
+        if(this.dom.form) this.dom.form.reset();
         if (this.quill) this.quill.setContents([]);
-        this.dom.date.valueAsDate = new Date();
+        if(this.dom.date) this.dom.date.valueAsDate = new Date();
 
-        this.dom.formTitle.innerText = "Yeni Yazı Ekle"; // Basitçe resetle
+        // Başlığı eski haline getir
+        if(this.dom.formTitle && this.dom.formTitle.dataset.original) {
+             this.dom.formTitle.innerHTML = this.dom.formTitle.dataset.original;
+        } else if (this.dom.formTitle) {
+             this.dom.formTitle.innerText = "Yeni Yazı Ekle";
+        }
+
         if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
+            this.dom.submitBtn.innerHTML = 'Yayınla';
             this.dom.submitBtn.style.background = '';
         }
         if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
     }
 
-    // --- DURUM DEĞİŞTİRME (YENİ ÖZELLİK) ---
+    // --- DURUM DEĞİŞTİRME ---
     async toggleStatus(post, btn) {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
 
         const newStatus = post.durum === 'Yayında' ? 'Taslak' : 'Yayında';
         const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Loading ikonu
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; 
         btn.disabled = true;
 
         try {
-            // Backend update_post tüm veriyi bekler, o yüzden mevcut veriyi koruyarak gönderiyoruz
             const payload = {
                 action: "update_post",
                 id: post.id,
@@ -307,7 +339,7 @@ class PostManager {
                 tarih: post.tarih,
                 kategori: post.kategori,
                 ozet: post.ozet,
-                durum: newStatus, // Sadece burası değişiyor
+                durum: newStatus,
                 okuma_suresi: post.okuma_suresi,
                 etiketler: post.etiketler,
                 one_cikan: post.one_cikan
@@ -317,14 +349,13 @@ class PostManager {
             const result = await response.json();
 
             if (result.ok) {
-                // Listeyi güncellemeden sadece UI'da durumu değiştir (Daha hızlı hissettirir)
-                post.durum = newStatus; // Local state güncelle
-                this.renderList(); // Listeyi tekrar çiz
+                post.durum = newStatus;
+                this.renderList();
             } else {
                 throw new Error(result.error);
             }
         } catch (error) {
-            alert("Durum güncellenemedi: " + error.message);
+            alert("Hata: " + error.message);
             btn.innerHTML = originalIcon;
         } finally {
             btn.disabled = false;
