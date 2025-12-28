@@ -1,19 +1,14 @@
 /* ============================================================
-   REAL-TIME LOGIN JS (Google Sheets Bağlantılı - FINAL)
+   BASİT LOGIN JS
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // ⚠️ 1. URL KONTROLÜ: Buraya Apps Script'ten aldığın en son "Web App URL"sini yapıştır.
-    // (Sonu /exec ile bitmeli)
-    const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
-    
-    // ⚠️ 2. DEĞİŞKEN TANIMI (ÖNEMLİ):
-    // Backend'de şifre kontrolünü kapattık AMA JavaScript kodunun çökmemesi için
-    // bu değişkenin burada tanımlı olması ZORUNLUDUR. İçeriği önemli değil.
-    const API_KEY = "Sifre2025"; 
+    // 👇 AYARLAR: KULLANICI ADI VE ŞİFREYİ BURADAN BELİRLE 👇
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "123456"; 
+    // 👆 Burayı değiştirebilirsin 👆
 
-    // DOM Elementleri
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -26,73 +21,47 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
+            // İkonu değiştir
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
     }
 
-    // 2. Form Gönderilince Çalışacak Kod
+    // 2. Form Gönderilince
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Sayfa yenilenmesin
 
-            const userInput = usernameInput.value.trim();
-            const passInput = passwordInput.value.trim();
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value.trim();
 
-            // UI Güncelleme (Yükleniyor...)
+            // Mesajı gizle
             errorMsg.style.display = 'none';
+
+            // Butonu yükleniyor yap
             const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
-            try {
-                // 🚀 ADIM 1: Google Sheets'ten güncel kullanıcı bilgilerini çek
-                // API_KEY parametresi backend'de kontrol edilmese bile URL yapısı bozulmasın diye gönderiyoruz.
-                const response = await fetch(`${API_URL}?type=settings&auth=${API_KEY}`);
-                const data = await response.json();
-
-                // Backend'den hata dönerse (örn: Tablo bulunamadı)
-                if (!data.ok) {
-                    throw new Error(data.error || "Sunucu hatası");
-                }
-
-                // Backend'den gelen gerçek kullanıcı adı ve şifre
-                const realUser = data.user; 
-                const realPass = data.pass; 
-
-                // 🚀 ADIM 2: Tarayıcıda Karşılaştırma Yap
-                if (userInput === realUser && passInput === realPass) {
-                    
+            // Ufak bir bekleme efekti (0.5 saniye)
+            setTimeout(() => {
+                if (user === ADMIN_USER && pass === ADMIN_PASS) {
                     // ✅ GİRİŞ BAŞARILI
-                    // Oturum bilgilerini tarayıcıya kaydet
                     localStorage.setItem('isAdmin', 'true');
-                    localStorage.setItem('adminName', realUser); 
-                    localStorage.setItem('adminUser', realUser); 
-                    localStorage.setItem('adminPass', realPass); 
+                    localStorage.setItem('adminName', user);
                     
-                    // Admin paneline yönlendir
+                    // Admin paneline git
                     window.location.href = "admin.html";
-
                 } else {
-                    // Şifre yanlışsa hata fırlat
-                    throw new Error("Kullanıcı adı veya şifre hatalı!");
+                    // ❌ HATA
+                    errorMsg.style.display = 'block';
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                    
+                    // Şifreyi temizle
+                    passwordInput.value = "";
                 }
-
-            } catch (error) {
-                // ❌ HATA YÖNETİMİ
-                console.error("Giriş Hatası:", error);
-                
-                errorMsg.style.display = 'block';
-                // Eğer internet yoksa veya URL yanlışsa "Failed to fetch" hatası gelir
-                errorMsg.innerText = error.message === "Failed to fetch" 
-                    ? "Bağlantı hatası! URL'yi veya interneti kontrol edin." 
-                    : "Giriş başarısız: Bilgiler yanlış.";
-                
-                // Butonu eski haline getir
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-                passwordInput.value = "";
-            }
+            }, 500);
         });
     }
 });
