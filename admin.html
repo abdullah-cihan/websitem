@@ -12,38 +12,90 @@
 
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
-    <link rel="stylesheet" href="admin-pages.css"> <link rel="stylesheet" href="tools.css"> 
-    <script>
-  // --- GÜVENLİK KONTROLÜ ---
-  (function() {
-    const token = localStorage.getItem('adminToken');
-    
-    // Eğer token yoksa, giriş sayfasına geri gönder
-    if (!token || token === "undefined" || token === "null") {
-      alert("Oturum süreniz dolmuş veya giriş yapmamışsınız.");
-      window.location.href = "login.html"; 
-    }
-  })();
+    <link rel="stylesheet" href="admin-pages.css"> 
+    <link rel="stylesheet" href="tools.css"> 
 
-  // ÇIKIŞ YAP (LOGOUT) FONKSİYONU
-  // Bu fonksiyonu bir "Çıkış" butonuna bağlayabilirsiniz: <button onclick="cikisYap()">Çıkış</button>
-  function cikisYap() {
-    if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
-      localStorage.removeItem('adminToken');
-      localStorage.removeItem('isAdmin');
-      window.location.href = "login.html";
+    <script>
+    (function() {
+        const token = localStorage.getItem('adminToken');
+        if (!token || token === "undefined" || token === "null") {
+            // alert("Oturum süreniz dolmuş veya giriş yapmamışsınız."); // İsterseniz açabilirsiniz
+            window.location.href = "login.html"; 
+        }
+    })();
+
+    function cikisYap() {
+        if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('isAdmin');
+            window.location.href = "login.html";
+        }
     }
-  }
-</script>
+    </script>
+
     <style>
         .hidden { display: none; }
-        .action-btn { cursor: pointer; border: none; background: none; color: #ef4444; font-size: 1.1rem; }
-        .action-btn:hover { color: #dc2626; }
-        .btn-submit:disabled, .btn-draft:disabled { opacity: 0.6; cursor: not-allowed; }
-        /* Editörün görünmesi için arka plan ayarı */
-        .ql-editor { min-height: 200px; color: #e2e8f0; }
         
-        /* Ayarlar Formu İçin Ek Stiller */
+        /* Editör Ayarları */
+        .ql-toolbar { background: #f1f5f9; border-radius: 8px 8px 0 0; border-color: #334155 !important; }
+        .ql-container { background: #1e293b; border-radius: 0 0 8px 8px; border-color: #334155 !important; color: #e2e8f0; font-size: 1rem; }
+        .ql-editor { min-height: 300px; }
+        
+        /* Kart Tipi Liste Tasarımı (Post Listesi İçin) */
+        #post-list-container { margin-top: 20px; }
+        .post-item {
+            background: rgba(255, 255, 255, 0.03); /* Glass effect için hafif transparan */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        .post-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .post-info h4 { margin: 0 0 8px 0; font-size: 1.1rem; color: #f1f5f9; }
+        .post-meta { display: flex; gap: 15px; font-size: 0.85rem; color: #94a3b8; align-items: center; }
+        .post-badge { background: rgba(59, 130, 246, 0.1); color: #60a5fa; padding: 2px 8px; border-radius: 4px; }
+        
+        /* Liste Butonları */
+        .post-actions { display: flex; gap: 8px; }
+        .btn-icon-action {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            border: none;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        
+        /* Buton Renkleri */
+        .btn-edit { background: rgba(16, 185, 129, 0.1); color: #34d399; }
+        .btn-edit:hover { background: rgba(16, 185, 129, 0.2); }
+        
+        .btn-delete { background: rgba(239, 68, 68, 0.1); color: #f87171; }
+        .btn-delete:hover { background: rgba(239, 68, 68, 0.2); }
+        
+        .btn-status { background: rgba(59, 130, 246, 0.1); color: #60a5fa; }
+        .btn-status:hover { background: rgba(59, 130, 246, 0.2); }
+
+        /* Form Butonları */
+        .btn-submit { background: #3b82f6; color: white; padding: 10px 20px; border-radius: 6px; border:none; cursor: pointer; font-weight: 500; }
+        .btn-submit:hover { background: #2563eb; }
+        
+        .btn-draft { background: #475569; color: white; padding: 10px 20px; border-radius: 6px; border:none; cursor: pointer; }
+        .btn-draft:hover { background: #334155; }
+
+        .cancel-edit-btn { margin-bottom: 20px; width: 100%; text-align: left; background: #dc2626 !important; }
+
+        /* Ayarlar Formu */
         .settings-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255,255,255,0.05); padding: 30px; border-radius: 12px; max-width: 500px; margin: 0 auto; }
         .settings-label { display: block; margin-bottom: 8px; color: #94a3b8; font-size: 0.9rem; }
         .settings-input { width: 100%; padding: 12px; margin-bottom: 15px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 8px; outline: none; transition: 0.3s; }
@@ -64,7 +116,9 @@
 
             <ul class="admin-menu">
                 <li class="active" onclick="showSection('dashboard')"><i class="fa-solid fa-chart-pie"></i> Özet</li>
-                <li onclick="showSection('posts')"><i class="fa-solid fa-layer-group"></i> Yazılar</li>
+                <li onclick="showSection('posts'); if(window.postManager) window.postManager.fetchPosts();">
+                    <i class="fa-solid fa-layer-group"></i> Yazılar
+                </li>
                 <li onclick="showSection('new-post')"><i class="fa-solid fa-pen-to-square"></i> Yeni Yazı Ekle</li>
                 <li onclick="showSection('tools-manager')"><i class="fa-solid fa-toolbox"></i> Araç Yönetimi</li>
                 <li onclick="showSection('pages-manager')"><i class="fa-solid fa-file-code"></i> Sayfalar</li>
@@ -89,7 +143,7 @@
 
                     <div class="profile-dropdown" id="profile-dropdown">
                         <a href="#" onclick="showSection('settings')"><i class="fa-solid fa-sliders"></i> Ayarlar</a>
-                        <a href="#" onclick="logout()" class="dropdown-logout"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</a>
+                        <a href="#" onclick="cikisYap()" class="dropdown-logout"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</a>
                     </div>
                 </div>
             </header>
@@ -98,11 +152,11 @@
                 <div class="stats-grid">
                     <div class="stat-card glass">
                         <div class="stat-icon icon-blue"><i class="fa-solid fa-file-lines"></i></div>
-                        <div><h4>Toplam Yazı</h4><span id="total-posts-count">0</span></div>
+                        <div><h4>Toplam Yazı</h4><span id="total-posts-count">...</span></div>
                     </div>
                     <div class="stat-card glass">
                         <div class="stat-icon icon-green"><i class="fa-solid fa-layer-group"></i></div>
-                        <div><h4>Kategoriler</h4><span id="total-cats-count">0</span></div>
+                        <div><h4>Kategoriler</h4><span id="total-cats-count">...</span></div>
                     </div>
                     <div class="stat-card glass">
                         <div class="stat-icon icon-purple"><i class="fa-solid fa-database"></i></div>
@@ -115,49 +169,75 @@
                 <div class="section-top">
                     <h2>Tüm Yazılar</h2>
                     <div class="actions-right">
-                        <input type="text" id="search-posts" placeholder="Yazı ara..." onkeyup="filterPosts()" class="search-input">
+                        <input type="text" id="search-posts" placeholder="Yazı ara..." class="search-input">
                         <button onclick="showSection('new-post')" class="btn-add"><i class="fa-solid fa-plus"></i> Yeni Ekle</button>
                     </div>
                 </div>
-                <div class="table-responsive glass">
-                    <table class="posts-table">
-                        <thead><tr><th>Görsel</th><th>Başlık</th><th>Kategori</th><th>Durum</th><th>İşlemler</th></tr></thead>
-                        <tbody id="posts-table-body"></tbody>
-                    </table>
+                
+                <div id="post-list-container">
+                    <p style="text-align: center; padding: 20px; color: #94a3b8;">Yükleniyor...</p>
                 </div>
             </section>
 
             <section id="new-post" class="admin-section">
                 <div class="editor-wrapper glass">
-                    <div class="form-header"><h2>Yeni Yazı Oluştur</h2></div>
+                    <div class="form-header"><h2>Yazı Editörü</h2></div>
+                    
                     <form id="add-post-form" onsubmit="return false;">
                         <div class="form-row">
-                            <div class="form-group flex-2"><label>Yazı Başlığı</label><input type="text" id="post-title" placeholder="Başlık giriniz..." required></div>
-                            <div class="form-group flex-1"><label>Tarih</label><input type="date" id="post-date"></div>
+                            <div class="form-group flex-2">
+                                <label>Yazı Başlığı</label>
+                                <input type="text" id="post-title" placeholder="Başlık giriniz..." required>
+                            </div>
+                            <div class="form-group flex-1">
+                                <label>Tarih</label>
+                                <input type="date" id="post-date">
+                            </div>
                         </div>
+                        
                         <div class="form-row">
                             <div class="form-group flex-1">
                                 <label>Kategori</label>
                                 <div class="input-group">
-                                    <select id="post-category"></select>
-                                    <button type="button" onclick="addNewCategory()" class="btn-icon"><i class="fa-solid fa-plus"></i></button>
+                                    <select id="post-category">
+                                        </select>
+                                    <button type="button" class="btn-icon"><i class="fa-solid fa-plus"></i></button>
                                 </div>
                             </div>
-                            <div class="form-group flex-1"><label>Okuma Süresi</label><input type="text" id="read-time" placeholder="Örn: 5 dk"></div>
+                            <div class="form-group flex-1">
+                                <label>Okuma Süresi</label>
+                                <input type="text" id="read-time" placeholder="Örn: 5 dk">
+                            </div>
                         </div>
-                        <div class="form-group"><label>Kapak Görseli / İkon</label><input type="text" id="post-image" placeholder="URL veya fa-solid fa-code"></div>
-                        <div class="form-group"><label>Özet</label><textarea id="post-desc" rows="2"></textarea></div>
+
+                        <div class="form-group">
+                            <label>Kapak Görseli (URL)</label>
+                            <input type="text" id="post-image" placeholder="https://...">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Özet</label>
+                            <textarea id="post-desc" rows="2" placeholder="Kısa açıklama..."></textarea>
+                        </div>
                         
                         <div class="form-group">
                             <label>İçerik</label>
-                            <div id="editor-container" style="height: 350px; background-color: #1e293b;"></div>
+                            <div id="editor-container"></div>
                         </div>
 
-                        <div class="form-group"><label>Etiketler</label><input type="text" id="tags-input" placeholder="Virgülle ayırınız..."></div>
-                        <div class="form-group checkbox-group"><input type="checkbox" id="post-featured"><label for="post-featured">Öne Çıkan</label></div>
-                        <div class="form-footer">
-                            <button type="button" onclick="savePost('draft')" class="btn-draft">Taslak</button>
-                            <button type="button" onclick="savePost('published')" class="btn-submit">Yayınla</button>
+                        <div class="form-group">
+                            <label>Etiketler</label>
+                            <input type="text" id="tags-input" placeholder="Virgülle ayırınız...">
+                        </div>
+
+                        <div class="form-group checkbox-group">
+                            <input type="checkbox" id="post-featured">
+                            <label for="post-featured" style="cursor:pointer">Öne Çıkan Yazı</label>
+                        </div>
+
+                        <div class="form-footer" style="margin-top:20px; display:flex; gap:10px; justify-content:flex-end;">
+                            <button type="button" class="btn-draft">Taslak</button>
+                            <button type="button" class="btn-submit">Yayınla</button>
                         </div>
                     </form>
                 </div>
@@ -169,12 +249,14 @@
                     <div class="glass" style="padding:20px; margin-bottom:20px;">
                         <div class="form-row">
                             <input type="text" id="tool-title" placeholder="Başlık">
-                            <input type="text" id="tool-icon" placeholder="İkon">
+                            <input type="text" id="tool-icon" placeholder="İkon (fa-solid...)">
                             <input type="text" id="tool-link" placeholder="Link">
                             <button type="button" onclick="addTool()" class="btn-submit">Ekle</button>
                         </div>
                     </div>
-                    <div class="table-responsive"><table class="posts-table"><tbody id="tools-table-body"></tbody></table></div>
+                    <div class="table-responsive">
+                        <table class="posts-table"><tbody id="tools-table-body"></tbody></table>
+                    </div>
                 </div>
             </section>
 
@@ -232,7 +314,46 @@
 
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
-    <script src="admin.js"></script>       <script src="admin-posts.js"></script> <script src="admin-tools.js"></script>
+    <script>
+        // Basit Tab Geçiş Fonksiyonu (admin.js yoksa diye ekliyorum)
+        function showSection(sectionId) {
+            // Tüm sectionları gizle
+            document.querySelectorAll('.admin-section').forEach(sec => {
+                sec.classList.remove('active');
+                sec.style.display = 'none'; // CSS class yetmeyebilir diye
+            });
+            // Seçileni göster
+            const activeSec = document.getElementById(sectionId);
+            if(activeSec) {
+                activeSec.classList.add('active');
+                activeSec.style.display = 'block';
+            }
+            
+            // Sidebar active class güncelle
+            document.querySelectorAll('.admin-menu li').forEach(li => li.classList.remove('active'));
+            // Tıklanan menüye active eklemek için event listener gerekir veya onclick içinde this gönderilir
+        }
+
+        // Profil menüsü toggle
+        function toggleProfileMenu() {
+            const menu = document.getElementById('profile-dropdown');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Sayfa yüklendiğinde dashboard aç
+        document.addEventListener('DOMContentLoaded', () => {
+            showSection('dashboard');
+        });
+        
+        // Düzenleme moduna geçişte "new-post" sekmesini açmak için bridge
+        // admin-post.js içinde enableEditMode çalıştığında bu fonksiyonu tetikleyeceğiz
+        window.switchToEditorTab = function() {
+            showSection('new-post');
+        };
+    </script>
+
+    <script src="admin.js"></script>        
+    <script src="admin-posts.js"></script> <script src="admin-tools.js"></script>
     <script src="admin-pages.js"></script>
 
 </body>
