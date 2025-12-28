@@ -59,8 +59,8 @@ window.savePost = async (status) => {
         }
 
         const postData = {
-            auth: window.API_KEY, // 🔑 GÜVENLİK ANAHTARI
             action: "add_post",
+            token: localStorage.getItem('adminToken'),
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
