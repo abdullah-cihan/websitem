@@ -5,7 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // ⚠️ 1. WEB UYGULAMASI URL'Sİ (Az önce kopyaladığın yeni linki buraya yapıştır)
-    const API_URL = "https://script.google.com/macros/s/.......SENIN_UZUN_KODUN....../exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
     
     // ⚠️ 2. GÜVENLİK ANAHTARI (Code.gs ile AYNI olmalı)
     const API_KEY = "Sifre2025"; 
