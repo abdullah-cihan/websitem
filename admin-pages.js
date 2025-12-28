@@ -1,408 +1,309 @@
-/**
- * ==========================================
- * MODERN ADMIN POST MANAGER (BUTONLU LİSTE VERSİYONU)
- * Backend: Google Apps Script (Code.gs)
- * Özellikler: Satır içi Silme, Durum Değiştirme, Düzenleme
- * ==========================================
- */
+"/* ADMIN POSTS MANAGER (BLOGGER TARZI ODAK MODU) */
 
-class PostManager {
-    constructor() {
-        // --- 1. AYARLAR VE STATE ---
-        this.apiUrl = window.API_URL;
-        this.state = {
-            currentEditId: null, // Şu an düzenlenen yazının ID'si
-            posts: []            // API'den çekilen tüm yazılar
-        };
-        
-        // --- 2. DOM ELEMENTLERİNİ SEÇ ---
-        this.dom = {
-            listContainer: document.getElementById('post-list-container'),
-            tableBody: document.getElementById('posts-table-body'), // Eski tabloyu gizlemek için
-            
-            // Form Alanları
-            form: document.getElementById('add-post-form'),
-            formTitle: document.querySelector('#add-post-form h2'),
-            
-            // Inputlar
-            title: document.getElementById('post-title'),
-            image: document.getElementById('post-image'),
-            category: document.getElementById('post-category'),
-            desc: document.getElementById('post-desc'),
-            readTime: document.getElementById('read-time'),
-            tags: document.getElementById('tags-input'),
-            date: document.getElementById('post-date'),
-            featured: document.getElementById('post-featured'),
-            
-            // Ana Butonlar
-            submitBtn: document.querySelector('.btn-submit'),
-            draftBtn: document.querySelector('.btn-draft'),
-            cancelBtn: null 
-        };
-
-        this.quill = null;
-        this.init();
-    }
-
-    async init() {
-        this.initQuill();
-        this.initDateInput();
-        this.loadCategories();
-        this.createCancelButton();
-        this.bindEvents();        
-        await this.fetchPosts();  
-    }
-
-    // ============================================================
-    // 1. KURULUMLAR
-    // ============================================================
-
-    initQuill() {
-        if (typeof Quill !== 'undefined' && !this.quill) {
-            this.quill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
-        }
-    }
-
-    initDateInput() {
-        if (this.dom.date && !this.dom.date.value) {
-            this.dom.date.valueAsDate = new Date();
-        }
-    }
-
-    loadCategories() {
-        if (!this.dom.category) return;
-        const storedCats = localStorage.getItem('categories');
-        const defaultCats = ["Genel", "Teknoloji", "Yazılım", "Felsefe", "Ekonomi", "Sanat", "Hayat"];
-        const cats = storedCats ? JSON.parse(storedCats) : defaultCats;
-        this.dom.category.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    }
-
-    createCancelButton() {
-        const btn = document.createElement('button');
-        btn.type = "button";
-        btn.className = "cancel-edit-btn"; 
-        btn.style.cssText = "display:none; margin-bottom:15px; padding:8px 15px; background:#64748b; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;";
-        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç / Yeni Ekleme Moduna Dön';
-        btn.onclick = () => this.disableEditMode();
-        this.dom.form.insertBefore(btn, this.dom.form.firstChild);
-        this.dom.cancelBtn = btn;
-    }
-
-    // ============================================================
-    // 2. OLAY DİNLEYİCİLERİ (GÜNCELLENDİ)
-    // ============================================================
-
-    bindEvents() {
-        // Form Gönderimi
-        if (this.dom.submitBtn) this.dom.submitBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('published'); });
-        if (this.dom.draftBtn) this.dom.draftBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('draft'); });
-
-        // Liste Konteynerini Hazırla
-        if (!this.dom.listContainer) this.setupListContainer();
-
-        // LİSTE TIKLAMA OLAYLARI (Delegation)
-        this.dom.listContainer.addEventListener('click', (e) => this.handleListClick(e));
-    }
-
-    setupListContainer() {
-        if (this.dom.tableBody) {
-            const parentTable = this.dom.tableBody.closest('table');
-            if (parentTable) parentTable.style.display = 'none';
-        }
-        const wrapper = document.createElement('div');
-        wrapper.id = 'post-list-container';
-        wrapper.className = 'post-list-container';
-        const targetDiv = this.dom.tableBody ? this.dom.tableBody.closest('div') : document.body;
-        targetDiv.appendChild(wrapper);
-        this.dom.listContainer = wrapper;
-    }
-
-    handleListClick(e) {
-        const target = e.target;
-        
-        // Butonu bul (ikon tıklansa bile butonu yakala)
-        const btn = target.closest('button'); 
-        if (!btn) return; // Butona tıklanmadıysa işlem yapma
-
-        const postItem = btn.closest('.post-item');
-        if (!postItem) return;
-
-        const postId = postItem.dataset.id;
-        const postData = this.state.posts.find(p => String(p.id) === String(postId));
-
-        if (!postData) { console.error("Veri bulunamadı"); return; }
-
-        // --- BUTON TİPLERİNE GÖRE İŞLEMLER ---
-
-        // 1. SİLME (DELETE)
-        if (btn.classList.contains('btn-delete')) {
-            this.deletePost(postId, btn);
-        }
-
-        // 2. DÜZENLEME (EDIT)
-        else if (btn.classList.contains('btn-edit')) {
-            this.enableEditMode(postData);
-        }
-
-        // 3. DURUM DEĞİŞTİRME (TOGGLE STATUS)
-        else if (btn.classList.contains('btn-status')) {
-            this.toggleStatus(postData, btn);
-        }
-    }
-
-    // ============================================================
-    // 3. LİSTELEME (BUTONLAR EKLENDİ)
-    // ============================================================
-
-    async fetchPosts() {
-        this.dom.listContainer.style.display = 'block';
-        this.dom.listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#9ca3af;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br>Yükleniyor...</div>';
-
-        try {
-            const res = await fetch(`${this.apiUrl}?type=posts`);
-            const data = await res.json();
-            this.state.posts = data.posts || [];
-            this.renderList();
-        } catch (error) {
-            console.error(error);
-            this.dom.listContainer.innerHTML = '<p style="color:red; text-align:center;">Hata oluştu.</p>';
-        }
-    }
-
-    renderList() {
-        if (this.state.posts.length === 0) {
-            this.dom.listContainer.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">Henüz yazı yok.</p>';
-            return;
-        }
-
-        // --- CSS STİLLERİ (JS İçinde) ---
-        // Bu stilleri dilerseniz style.css dosyanıza taşıyabilirsiniz.
-        const btnStyle = "border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; margin-left:5px;";
-
-        const html = this.state.posts.slice().reverse().map(post => {
-            const dateDisplay = new Date(post.tarih).toLocaleDateString('tr-TR');
-            const isPublished = post.durum === 'Yayında';
-            const statusColor = isPublished ? '#10b981' : '#f59e0b';
-            
-            // Yıldız ikonu
-            const starIcon = (String(post.one_cikan) === "true") 
-                ? '<i class="fa-solid fa-star" style="color:#fbbf24; margin-left:5px;"></i>' : '';
-
-            return `
-                <div class="post-item" data-id="${post.id}" 
-                     style="background:white; border:1px solid #e5e7eb; border-radius:8px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-                    
-                    <div class="post-info" style="flex:1;">
-                        <div style="font-weight:600; font-size:1.05rem; color:#1f2937; margin-bottom:4px;">
-                            ${post.baslik} ${starIcon}
-                        </div>
-                        <div style="font-size:0.85rem; color:#6b7280; display:flex; gap:15px; align-items:center;">
-                            <span style="display:flex; align-items:center;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:${statusColor}; margin-right:6px;"></span>
-                                ${post.durum}
-                            </span>
-                            <span><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> ${dateDisplay}</span>
-                            <span style="background:#f3f4f6; padding:2px 8px; border-radius:4px; font-weight:500; font-size:0.8rem;">${post.kategori}</span>
-                        </div>
-                    </div>
-
-                    <div class="post-actions" style="display:flex; align-items:center;">
-                        
-                        <button class="btn-status" title="${isPublished ? 'Taslağa Al' : 'Yayınla'}"
-                                style="${btnStyle} background:${isPublished ? '#eff6ff' : '#fff7ed'}; color:${isPublished ? '#3b82f6' : '#f97316'};">
-                            <i class="${isPublished ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash'}"></i>
-                        </button>
-
-                        <button class="btn-edit" title="Düzenle"
-                                style="${btnStyle} background:#f0fdf4; color:#16a34a;">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-
-                        <button class="btn-delete" title="Sil"
-                                style="${btnStyle} background:#fef2f2; color:#ef4444;">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        this.dom.listContainer.innerHTML = html;
-    }
-
-    // ============================================================
-    // 4. İŞLEM FONKSİYONLARI
-    // ============================================================
-
-    // --- DÜZENLEME MODU ---
-    enableEditMode(post) {
-        console.log("Düzenleniyor:", post.baslik);
-        this.state.currentEditId = post.id;
-
-        // Formu Doldur
-        this.dom.title.value = post.baslik || "";
-        this.dom.image.value = post.resim || "";
-        this.dom.category.value = post.kategori || "Genel";
-        this.dom.desc.value = post.ozet || "";
-        this.dom.readTime.value = post.okuma_suresi || "";
-        this.dom.tags.value = post.etiketler || "";
-        this.dom.featured.checked = (String(post.one_cikan) === "true");
-
-        if (post.tarih) {
-            let isoDate = post.tarih.includes('T') ? post.tarih.split('T')[0] : post.tarih;
-            this.dom.date.value = isoDate;
-        }
-
-        if (this.quill) {
-            const delta = this.quill.clipboard.convert(post.icerik || "");
-            this.quill.setContents(delta, 'silent');
-        }
-
-        // UI Güncelle
-        this.dom.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
-        if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
-            this.dom.submitBtn.style.background = '#f59e0b';
-        }
-        if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'inline-block';
-
-        // Yukarı Kaydır
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    disableEditMode() {
-        this.state.currentEditId = null;
-        this.dom.form.reset();
-        if (this.quill) this.quill.setContents([]);
-        this.dom.date.valueAsDate = new Date();
-
-        this.dom.formTitle.innerText = "Yeni Yazı Ekle"; // Basitçe resetle
-        if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
-            this.dom.submitBtn.style.background = '';
-        }
-        if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
-    }
-
-    // --- DURUM DEĞİŞTİRME (YENİ ÖZELLİK) ---
-    async toggleStatus(post, btn) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        const newStatus = post.durum === 'Yayında' ? 'Taslak' : 'Yayında';
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; // Loading ikonu
-        btn.disabled = true;
-
-        try {
-            // Backend update_post tüm veriyi bekler, o yüzden mevcut veriyi koruyarak gönderiyoruz
-            const payload = {
-                action: "update_post",
-                id: post.id,
-                token: token,
-                baslik: post.baslik,
-                icerik: post.icerik,
-                resim: post.resim,
-                tarih: post.tarih,
-                kategori: post.kategori,
-                ozet: post.ozet,
-                durum: newStatus, // Sadece burası değişiyor
-                okuma_suresi: post.okuma_suresi,
-                etiketler: post.etiketler,
-                one_cikan: post.one_cikan
-            };
-
-            const response = await fetch(this.apiUrl, { method: "POST", body: JSON.stringify(payload) });
-            const result = await response.json();
-
-            if (result.ok) {
-                // Listeyi güncellemeden sadece UI'da durumu değiştir (Daha hızlı hissettirir)
-                post.durum = newStatus; // Local state güncelle
-                this.renderList(); // Listeyi tekrar çiz
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (error) {
-            alert("Durum güncellenemedi: " + error.message);
-            btn.innerHTML = originalIcon;
-        } finally {
-            btn.disabled = false;
-        }
-    }
-
-    // --- KAYDET / GÜNCELLE ---
-    async savePost(status) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) { alert("Oturum yok"); return; }
-        
-        const titleVal = this.dom.title.value.trim();
-        if (!titleVal) { alert("Başlık giriniz."); return; }
-
-        const activeBtn = status === 'published' ? this.dom.submitBtn : this.dom.draftBtn;
-        const oldText = activeBtn.innerHTML;
-        activeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        activeBtn.disabled = true;
-
-        try {
-            const payload = {
-                action: this.state.currentEditId ? "update_post" : "add_post",
-                id: this.state.currentEditId,
-                token: token,
-                baslik: titleVal,
-                icerik: this.quill ? this.quill.root.innerHTML : "",
-                resim: this.dom.image.value,
-                tarih: this.dom.date.value || new Date().toISOString().split('T')[0],
-                kategori: this.dom.category.value,
-                ozet: this.dom.desc.value,
-                durum: status === 'published' ? 'Yayında' : 'Taslak',
-                okuma_suresi: this.dom.readTime.value,
-                etiketler: this.dom.tags.value,
-                one_cikan: this.dom.featured.checked
-            };
-
-            const response = await fetch(this.apiUrl, { method: "POST", body: JSON.stringify(payload) });
-            const result = await response.json();
-
-            if (result.ok) {
-                alert(this.state.currentEditId ? "Güncellendi!" : "Eklendi!");
-                this.disableEditMode();
-                setTimeout(() => this.fetchPosts(), 500);
-            } else {
-                throw new Error(result.error);
-            }
-        } catch (e) { alert("Hata: " + e.message); } 
-        finally { activeBtn.innerHTML = oldText; activeBtn.disabled = false; }
-    }
-
-    // --- SİLME ---
-    async deletePost(id, btn) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-        if (!confirm("Silinsin mi?")) return;
-
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: "POST",
-                body: JSON.stringify({ token, action: "delete_row", type: "posts", id })
-            });
-            const result = await response.json();
-            if (result.ok) {
-                const row = btn.closest('.post-item');
-                row.style.opacity = "0";
-                setTimeout(() => row.remove(), 400);
-                if (String(this.state.currentEditId) === String(id)) this.disableEditMode();
-            } else { throw new Error(result.error); }
-        } catch (e) { 
-            alert("Hata: " + e.message); 
-            btn.innerHTML = originalIcon; 
-        }
-    }
-}
+let currentEditId = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.postManager = new PostManager();
+    initQuill();
+    loadCategories();
+    fetchPosts();
+    
+    const dateInput = document.getElementById('post-date');
+    if(dateInput && !dateInput.value) {
+        dateInput.valueAsDate = new Date();
+    }
 });
+
+function initQuill() {
+    if (typeof Quill !== 'undefined' && !document.querySelector('.ql-editor')) {
+        window.myQuill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
+    }
+}
+
+function loadCategories() {
+    const select = document.getElementById('post-category');
+    if(!select) return;
+    let cats = JSON.parse(localStorage.getItem('categories') || '["Genel","Teknoloji","Yazılım","Felsefe","Ekonomi","Sanat"]');
+    select.innerHTML = '';
+    cats.forEach(c => { 
+        const o = document.createElement('option'); o.value=c; o.innerText=c; select.appendChild(o); 
+    });
+}
+
+// ==========================================
+// 1. YAZILARI LİSTELEME
+// ==========================================
+async function fetchPosts() {
+    // Tabloyu tamamen gizle
+    const tableBody = document.getElementById('posts-table-body');
+    if(tableBody) {
+        const table = tableBody.closest('table');
+        if(table) table.style.display = 'none';
+    }
+
+    // Liste alanını bul veya oluştur
+    let container = document.getElementById('post-list-container');
+    if (!container && tableBody) {
+        container = document.createElement('div');
+        container.id = 'post-list-container';
+        container.className = 'post-list-container';
+        tableBody.closest('div').appendChild(container);
+    }
+
+    if(!container) return;
+    
+    // Listeyi görünür yap (Eğer gizlendiyse)
+    container.style.display = 'block';
+    // Formu "Yeni Yazı" modunda tut, ama listeyi göster
+    document.getElementById('add-post-form').style.display = 'block'; 
+
+    container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Yükleniyor...</p>';
+    
+    try {
+        const res = await fetch(`${window.API_URL}?type=posts`);
+        const data = await res.json();
+        const posts = data.posts || [];
+        
+        container.innerHTML = '';
+        if(posts.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; color:#94a3b8;">Henüz yazı yok.</p>'; 
+            return; 
+        }
+
+        posts.reverse().forEach(p => {
+            let tarihGoster = p.tarih;
+            try { if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0]; } catch(e){}
+            const statusClass = p.durum === 'Yayında' ? 'status-active' : 'status-draft';
+
+            const item = document.createElement('div');
+            item.className = 'post-item';
+            item.innerHTML = `
+                <div class="post-info">
+                    <div class="post-title-row">${p.baslik}</div>
+                    <div class="post-meta-row">
+                        <span><span class="post-status ${statusClass}"></span> ${p.durum}</span>
+                        <span><i class="fa-regular fa-calendar"></i> ${tarihGoster}</span>
+                        <span class="post-badge">${p.kategori}</span>
+                        ${p.one_cikan ? '<i class="fa-solid fa-star" style="color:gold; margin-left:5px;"></i>' : ''}
+                    </div>
+                </div>
+                <div class="post-actions">
+                   <button class="icon-btn delete-btn"><i class="fa-solid fa-trash"></i></button>
+                   <i class="fa-solid fa-chevron-right" style="margin-left:10px; opacity:0.5;"></i>
+                </div>
+            `;
+            
+            // TIKLAMA: DÜZENLEME MODUNA GEÇ
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.delete-btn')) return; // Silme butonuna basıldıysa açma
+                loadPostToEdit(p);
+            });
+
+            // SİLME BUTONU
+            const deleteBtn = item.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                deletePost(p.id, deleteBtn);
+            });
+
+            container.appendChild(item);
+        });
+
+    } catch(e) { 
+        console.error(e); 
+        container.innerHTML = '<p style="color:red;text-align:center">Veri çekilemedi.</p>'; 
+    }
+}
+
+// ==========================================
+// 2. DÜZENLEME MODU (LİSTEYİ GİZLE, EDİTÖRÜ AÇ)
+// ==========================================
+function loadPostToEdit(post) {
+    console.log("Düzenleniyor:", post.baslik);
+    currentEditId = post.id;
+
+    // 1. LİSTEYİ GİZLE (ODAKLANMA)
+    const container = document.getElementById('post-list-container');
+    if(container) container.style.display = 'none';
+
+    // 2. FORMU DOLDUR
+    document.getElementById("post-title").value = post.baslik || "";
+    document.getElementById("post-image").value = post.resim || "";
+    document.getElementById("post-category").value = post.kategori || "Genel";
+    document.getElementById("post-desc").value = post.ozet || "";
+    document.getElementById("read-time").value = post.okuma_suresi || "";
+    document.getElementById("tags-input").value = post.etiketler || "";
+    document.getElementById("post-featured").checked = (String(post.one_cikan) === "true");
+
+    if(window.myQuill) window.myQuill.root.innerHTML = post.icerik || "";
+
+    let tarihVal = post.tarih;
+    if(tarihVal && tarihVal.includes('T')) tarihVal = tarihVal.split('T')[0];
+    document.getElementById("post-date").value = tarihVal;
+
+    // 3. UI DEĞİŞİKLİKLERİ
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
+    submitBtn.style.background = '#f59e0b';
+    
+    // Başlığı Değiştir
+    const formTitle = document.querySelector('h2'); // Genelde formun başlığı h2 olur
+    if(formTitle) {
+        formTitle.dataset.original = formTitle.innerText; // Eski başlığı sakla
+        formTitle.innerText = "Yazıyı Düzenle: " + post.baslik;
+    }
+
+    // Geri Dön Butonu Ekle
+    let cancelBtn = document.getElementById('cancel-edit-btn');
+    if(!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancel-edit-btn';
+        cancelBtn.className = 'cancel-edit-btn';
+        cancelBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Vazgeç ve Listeye Dön';
+        cancelBtn.type = "button";
+        // Butonu formun en üstüne veya butonların yanına koyalım
+        // En üste koymak daha belirgin olur
+        const form = document.getElementById('add-post-form');
+        form.insertBefore(cancelBtn, form.firstChild);
+        
+        cancelBtn.onclick = resetForm;
+    }
+    cancelBtn.style.display = 'inline-block';
+    cancelBtn.style.marginBottom = '15px';
+    cancelBtn.style.background = '#475569';
+    cancelBtn.style.color = 'white';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.padding = '8px 15px';
+    cancelBtn.style.borderRadius = '6px';
+    cancelBtn.style.cursor = 'pointer';
+
+    // Sayfayı yukarı kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Modu Sıfırla (Listeye Geri Dön)
+function resetForm() {
+    currentEditId = null;
+    
+    // Formu Temizle
+    document.getElementById("add-post-form").reset();
+    if(window.myQuill) window.myQuill.setContents([]);
+    document.getElementById("post-date").valueAsDate = new Date();
+
+    // 1. LİSTEYİ GERİ GETİR
+    const container = document.getElementById('post-list-container');
+    if(container) container.style.display = 'block';
+
+    // UI Eski Haline Dönsün
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
+    submitBtn.style.background = ''; 
+
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    if(cancelBtn) cancelBtn.style.display = 'none';
+    
+    const formTitle = document.querySelector('h2');
+    if(formTitle && formTitle.dataset.original) {
+        formTitle.innerText = formTitle.dataset.original;
+    }
+}
+
+// ==========================================
+// 3. KAYDET / GÜNCELLE
+// ==========================================
+window.savePost = async (status) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        alert("Oturum süreniz dolmuş.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
+    const oldText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+    btn.disabled = true;
+    
+    try {
+        const baslik = document.getElementById("post-title").value;
+        const editorContent = window.myQuill ? window.myQuill.root.innerHTML : "";
+        if(!baslik) throw new Error("Başlık zorunlu."); 
+
+        let tarihVal = document.getElementById("post-date").value;
+        if(!tarihVal) {
+            const now = new Date();
+            tarihVal = now.toISOString().split('T')[0]; 
+        }
+
+        const actionType = currentEditId ? "update_post" : "add_post";
+
+        const postData = {
+            action: actionType,
+            id: currentEditId,
+            token: token,
+            baslik: baslik,
+            icerik: editorContent,
+            resim: document.getElementById("post-image").value,
+            tarih: tarihVal,
+            kategori: document.getElementById("post-category").value,
+            ozet: document.getElementById("post-desc").value,
+            durum: status === 'published' ? 'Yayında' : 'Taslak',
+            okuma_suresi: document.getElementById("read-time").value,
+            etiketler: document.getElementById("tags-input").value,
+            one_cikan: document.getElementById("post-featured").checked
+        };
+
+        const response = await fetch(window.API_URL, {
+            method: "POST",
+            body: JSON.stringify(postData)
+        });
+
+        const result = await response.json();
+
+        if (result.ok) {
+            alert(currentEditId ? "✅ Yazı güncellendi!" : "✅ Yazı eklendi!");
+            resetForm(); // Listeye dön
+            setTimeout(fetchPosts, 500); // Listeyi yenile
+        } else {
+            throw new Error(result.error || "İşlem başarısız.");
+        }
+
+    } catch (e) {
+        alert("HATA: " + e.message);
+    } finally {
+        btn.innerHTML = oldText;
+        btn.disabled = false;
+    }
+};
+
+// ==========================================
+// 4. SİLME İŞLEMİ
+// ==========================================
+window.deletePost = async (id, btn) => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) { alert("Token yok."); return; }
+    if(!confirm("Silmek istediğinize emin misiniz?")) return;
+    
+    const originalIcon = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    
+    try {
+        const response = await fetch(window.API_URL, { 
+            method: "POST",
+            body: JSON.stringify({
+                token: token,
+                action: "delete_row",
+                type: "posts",
+                id: id
+            })
+        });
+        const result = await response.json();
+        if (result.ok) {
+            btn.closest('.post-item').style.opacity = "0.3";
+            setTimeout(() => fetchPosts(), 1000);
+            alert("Silindi.");
+        } else { throw new Error(result.error); }
+    } catch (e) {
+        alert("Hata: " + e.message);
+        btn.innerHTML = originalIcon;
+    }
+};" admin-post.js
