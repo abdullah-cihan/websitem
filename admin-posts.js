@@ -1,301 +1,394 @@
-class BlogManager {
-    constructor() {
-        this.apiUrl = window.API_URL; // Global API URL'ini al
-        this.token = localStorage.getItem('adminToken');
-        
-        // Durum (State) Yönetimi
-        this.posts = [];
-        this.currentEditId = null;
-        this.categories = JSON.parse(localStorage.getItem('categories') || '["Genel","Teknoloji","Yazılım","Hayat","Seyahat"]');
+/**
+ * ADMIN POSTS MANAGER (MODERN)
+ * Özellikler: ES6 Class Yapısı, Event Delegation, Async/Await
+ */
 
-        // DOM Elementlerini Tanımla
-        this.ui = {
-            viewList: document.getElementById('view-list'),
-            viewEditor: document.getElementById('view-editor'),
-            postsContainer: document.getElementById('posts-container'),
-            form: document.getElementById('post-form'),
-            searchInput: document.getElementById('search-input'),
-            titleDisplay: document.getElementById('form-title'),
-            btnNew: document.getElementById('btn-new-post'),
-            btnCancel: document.getElementById('btn-cancel'),
-            btnSaveDraft: document.getElementById('btn-save-draft'),
-            inputs: {
-                title: document.getElementById('inp-title'),
-                category: document.getElementById('inp-category'),
-                date: document.getElementById('inp-date'),
-                image: document.getElementById('inp-image'),
-                desc: document.getElementById('inp-desc'),
-                readTime: document.getElementById('inp-readtime'),
-                tags: document.getElementById('inp-tags'),
-                featured: document.getElementById('inp-featured'),
-            }
+class PostManager {
+    constructor() {
+        // Yapılandırma ve State
+        this.apiUrl = window.API_URL;
+        this.state = {
+            currentEditId: null,
+            posts: []
+        };
+        
+        // DOM Elementlerini Önbelleğe Al
+        this.dom = {
+            listContainer: document.getElementById('post-list-container'),
+            tableBody: document.getElementById('posts-table-body'),
+            form: document.getElementById('add-post-form'),
+            formTitle: document.querySelector('#add-post-form h2'),
+            categorySelect: document.getElementById('post-category'),
+            dateInput: document.getElementById('post-date'),
+            cancelBtn: null, // Dinamik oluşturulacak
+            submitBtn: document.querySelector('.btn-submit'),
+            draftBtn: document.querySelector('.btn-draft')
         };
 
+        // Quill Editör Referansı
+        this.quill = null;
+
+        // Başlat
         this.init();
     }
 
-    init() {
-        if (!this.token) {
-            window.location.href = 'login.html';
-            return;
-        }
-
+    async init() {
         this.initQuill();
+        this.initDateInput();
         this.loadCategories();
-        this.fetchPosts();
-        this.addEventListeners();
+        this.bindGlobalEvents(); // Form butonlarını dinle
+        await this.fetchPosts();
     }
 
+    // --- 1. BAŞLANGIÇ AYARLARI ---
+
     initQuill() {
-        this.quill = new Quill('#quill-editor', {
-            theme: 'snow',
-            placeholder: 'Harika bir içerik oluştur...',
-            modules: {
-                toolbar: [
-                    [{ 'header': [1, 2, 3, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    ['link', 'image', 'code-block'],
-                    ['clean']
-                ]
-            }
-        });
+        if (typeof Quill !== 'undefined' && !this.quill) {
+            this.quill = new Quill('#editor-container', { 
+                theme: 'snow', 
+                placeholder: 'İçerik buraya...' 
+            });
+        }
+    }
+
+    initDateInput() {
+        if (this.dom.dateInput && !this.dom.dateInput.value) {
+            this.dom.dateInput.valueAsDate = new Date();
+        }
     }
 
     loadCategories() {
-        this.ui.inputs.category.innerHTML = this.categories
-            .map(c => `<option value="${c}">${c}</option>`).join('');
-    }
-
-    addEventListeners() {
-        // Yeni Yazı Butonu
-        this.ui.btnNew.addEventListener('click', () => this.switchView('editor'));
+        if (!this.dom.categorySelect) return;
         
-        // Vazgeç Butonu
-        this.ui.btnCancel.addEventListener('click', () => this.switchView('list'));
+        const storedCats = localStorage.getItem('categories');
+        const defaultCats = ["Genel", "Teknoloji", "Yazılım", "Felsefe", "Ekonomi", "Sanat"];
+        const cats = storedCats ? JSON.parse(storedCats) : defaultCats;
 
-        // Form Submit (Yayınla)
-        this.ui.form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.savePost('Yayında');
-        });
-
-        // Taslak Kaydet
-        this.ui.btnSaveDraft.addEventListener('click', (e) => {
-            e.preventDefault();
-            this.savePost('Taslak');
-        });
-
-        // Arama
-        this.ui.searchInput.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = this.posts.filter(p => p.baslik.toLowerCase().includes(term));
-            this.renderPosts(filtered);
-        });
+        this.dom.categorySelect.innerHTML = cats
+            .map(c => `<option value="${c}">${c}</option>`)
+            .join('');
     }
 
-    switchView(mode) {
-        if (mode === 'editor') {
-            this.ui.viewList.style.display = 'none';
-            this.ui.viewEditor.style.display = 'block';
-            
-            // Eğer yeni bir yazıysa formu temizle
-            if (!this.currentEditId) {
-                this.resetForm();
-                this.ui.titleDisplay.innerText = "Yeni Yazı Oluştur";
-            } else {
-                this.ui.titleDisplay.innerText = "Yazıyı Düzenle";
-            }
-        } else {
-            this.ui.viewList.style.display = 'block';
-            this.ui.viewEditor.style.display = 'none';
-            this.currentEditId = null; // ID'yi sıfırla
-            this.resetForm();
+    bindGlobalEvents() {
+        // Kaydet Butonu (Yayında)
+        if (this.dom.submitBtn) {
+            this.dom.submitBtn.addEventListener('click', () => this.savePost('published'));
+        }
+        
+        // Taslak Butonu
+        if (this.dom.draftBtn) {
+            this.dom.draftBtn.addEventListener('click', () => this.savePost('draft'));
+        }
+
+        // Liste Üzerindeki Tıklamalar (Event Delegation)
+        // Düzenle ve Sil butonları için tek bir dinleyici
+        if (this.dom.listContainer) {
+            this.dom.listContainer.addEventListener('click', (e) => {
+                const target = e.target;
+                const postItem = target.closest('.post-item');
+                const deleteBtn = target.closest('.delete-btn');
+
+                if (!postItem) return;
+
+                // Silme Butonuna Tıklandıysa
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    const postId = postItem.dataset.id;
+                    this.deletePost(postId, deleteBtn);
+                    return;
+                }
+
+                // Postun Kendisine Tıklandıysa (Düzenleme Modu)
+                const postData = this.state.posts.find(p => String(p.id) === String(postItem.dataset.id));
+                if (postData) {
+                    this.enableEditMode(postData);
+                }
+            });
         }
     }
 
-    resetForm() {
-        this.ui.form.reset();
-        this.quill.setContents([]);
-        this.ui.inputs.date.valueAsDate = new Date();
-    }
-
-    // ================= VERİ İŞLEMLERİ =================
+    // --- 2. VERİ ÇEKME VE LİSTELEME ---
 
     async fetchPosts() {
-        this.ui.postsContainer.innerHTML = '';
-        document.getElementById('loading-spinner').style.display = 'block';
+        // Tabloyu gizle, liste konteynerini hazırla
+        if (this.dom.tableBody) this.dom.tableBody.closest('table').style.display = 'none';
+        
+        if (!this.dom.listContainer) {
+            // Konteyner yoksa oluştur
+            const wrapper = document.createElement('div');
+            wrapper.id = 'post-list-container';
+            wrapper.className = 'post-list-container';
+            this.dom.tableBody?.closest('div').appendChild(wrapper);
+            this.dom.listContainer = wrapper;
+            // Event listener'ı yeni elemana tekrar bağla
+            this.bindGlobalEvents(); 
+        }
+
+        // UI Reset
+        this.dom.listContainer.style.display = 'block';
+        this.dom.form.style.display = 'block';
+        this.dom.listContainer.innerHTML = this.renderLoading();
 
         try {
             const res = await fetch(`${this.apiUrl}?type=posts`);
             const data = await res.json();
-            
-            if (data.posts) {
-                this.posts = data.posts.reverse(); // En yeniden eskiye
-                this.renderPosts(this.posts);
-            }
+            this.state.posts = data.posts || [];
+
+            this.renderList();
         } catch (error) {
             console.error(error);
-            Swal.fire('Hata', 'Veriler çekilemedi.', 'error');
-        } finally {
-            document.getElementById('loading-spinner').style.display = 'none';
+            this.dom.listContainer.innerHTML = `<p class="text-center text-red-500">Veriler yüklenirken hata oluştu.</p>`;
         }
     }
 
-    renderPosts(postsToRender) {
-        if (postsToRender.length === 0) {
-            this.ui.postsContainer.innerHTML = '<p style="text-align:center; color:#94a3b8;">Kayıtlı yazı bulunamadı.</p>';
+    renderList() {
+        if (this.state.posts.length === 0) {
+            this.dom.listContainer.innerHTML = '<p class="text-center text-gray-400 p-5">Henüz yazı yok.</p>';
             return;
         }
 
-        this.ui.postsContainer.innerHTML = postsToRender.map(p => {
-            const isPublished = p.durum === 'Yayında';
-            const statusIcon = isPublished ? 'fa-check-circle' : 'fa-clock';
-            const statusClass = isPublished ? 'published' : 'draft';
-            const dateStr = p.tarih ? new Date(p.tarih).toLocaleDateString('tr-TR') : '-';
+        // HTML string oluştur (Map kullanımı performanslıdır)
+        const html = this.state.posts.slice().reverse().map(post => {
+            const dateDisplay = new Date(post.tarih).toLocaleDateString('tr-TR');
+            const statusClass = post.durum === 'Yayında' ? 'status-active' : 'status-draft';
+            const starIcon = post.one_cikan ? '<i class="fa-solid fa-star text-yellow-400 ml-2"></i>' : '';
 
             return `
-                <div class="post-card">
+                <div class="post-item" data-id="${post.id}">
                     <div class="post-info">
-                        <h3>${p.baslik} ${p.one_cikan ? '<i class="fa-solid fa-star" style="color:#f59e0b; font-size:12px;"></i>' : ''}</h3>
-                        <div class="post-meta">
-                            <span class="badge badge-cat">${p.kategori}</span>
-                            <span class="badge badge-status ${statusClass}"><i class="fa-solid ${statusIcon}"></i> ${p.durum}</span>
-                            <span><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
+                        <div class="post-title-row font-bold">${post.baslik}</div>
+                        <div class="post-meta-row text-sm text-gray-500 mt-1">
+                            <span class="mr-3"><span class="post-status ${statusClass} w-2 h-2 inline-block rounded-full mr-1"></span> ${post.durum}</span>
+                            <span class="mr-3"><i class="fa-regular fa-calendar"></i> ${dateDisplay}</span>
+                            <span class="post-badge bg-gray-200 px-2 py-0.5 rounded text-xs">${post.kategori}</span>
+                            ${starIcon}
                         </div>
                     </div>
-                    <div class="post-actions-btn">
-                        <button class="icon-btn edit" onclick="blogManager.editPost(${p.id})"><i class="fa-solid fa-pen"></i></button>
-                        <button class="icon-btn delete" onclick="blogManager.deletePost(${p.id})"><i class="fa-solid fa-trash"></i></button>
+                    <div class="post-actions opacity-50 hover:opacity-100 transition-opacity">
+                        <button class="icon-btn delete-btn text-red-500 p-2 hover:bg-red-50 rounded"><i class="fa-solid fa-trash"></i></button>
+                        <i class="fa-solid fa-chevron-right ml-2"></i>
                     </div>
                 </div>
             `;
         }).join('');
+
+        this.dom.listContainer.innerHTML = html;
     }
 
-    // ================= DÜZENLEME & KAYDETME =================
-
-    editPost(id) {
-        const post = this.posts.find(p => p.id === id);
-        if (!post) return;
-
-        this.currentEditId = id;
-        
-        // Form Alanlarını Doldur
-        this.ui.inputs.title.value = post.baslik;
-        this.ui.inputs.category.value = post.kategori;
-        this.ui.inputs.date.value = post.tarih ? post.tarih.split('T')[0] : '';
-        this.ui.inputs.image.value = post.resim || '';
-        this.ui.inputs.desc.value = post.ozet || '';
-        this.ui.inputs.readTime.value = post.okuma_suresi || '';
-        this.ui.inputs.tags.value = post.etiketler || '';
-        this.ui.inputs.featured.checked = (String(post.one_cikan) === "true");
-        
-        // Quill Editöre İçeriği Bas
-        this.quill.root.innerHTML = post.icerik || '';
-
-        this.switchView('editor');
+    renderLoading() {
+        return '<p class="text-center text-gray-400 p-5"><i class="fa-solid fa-circle-notch fa-spin"></i> Yükleniyor...</p>';
     }
 
-    async savePost(status) {
-        const title = this.ui.inputs.title.value;
-        if (!title) {
-            Swal.fire('Eksik Bilgi', 'Lütfen yazı başlığını girin.', 'warning');
-            return;
+    // --- 3. DÜZENLEME MODU (FOCUS MODE) ---
+
+    enableEditMode(post) {
+        console.log("Düzenleme Modu:", post.baslik);
+        this.state.currentEditId = post.id;
+
+        // UI Değişiklikleri
+        this.dom.listContainer.style.display = 'none'; // Listeyi gizle
+        this.updateFormTitle(`Yazıyı Düzenle: ${post.baslik}`);
+        this.toggleSubmitButtonState(true); // Buton rengini değiştir
+        this.createOrShowCancelButton();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Formu Doldur
+        this.fillForm(post);
+    }
+
+    disableEditMode() {
+        this.state.currentEditId = null;
+        
+        // UI Reset
+        this.dom.form.reset();
+        if (this.quill) this.quill.setContents([]);
+        this.dom.dateInput.valueAsDate = new Date();
+
+        this.dom.listContainer.style.display = 'block'; // Listeyi göster
+        this.updateFormTitle(null); // Orijinal başlığa dön
+        this.toggleSubmitButtonState(false);
+        
+        if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
+    }
+
+    fillForm(post) {
+        document.getElementById("post-title").value = post.baslik || "";
+        document.getElementById("post-image").value = post.resim || "";
+        document.getElementById("post-category").value = post.kategori || "Genel";
+        document.getElementById("post-desc").value = post.ozet || "";
+        document.getElementById("read-time").value = post.okuma_suresi || "";
+        document.getElementById("tags-input").value = post.etiketler || "";
+        document.getElementById("post-featured").checked = (String(post.one_cikan) === "true");
+        
+        // Tarih (YYYY-MM-DD formatı input için gereklidir)
+        if (post.tarih) {
+            const isoDate = post.tarih.includes('T') ? post.tarih.split('T')[0] : post.tarih;
+            this.dom.dateInput.value = isoDate;
         }
 
-        const btn = status === 'Yayında' ? document.getElementById('btn-publish') : this.ui.btnSaveDraft;
-        const oldText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        btn.disabled = true;
+        if (this.quill) this.quill.root.innerHTML = post.icerik || "";
+    }
 
-        const postData = {
-            action: this.currentEditId ? "update_post" : "add_post",
-            id: this.currentEditId,
-            token: this.token,
-            baslik: title,
-            icerik: this.quill.root.innerHTML,
-            resim: this.ui.inputs.image.value,
-            tarih: this.ui.inputs.date.value || new Date().toISOString().split('T')[0],
-            kategori: this.ui.inputs.category.value,
-            ozet: this.ui.inputs.desc.value,
-            durum: status,
-            okuma_suresi: this.ui.inputs.readTime.value,
-            etiketler: this.ui.inputs.tags.value,
-            one_cikan: this.ui.inputs.featured.checked
-        };
+    // --- 4. UI YARDIMCILARI ---
+
+    updateFormTitle(text) {
+        if (!this.dom.formTitle) return;
+        
+        if (!this.dom.formTitle.dataset.original) {
+            this.dom.formTitle.dataset.original = this.dom.formTitle.innerText;
+        }
+        
+        this.dom.formTitle.innerText = text || this.dom.formTitle.dataset.original;
+    }
+
+    toggleSubmitButtonState(isEditing) {
+        if (!this.dom.submitBtn) return;
+        
+        if (isEditing) {
+            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
+            this.dom.submitBtn.style.background = '#f59e0b'; // Amber
+        } else {
+            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
+            this.dom.submitBtn.style.background = '';
+        }
+    }
+
+    createOrShowCancelButton() {
+        if (!this.dom.cancelBtn) {
+            const btn = document.createElement('button');
+            btn.type = "button";
+            btn.className = 'cancel-edit-btn mb-4 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition';
+            btn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Vazgeç ve Listeye Dön';
+            btn.onclick = () => this.disableEditMode();
+            
+            this.dom.form.insertBefore(btn, this.dom.form.firstChild);
+            this.dom.cancelBtn = btn;
+        }
+        this.dom.cancelBtn.style.display = 'inline-block';
+    }
+
+    // --- 5. KAYDETME VE SİLME İŞLEMLERİ ---
+
+    async savePost(status) {
+        const token = localStorage.getItem('adminToken');
+        if (!token) return this.handleAuthError();
+
+        const activeBtn = status === 'published' ? this.dom.submitBtn : this.dom.draftBtn;
+        const originalText = activeBtn.innerHTML;
+        
+        this.setLoading(activeBtn, true);
 
         try {
+            const formValues = this.getFormValues(status);
+            const actionType = this.state.currentEditId ? "update_post" : "add_post";
+
+            const payload = {
+                action: actionType,
+                id: this.state.currentEditId,
+                token: token,
+                ...formValues
+            };
+
             const response = await fetch(this.apiUrl, {
                 method: "POST",
-                body: JSON.stringify(postData)
+                body: JSON.stringify(payload)
             });
+
             const result = await response.json();
 
             if (result.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Başarılı!',
-                    text: this.currentEditId ? 'Yazı güncellendi.' : 'Yeni yazı eklendi.',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-                this.switchView('list');
-                this.fetchPosts();
+                alert(this.state.currentEditId ? "✅ Yazı başarıyla güncellendi!" : "✅ Yeni yazı eklendi!");
+                this.disableEditMode(); // Resetle ve listeye dön
+                setTimeout(() => this.fetchPosts(), 500); // Listeyi yenile
             } else {
-                throw new Error(result.error);
+                throw new Error(result.error || "İşlem başarısız.");
             }
-        } catch (e) {
-            Swal.fire('Hata', 'Kaydedilemedi: ' + e.message, 'error');
+
+        } catch (error) {
+            alert("HATA: " + error.message);
         } finally {
-            btn.innerHTML = oldText;
-            btn.disabled = false;
+            this.setLoading(activeBtn, false, originalText);
         }
     }
 
-    // ================= SİLME İŞLEMİ =================
+    getFormValues(status) {
+        const title = document.getElementById("post-title").value;
+        if (!title) throw new Error("Başlık alanı zorunludur.");
 
-    async deletePost(id) {
-        const result = await Swal.fire({
-            title: 'Emin misiniz?',
-            text: "Bu yazı kalıcı olarak silinecek!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#cbd5e1',
-            confirmButtonText: 'Evet, Sil',
-            cancelButtonText: 'Vazgeç'
-        });
+        let dateVal = this.dom.dateInput.value;
+        if (!dateVal) dateVal = new Date().toISOString().split('T')[0];
 
-        if (!result.isConfirmed) return;
+        return {
+            baslik: title,
+            icerik: this.quill ? this.quill.root.innerHTML : "",
+            resim: document.getElementById("post-image").value,
+            tarih: dateVal,
+            kategori: document.getElementById("post-category").value,
+            ozet: document.getElementById("post-desc").value,
+            durum: status === 'published' ? 'Yayında' : 'Taslak',
+            okuma_suresi: document.getElementById("read-time").value,
+            etiketler: document.getElementById("tags-input").value,
+            one_cikan: document.getElementById("post-featured").checked
+        };
+    }
+
+    async deletePost(id, btnElement) {
+        const token = localStorage.getItem('adminToken');
+        if (!token) return this.handleAuthError();
+        
+        if (!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
+
+        const originalIcon = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
             const response = await fetch(this.apiUrl, {
                 method: "POST",
                 body: JSON.stringify({
-                    token: this.token,
+                    token: token,
                     action: "delete_row",
                     type: "posts",
                     id: id
                 })
             });
-            const data = await response.json();
 
-            if (data.ok) {
-                this.posts = this.posts.filter(p => p.id !== id); // Array'den sil
-                this.renderPosts(this.posts); // Tekrar render et (API çağırmadan)
-                Swal.fire('Silindi!', 'Yazı başarıyla silindi.', 'success');
+            const result = await response.json();
+
+            if (result.ok) {
+                // UI'dan satırı sil (yeniden fetch etmeye gerek kalmadan)
+                const row = btnElement.closest('.post-item');
+                row.style.transition = "all 0.5s";
+                row.style.opacity = "0";
+                row.style.transform = "translateX(20px)";
+                setTimeout(() => row.remove(), 500);
             } else {
-                throw new Error(data.error);
+                throw new Error(result.error);
             }
-        } catch (e) {
-            Swal.fire('Hata', 'Silme işlemi başarısız: ' + e.message, 'error');
+        } catch (error) {
+            alert("Silme hatası: " + error.message);
+            btnElement.innerHTML = originalIcon;
         }
+    }
+
+    // --- YARDIMCI FONKSİYONLAR ---
+
+    setLoading(btn, isLoading, originalText = '') {
+        if (!btn) return;
+        btn.disabled = isLoading;
+        if (isLoading) {
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+        } else {
+            btn.innerHTML = originalText;
+        }
+    }
+
+    handleAuthError() {
+        alert("Oturum süreniz dolmuş. Giriş sayfasına yönlendiriliyorsunuz.");
+        window.location.href = "login.html";
     }
 }
 
 // Uygulamayı Başlat
 document.addEventListener('DOMContentLoaded', () => {
-    // Global değişkene ata ki HTML içindeki onclick fonksiyonları erişebilsin
-    window.blogManager = new BlogManager();
+    window.postManager = new PostManager();
 });
