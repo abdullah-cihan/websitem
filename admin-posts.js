@@ -148,12 +148,15 @@ window.deletePost = async (id, btn) => {
     btn.disabled = true;
 
     try {
+        // 👇 BURASI DÜZELTİLDİ: 'a, {' yerine doğru fetch komutu geldi
         await fetch(window.API_URL, { 
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify({
-                auth: window.API_KEY, // 🔑 GÜVENLİK
+                // 👇 BURASI DÜZELTİLDİ: auth yerine token eklendi
+                token: localStorage.getItem('adminToken'), 
+                
                 action: "delete_row",
                 type: "posts",
                 id: id
