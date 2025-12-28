@@ -1,28 +1,28 @@
 /**
  * ==========================================
- * MODERN ADMIN POST MANAGER (BUTONLU LİSTE VERSİYONU)
- * Backend: Google Apps Script (Code.gs)
- * Özellikler: Satır içi Silme, Durum Değiştirme, Düzenleme, TAB GEÇİŞİ
+ * MODERN ADMIN POST MANAGER (TAM SÜRÜM)
+ * Özellikler: Düzenleme, Silme, Durum Değiştirme, Sekme Geçişi, VAZGEÇME
  * ==========================================
  */
 
 class PostManager {
     constructor() {
-        // --- 1. AYARLAR VE STATE ---
         this.apiUrl = window.API_URL;
         this.state = {
-            currentEditId: null, // Şu an düzenlenen yazının ID'si
-            posts: []            // API'den çekilen tüm yazılar
+            currentEditId: null, // Düzenlenen ID
+            posts: []            // Yazı verileri
         };
         
-        // --- 2. DOM ELEMENTLERİNİ SEÇ ---
+        // DOM Elementleri
         this.dom = {
             listContainer: document.getElementById('post-list-container'),
             tableBody: document.getElementById('posts-table-body'),
             
-            // Form Alanları
+            // Form ve Başlık (DÜZELTİLDİ)
             form: document.getElementById('add-post-form'),
-            formTitle: document.querySelector('#add-post-form h2'), // Bu bazen null olabilir, kontrol edeceğiz
+            // Başlık .form-header içinde olduğu için seçiciyi güncelledik:
+            formHeader: document.querySelector('.editor-wrapper .form-header'), 
+            formTitle: document.querySelector('.editor-wrapper .form-header h2'),
             
             // Inputlar
             title: document.getElementById('post-title'),
@@ -34,7 +34,7 @@ class PostManager {
             date: document.getElementById('post-date'),
             featured: document.getElementById('post-featured'),
             
-            // Ana Butonlar
+            // Butonlar
             submitBtn: document.querySelector('.btn-submit'),
             draftBtn: document.querySelector('.btn-draft'),
             cancelBtn: null 
@@ -48,14 +48,12 @@ class PostManager {
         this.initQuill();
         this.initDateInput();
         this.loadCategories();
-        this.createCancelButton();
+        this.createCancelButton(); // Vazgeç butonunu oluştur
         this.bindEvents();        
         await this.fetchPosts();  
     }
 
-    // ============================================================
-    // 1. KURULUMLAR
-    // ============================================================
+    // --- 1. KURULUMLAR ---
 
     initQuill() {
         if (typeof Quill !== 'undefined' && !this.quill) {
@@ -77,34 +75,44 @@ class PostManager {
         this.dom.category.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
     }
 
+    // --- VAZGEÇ BUTONUNU OLUŞTURMA (YENİ) ---
     createCancelButton() {
+        // Eğer zaten varsa tekrar oluşturma
+        if (this.dom.cancelBtn) return;
+
         const btn = document.createElement('button');
         btn.type = "button";
-        btn.className = "cancel-edit-btn"; 
-        btn.style.cssText = "display:none; margin-bottom:15px; padding:8px 15px; background:#ef4444; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.9rem; transition: background 0.2s;";
-        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç / Yeni Ekleme Moduna Dön';
+        btn.className = "btn-cancel-edit"; 
+        // Şık bir kırmızı buton stili
+        btn.style.cssText = "display:none; margin-left: auto; padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; align-items: center; gap: 5px;";
+        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç';
+        
+        // Tıklanınca düzenleme modundan çık
         btn.onclick = () => this.disableEditMode();
         
-        if(this.dom.form) {
+        // Butonu başlığın yanına (.form-header içine) ekle
+        if(this.dom.formHeader) {
+            // Header'ın stilini flex yaparak başlık ve butonu yan yana koyalım
+            this.dom.formHeader.style.display = "flex";
+            this.dom.formHeader.style.alignItems = "center";
+            this.dom.formHeader.style.justifyContent = "space-between";
+            this.dom.formHeader.appendChild(btn);
+            this.dom.cancelBtn = btn;
+        } else if (this.dom.form) {
+            // Header yoksa formun en başına ekle
             this.dom.form.insertBefore(btn, this.dom.form.firstChild);
             this.dom.cancelBtn = btn;
         }
     }
 
-    // ============================================================
-    // 2. OLAY DİNLEYİCİLERİ
-    // ============================================================
+    // --- 2. EVENTLER ---
 
     bindEvents() {
-        // Form Gönderimi
         if (this.dom.submitBtn) this.dom.submitBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('published'); });
         if (this.dom.draftBtn) this.dom.draftBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('draft'); });
 
-        // Liste Konteynerini Hazırla
         if (!this.dom.listContainer) this.setupListContainer();
-
-        // LİSTE TIKLAMA OLAYLARI (Delegation)
-        if(this.dom.listContainer) {
+        if (this.dom.listContainer) {
             this.dom.listContainer.addEventListener('click', (e) => this.handleListClick(e));
         }
     }
@@ -114,13 +122,10 @@ class PostManager {
             const parentTable = this.dom.tableBody.closest('table');
             if (parentTable) parentTable.style.display = 'none';
         }
-        
-        // Eğer zaten varsa tekrar oluşturma
         if(document.getElementById('post-list-container')) {
              this.dom.listContainer = document.getElementById('post-list-container');
              return;
         }
-
         const wrapper = document.createElement('div');
         wrapper.id = 'post-list-container';
         wrapper.className = 'post-list-container';
@@ -131,10 +136,8 @@ class PostManager {
 
     handleListClick(e) {
         const target = e.target;
-        
-        // Butonu bul (ikon tıklansa bile butonu yakala)
         const btn = target.closest('button'); 
-        if (!btn) return; // Butona tıklanmadıysa işlem yapma
+        if (!btn) return; 
 
         const postItem = btn.closest('.post-item');
         if (!postItem) return;
@@ -142,33 +145,23 @@ class PostManager {
         const postId = postItem.dataset.id;
         const postData = this.state.posts.find(p => String(p.id) === String(postId));
 
-        if (!postData) { console.error("Veri bulunamadı"); return; }
+        if (!postData) return;
 
-        // --- BUTON TİPLERİNE GÖRE İŞLEMLER ---
-
-        // 1. SİLME (DELETE)
         if (btn.classList.contains('btn-delete')) {
             this.deletePost(postId, btn);
         }
-
-        // 2. DÜZENLEME (EDIT) -> BURASI KRİTİK
         else if (btn.classList.contains('btn-edit')) {
             this.enableEditMode(postData);
         }
-
-        // 3. DURUM DEĞİŞTİRME (TOGGLE STATUS)
         else if (btn.classList.contains('btn-status')) {
             this.toggleStatus(postData, btn);
         }
     }
 
-    // ============================================================
-    // 3. LİSTELEME
-    // ============================================================
+    // --- 3. LİSTELEME ---
 
     async fetchPosts() {
         if(!this.dom.listContainer) return;
-
         this.dom.listContainer.style.display = 'block';
         this.dom.listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#9ca3af;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br>Yükleniyor...</div>';
 
@@ -195,9 +188,7 @@ class PostManager {
             const dateDisplay = new Date(post.tarih).toLocaleDateString('tr-TR');
             const isPublished = post.durum === 'Yayında';
             const statusColor = isPublished ? '#10b981' : '#f59e0b';
-            
-            const starIcon = (String(post.one_cikan) === "true") 
-                ? '<i class="fa-solid fa-star" style="color:#fbbf24; margin-left:5px;"></i>' : '';
+            const starIcon = (String(post.one_cikan) === "true") ? '<i class="fa-solid fa-star" style="color:#fbbf24; margin-left:5px;"></i>' : '';
 
             return `
                 <div class="post-item" data-id="${post.id}" 
@@ -218,22 +209,15 @@ class PostManager {
                     </div>
 
                     <div class="post-actions" style="display:flex; align-items:center;">
-                        
-                        <button class="btn-status" title="${isPublished ? 'Taslağa Al' : 'Yayınla'}"
-                                style="${btnStyle} background:rgba(59, 130, 246, 0.1); color:#60a5fa;">
+                        <button class="btn-status" title="${isPublished ? 'Taslağa Al' : 'Yayınla'}" style="${btnStyle} background:rgba(59, 130, 246, 0.1); color:#60a5fa;">
                             <i class="${isPublished ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash'}"></i>
                         </button>
-
-                        <button class="btn-edit" title="Düzenle"
-                                style="${btnStyle} background:rgba(16, 185, 129, 0.1); color:#34d399;">
+                        <button class="btn-edit" title="Düzenle" style="${btnStyle} background:rgba(16, 185, 129, 0.1); color:#34d399;">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-
-                        <button class="btn-delete" title="Sil"
-                                style="${btnStyle} background:rgba(239, 68, 68, 0.1); color:#f87171;">
+                        <button class="btn-delete" title="Sil" style="${btnStyle} background:rgba(239, 68, 68, 0.1); color:#f87171;">
                             <i class="fa-solid fa-trash"></i>
                         </button>
-
                     </div>
                 </div>
             `;
@@ -242,25 +226,20 @@ class PostManager {
         this.dom.listContainer.innerHTML = html;
     }
 
-    // ============================================================
-    // 4. İŞLEM FONKSİYONLARI
-    // ============================================================
+    // --- 4. MODLAR (EDIT / VAZGEÇ) ---
 
-    // --- DÜZENLEME MODU (BURASI DEĞİŞTİ: TAB GEÇİŞİ EKLENDİ) ---
     enableEditMode(post) {
         console.log("Düzenleniyor:", post.baslik);
         this.state.currentEditId = post.id;
 
-        // 1. EKRANI "YENİ EKLE" SEKMESİNE GEÇİR (KÖPRÜ)
-        // admin.html'de tanımladığımız global fonksiyonu çağırıyoruz
+        // Sekmeyi değiştir (Köprü)
         if (window.switchToEditorTab) {
             window.switchToEditorTab();
         } else if (typeof showSection === 'function') {
-            // Eğer bridge yoksa manuel dene
             showSection('new-post');
         }
 
-        // 2. Formu Doldur
+        // Formu Doldur
         if(this.dom.title) this.dom.title.value = post.baslik || "";
         if(this.dom.image) this.dom.image.value = post.resim || "";
         if(this.dom.category) this.dom.category.value = post.kategori || "Genel";
@@ -279,46 +258,59 @@ class PostManager {
             this.quill.setContents(delta, 'silent');
         }
 
-        // 3. UI Güncelle (Başlık ve Buton)
+        // UI Güncelle (Başlık ve Butonlar)
         if(this.dom.formTitle) {
-            // Başlığı sakla
+            // Orijinal başlığı sakla (eğer henüz saklanmadıysa)
             if (!this.dom.formTitle.dataset.original) {
-                this.dom.formTitle.dataset.original = this.dom.formTitle.innerHTML;
+                this.dom.formTitle.dataset.original = this.dom.formTitle.innerText; // .innerHTML yerine .innerText daha temiz
             }
-            this.dom.formTitle.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
+            this.dom.formTitle.innerHTML = `Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
         }
         
         if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
-            this.dom.submitBtn.style.background = '#f59e0b';
+            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Güncelle';
+            this.dom.submitBtn.style.background = '#f59e0b'; // Turuncu
         }
-        if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'inline-block';
+        
+        // Vazgeç butonunu göster
+        if (this.dom.cancelBtn) {
+            this.dom.cancelBtn.style.display = 'flex'; // Flex ile ortalı görünsün
+        }
 
-        // 4. Yukarı Kaydır
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    // --- VAZGEÇ VE SIFIRLA ---
     disableEditMode() {
+        console.log("Düzenleme modu iptal edildi.");
         this.state.currentEditId = null;
+
+        // Formu temizle
         if(this.dom.form) this.dom.form.reset();
         if (this.quill) this.quill.setContents([]);
         if(this.dom.date) this.dom.date.valueAsDate = new Date();
 
         // Başlığı eski haline getir
-        if(this.dom.formTitle && this.dom.formTitle.dataset.original) {
-             this.dom.formTitle.innerHTML = this.dom.formTitle.dataset.original;
-        } else if (this.dom.formTitle) {
-             this.dom.formTitle.innerText = "Yeni Yazı Ekle";
+        if(this.dom.formTitle) {
+            if (this.dom.formTitle.dataset.original) {
+                this.dom.formTitle.innerText = this.dom.formTitle.dataset.original;
+            } else {
+                this.dom.formTitle.innerText = "Yazı Editörü";
+            }
         }
 
+        // Kaydet butonunu eski haline getir
         if (this.dom.submitBtn) {
             this.dom.submitBtn.innerHTML = 'Yayınla';
-            this.dom.submitBtn.style.background = '';
+            this.dom.submitBtn.style.background = ''; // CSS varsayılanına dön
         }
+
+        // Vazgeç butonunu gizle
         if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
     }
 
-    // --- DURUM DEĞİŞTİRME ---
+    // --- 5. VERİTABANI İŞLEMLERİ ---
+
     async toggleStatus(post, btn) {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
@@ -333,13 +325,14 @@ class PostManager {
                 action: "update_post",
                 id: post.id,
                 token: token,
+                // Mevcut verileri koru, sadece durumu değiştir
                 baslik: post.baslik,
                 icerik: post.icerik,
                 resim: post.resim,
                 tarih: post.tarih,
                 kategori: post.kategori,
                 ozet: post.ozet,
-                durum: newStatus,
+                durum: newStatus, 
                 okuma_suresi: post.okuma_suresi,
                 etiketler: post.etiketler,
                 one_cikan: post.one_cikan
@@ -351,18 +344,13 @@ class PostManager {
             if (result.ok) {
                 post.durum = newStatus;
                 this.renderList();
-            } else {
-                throw new Error(result.error);
-            }
+            } else { throw new Error(result.error); }
         } catch (error) {
             alert("Hata: " + error.message);
             btn.innerHTML = originalIcon;
-        } finally {
-            btn.disabled = false;
-        }
+        } finally { btn.disabled = false; }
     }
 
-    // --- KAYDET / GÜNCELLE ---
     async savePost(status) {
         const token = localStorage.getItem('adminToken');
         if (!token) { alert("Oturum yok"); return; }
@@ -397,16 +385,13 @@ class PostManager {
 
             if (result.ok) {
                 alert(this.state.currentEditId ? "Güncellendi!" : "Eklendi!");
-                this.disableEditMode();
+                this.disableEditMode(); // Formu sıfırla
                 setTimeout(() => this.fetchPosts(), 500);
-            } else {
-                throw new Error(result.error);
-            }
+            } else { throw new Error(result.error); }
         } catch (e) { alert("Hata: " + e.message); } 
         finally { activeBtn.innerHTML = oldText; activeBtn.disabled = false; }
     }
 
-    // --- SİLME ---
     async deletePost(id, btn) {
         const token = localStorage.getItem('adminToken');
         if (!token) return;
