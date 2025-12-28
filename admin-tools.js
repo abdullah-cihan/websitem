@@ -1,6 +1,6 @@
 /**
- * MODERN ADMIN TOOLS MANAGER (V-FINAL)
- * Entegrasyon: admin.js (Core) ile tam uyumlu
+ * MODERN ADMIN TOOLS MANAGER (V-FINAL FIXED)
+ * Entegrasyon: admin.js (Core) ve Yeni Code.gs ile tam uyumlu
  */
 
 class ToolsManager {
@@ -72,12 +72,17 @@ class ToolsManager {
         this.showNotification("Sıralama güncelleniyor...", "info");
 
         try {
+            // AUTH parametresi burada otomatik olarak sendRequest içinde ekleniyor
             await this.sendRequest({
                 action: "reorder_tools",
                 oldIndex: oldIndex,
                 newIndex: newIndex
             });
             this.showNotification("✅ Sıralama kaydedildi!", "success");
+            
+            // Veri bütünlüğü için listeyi yenile (1 saniye sonra)
+            setTimeout(() => this.fetchTools(), 1000);
+
         } catch (e) {
             console.error(e);
             this.showNotification("⚠️ Sıralama kaydedilemedi.", "error");
@@ -232,6 +237,7 @@ class ToolsManager {
     // API İsteği (POST)
     async sendRequest(data) {
         // admin.js'den gelen API_KEY'i 'auth' parametresi olarak ekle
+        // BU KISIM KRİTİK: Code.gs'deki yeni güvenlik duvarı bu 'auth' parametresini bekliyor
         return fetch(this.API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -276,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     window.toolsManager = new ToolsManager();
 
     // admin.js'nin aradığı global fonksiyonu tanımla
-    // admin.js showSection('tools-manager') çalıştığında bu fonksiyonu tetikler
     window.fetchTools = () => {
         if (window.toolsManager) {
             window.toolsManager.fetchTools();
