@@ -1,4 +1,4 @@
-/* ADMIN POSTS MANAGER (TIKLA & DÜZENLE - FINAL FIX) */
+/* ADMIN POSTS MANAGER (BLOGGER TARZI ODAK MODU) */
 
 let currentEditId = null;
 
@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCategories();
     fetchPosts();
     
-    // Tarih alanına varsayılan olarak bugünü ver
     const dateInput = document.getElementById('post-date');
     if(dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
@@ -31,17 +30,17 @@ function loadCategories() {
 }
 
 // ==========================================
-// 1. YAZILARI LİSTELEME (DÜZELTİLDİ)
+// 1. YAZILARI LİSTELEME
 // ==========================================
 async function fetchPosts() {
-    // Eski tabloyu gizle
+    // Tabloyu tamamen gizle
     const tableBody = document.getElementById('posts-table-body');
     if(tableBody) {
         const table = tableBody.closest('table');
         if(table) table.style.display = 'none';
     }
 
-    // Liste alanını hazırla
+    // Liste alanını bul veya oluştur
     let container = document.getElementById('post-list-container');
     if (!container && tableBody) {
         container = document.createElement('div');
@@ -51,6 +50,12 @@ async function fetchPosts() {
     }
 
     if(!container) return;
+    
+    // Listeyi görünür yap (Eğer gizlendiyse)
+    container.style.display = 'block';
+    // Formu "Yeni Yazı" modunda tut, ama listeyi göster
+    document.getElementById('add-post-form').style.display = 'block'; 
+
     container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Yükleniyor...</p>';
     
     try {
@@ -64,17 +69,13 @@ async function fetchPosts() {
             return; 
         }
 
-        // Yazıları tersten sırala (En yeni en üstte)
         posts.reverse().forEach(p => {
             let tarihGoster = p.tarih;
             try { if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0]; } catch(e){}
             const statusClass = p.durum === 'Yayında' ? 'status-active' : 'status-draft';
 
-            // Kart Elementini Oluştur
             const item = document.createElement('div');
             item.className = 'post-item';
-            
-            // İçerik HTML'i
             item.innerHTML = `
                 <div class="post-info">
                     <div class="post-title-row">${p.baslik}</div>
@@ -86,24 +87,21 @@ async function fetchPosts() {
                     </div>
                 </div>
                 <div class="post-actions">
-                   <button class="icon-btn edit-btn"><i class="fa-solid fa-pen-to-square"></i></button>
                    <button class="icon-btn delete-btn"><i class="fa-solid fa-trash"></i></button>
+                   <i class="fa-solid fa-chevron-right" style="margin-left:10px; opacity:0.5;"></i>
                 </div>
             `;
             
-            // --- TIKLAMA OLAYLARI (EN GÜVENLİ YÖNTEM) ---
-            
-            // 1. Karta tıklayınca düzenle
+            // TIKLAMA: DÜZENLEME MODUNA GEÇ
             item.addEventListener('click', (e) => {
-                // Eğer silme butonuna tıklandıysa düzenlemeyi açma
-                if (e.target.closest('.delete-btn')) return;
+                if (e.target.closest('.delete-btn')) return; // Silme butonuna basıldıysa açma
                 loadPostToEdit(p);
             });
 
-            // 2. Silme Butonu
+            // SİLME BUTONU
             const deleteBtn = item.querySelector('.delete-btn');
             deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Tıklamanın karta yayılmasını engelle
+                e.stopPropagation(); 
                 deletePost(p.id, deleteBtn);
             });
 
@@ -117,13 +115,17 @@ async function fetchPosts() {
 }
 
 // ==========================================
-// 2. FORMU DOLDURMA (SCROLL EKLENDİ)
+// 2. DÜZENLEME MODU (LİSTEYİ GİZLE, EDİTÖRÜ AÇ)
 // ==========================================
 function loadPostToEdit(post) {
     console.log("Düzenleniyor:", post.baslik);
     currentEditId = post.id;
 
-    // Formu Doldur
+    // 1. LİSTEYİ GİZLE (ODAKLANMA)
+    const container = document.getElementById('post-list-container');
+    if(container) container.style.display = 'none';
+
+    // 2. FORMU DOLDUR
     document.getElementById("post-title").value = post.baslik || "";
     document.getElementById("post-image").value = post.resim || "";
     document.getElementById("post-category").value = post.kategori || "Genel";
@@ -138,42 +140,71 @@ function loadPostToEdit(post) {
     if(tarihVal && tarihVal.includes('T')) tarihVal = tarihVal.split('T')[0];
     document.getElementById("post-date").value = tarihVal;
 
-    // Butonu Değiştir
+    // 3. UI DEĞİŞİKLİKLERİ
     const submitBtn = document.querySelector('.btn-submit');
-    submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Yazıyı Güncelle';
+    submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Değişiklikleri Güncelle';
     submitBtn.style.background = '#f59e0b';
     
-    // İptal Butonu
+    // Başlığı Değiştir
+    const formTitle = document.querySelector('h2'); // Genelde formun başlığı h2 olur
+    if(formTitle) {
+        formTitle.dataset.original = formTitle.innerText; // Eski başlığı sakla
+        formTitle.innerText = "Yazıyı Düzenle: " + post.baslik;
+    }
+
+    // Geri Dön Butonu Ekle
     let cancelBtn = document.getElementById('cancel-edit-btn');
     if(!cancelBtn) {
         cancelBtn = document.createElement('button');
         cancelBtn.id = 'cancel-edit-btn';
         cancelBtn.className = 'cancel-edit-btn';
-        cancelBtn.innerText = 'Vazgeç / Yeni Yazı';
+        cancelBtn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Vazgeç ve Listeye Dön';
         cancelBtn.type = "button";
-        cancelBtn.style.cssText = "background:#ef4444; color:white; border:none; padding:10px 15px; border-radius:8px; margin-left:10px; cursor:pointer;";
+        // Butonu formun en üstüne veya butonların yanına koyalım
+        // En üste koymak daha belirgin olur
+        const form = document.getElementById('add-post-form');
+        form.insertBefore(cancelBtn, form.firstChild);
+        
         cancelBtn.onclick = resetForm;
-        submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
     }
     cancelBtn.style.display = 'inline-block';
+    cancelBtn.style.marginBottom = '15px';
+    cancelBtn.style.background = '#475569';
+    cancelBtn.style.color = 'white';
+    cancelBtn.style.border = 'none';
+    cancelBtn.style.padding = '8px 15px';
+    cancelBtn.style.borderRadius = '6px';
+    cancelBtn.style.cursor = 'pointer';
 
-    // Sayfayı YUKARI Kaydır (Önemli!)
+    // Sayfayı yukarı kaydır
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Formu Sıfırla
+// Modu Sıfırla (Listeye Geri Dön)
 function resetForm() {
     currentEditId = null;
+    
+    // Formu Temizle
     document.getElementById("add-post-form").reset();
     if(window.myQuill) window.myQuill.setContents([]);
     document.getElementById("post-date").valueAsDate = new Date();
 
+    // 1. LİSTEYİ GERİ GETİR
+    const container = document.getElementById('post-list-container');
+    if(container) container.style.display = 'block';
+
+    // UI Eski Haline Dönsün
     const submitBtn = document.querySelector('.btn-submit');
     submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
     submitBtn.style.background = ''; 
 
     const cancelBtn = document.getElementById('cancel-edit-btn');
     if(cancelBtn) cancelBtn.style.display = 'none';
+    
+    const formTitle = document.querySelector('h2');
+    if(formTitle && formTitle.dataset.original) {
+        formTitle.innerText = formTitle.dataset.original;
+    }
 }
 
 // ==========================================
@@ -182,7 +213,7 @@ function resetForm() {
 window.savePost = async (status) => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
-        alert("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+        alert("Oturum süreniz dolmuş.");
         window.location.href = "login.html";
         return;
     }
@@ -195,7 +226,6 @@ window.savePost = async (status) => {
     try {
         const baslik = document.getElementById("post-title").value;
         const editorContent = window.myQuill ? window.myQuill.root.innerHTML : "";
-        
         if(!baslik) throw new Error("Başlık zorunlu."); 
 
         let tarihVal = document.getElementById("post-date").value;
@@ -231,8 +261,8 @@ window.savePost = async (status) => {
 
         if (result.ok) {
             alert(currentEditId ? "✅ Yazı güncellendi!" : "✅ Yazı eklendi!");
-            resetForm();
-            setTimeout(fetchPosts, 1000);
+            resetForm(); // Listeye dön
+            setTimeout(fetchPosts, 500); // Listeyi yenile
         } else {
             throw new Error(result.error || "İşlem başarısız.");
         }
@@ -250,10 +280,7 @@ window.savePost = async (status) => {
 // ==========================================
 window.deletePost = async (id, btn) => {
     const token = localStorage.getItem('adminToken');
-    if (!token) {
-        alert("Hata: Token bulunamadı.");
-        return;
-    }
+    if (!token) { alert("Token yok."); return; }
     if(!confirm("Silmek istediğinize emin misiniz?")) return;
     
     const originalIcon = btn.innerHTML;
@@ -269,16 +296,12 @@ window.deletePost = async (id, btn) => {
                 id: id
             })
         });
-        
         const result = await response.json();
-
         if (result.ok) {
             btn.closest('.post-item').style.opacity = "0.3";
             setTimeout(() => fetchPosts(), 1000);
             alert("Silindi.");
-        } else {
-            throw new Error(result.error);
-        }
+        } else { throw new Error(result.error); }
     } catch (e) {
         alert("Hata: " + e.message);
         btn.innerHTML = originalIcon;
