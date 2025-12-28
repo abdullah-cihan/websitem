@@ -1,12 +1,13 @@
-/* ADMIN POSTS MANAGER (FIXED) */
+/* ADMIN POSTS MANAGER (FIXED & SECURE V2) */
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
     loadCategories();
+    
     // Eğer tablo varsa yazıları çek
     if(document.getElementById('posts-table-body')) fetchPosts();
     
-    // Tarih alanına bugünün tarihini otomatik ver (Boş kalmasın)
+    // Tarih alanına bugünün tarihini otomatik ver
     const dateInput = document.getElementById('post-date');
     if(dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
@@ -37,7 +38,18 @@ window.addNewCategory = () => {
     }
 };
 
+// ==========================================
+// YAZI KAYDETME FONKSİYONU (GÜNCELLENDİ)
+// ==========================================
 window.savePost = async (status) => {
+    // 1. ÖNCE TOKEN KONTROLÜ
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        alert("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
+        window.location.href = "login.html";
+        return;
+    }
+
     const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
     const oldText = btn ? btn.innerText : "Kaydet";
     
@@ -51,16 +63,16 @@ window.savePost = async (status) => {
             throw new Error("Başlık ve içerik zorunlu."); 
         }
 
-        // Tarih kontrolü: Boşsa bugünü seç
+        // Tarih kontrolü
         let tarihVal = document.getElementById("post-date").value;
         if(!tarihVal) {
             const now = new Date();
-            tarihVal = now.toISOString().split('T')[0]; // YYYY-MM-DD
+            tarihVal = now.toISOString().split('T')[0]; 
         }
 
         const postData = {
             action: "add_post",
-            token: localStorage.getItem('adminToken'),
+            token: token, // Token burada gönderiliyor
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
@@ -73,40 +85,53 @@ window.savePost = async (status) => {
             one_cikan: document.getElementById("post-featured").checked
         };
 
-        // window.API_URL kullandığımızdan emin olalım
-        await fetch(window.API_URL, {
+        // 2. FETCH İSTEĞİ ('no-cors' KALDIRILDI)
+        const response = await fetch(window.API_URL, {
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            // mode: "no-cors", <--- BU SATIR HATALARI GİZLİYORDU, SİLDİK.
             body: JSON.stringify(postData)
         });
 
-        alert("✅ Yazı başarıyla gönderildi!");
-        
-        // Formu temizle
-        document.getElementById("add-post-form").reset();
-        window.myQuill.setContents([]);
-        
-        // Tarihi tekrar bugüne ayarla
-        document.getElementById("post-date").valueAsDate = new Date();
+        // 3. YANITI OKU VE KONTROL ET
+        const result = await response.json();
 
-        // Eğer liste sayfasındaysak listeyi yenile
-        if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 2000);
+        if (result.ok) {
+            alert("✅ Yazı başarıyla kaydedildi!");
+            
+            // Formu temizle
+            document.getElementById("add-post-form").reset();
+            window.myQuill.setContents([]);
+            document.getElementById("post-date").valueAsDate = new Date();
+
+            // Listeyi yenile
+            if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 1000);
+        } else {
+            // Backend'den hata geldiyse göster
+            throw new Error(result.error || "Bilinmeyen bir hata oluştu.");
+        }
 
     } catch (e) {
-        alert("Hata: " + e.message);
+        console.error("Save Post Hatası:", e);
+        alert("HATA: " + e.message);
+        
+        // Eğer token geçersizse login'e at
+        if(e.message.includes("YETKİSİZ") || e.message.includes("Token")) {
+            window.location.href = "login.html";
+        }
     } finally {
         if(btn) { btn.innerText = oldText; btn.disabled = false; }
     }
 };
 
+// ==========================================
+// YAZILARI LİSTELEME
+// ==========================================
 async function fetchPosts() {
     const tbody = document.getElementById('posts-table-body');
     if(!tbody) return;
     tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
     
     try {
-        // window.API_URL kullanıyoruz
         const res = await fetch(`${window.API_URL}?type=posts`);
         const data = await res.json();
         const posts = data.posts || [];
@@ -117,7 +142,6 @@ async function fetchPosts() {
         posts.reverse().forEach(p => {
             let img = p.resim && p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="fa-solid fa-image"></i>`;
             
-            // Tarihi düzgün göster
             let tarihGoster = p.tarih;
             try {
                 if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0];
@@ -140,7 +164,17 @@ async function fetchPosts() {
     }
 }
 
+// ==========================================
+// YAZI SİLME FONKSİYONU (GÜNCELLENDİ)
+// ==========================================
 window.deletePost = async (id, btn) => {
+    // 1. TOKEN KONTROLÜ
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+        alert("Hata: Token bulunamadı. Lütfen giriş yapın.");
+        return;
+    }
+
     if(!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
     
     const originalIcon = btn.innerHTML;
@@ -148,32 +182,36 @@ window.deletePost = async (id, btn) => {
     btn.disabled = true;
 
     try {
-        // 👇 BURASI DÜZELTİLDİ: 'a, {' yerine doğru fetch komutu geldi
-        await fetch(window.API_URL, { 
+        // 2. FETCH İSTEĞİ ('no-cors' KALDIRILDI)
+        const response = await fetch(window.API_URL, { 
             method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            // mode: "no-cors", <--- SİLDİK
             body: JSON.stringify({
-                // 👇 BURASI DÜZELTİLDİ: auth yerine token eklendi
-                token: localStorage.getItem('adminToken'), 
-                
+                token: token,
                 action: "delete_row",
                 type: "posts",
                 id: id
             })
         });
         
-        // İşlem başarılı kabul edip satırı silelim (UX için)
-        const row = btn.closest('tr');
-        if(row) row.style.opacity = "0.3";
-        
-        setTimeout(() => {
-            fetchPosts(); // Listeyi yenile
-            alert("Silme işlemi tamamlandı.");
-        }, 1500);
+        // 3. YANIT KONTROLÜ
+        const result = await response.json();
+
+        if (result.ok) {
+            // UX için satırı silik yap
+            const row = btn.closest('tr');
+            if(row) row.style.opacity = "0.3";
+            
+            setTimeout(() => {
+                fetchPosts(); // Listeyi yenile
+                alert("Silme işlemi tamamlandı.");
+            }, 1000);
+        } else {
+            throw new Error(result.error || "Silinemedi.");
+        }
 
     } catch (e) {
-        alert("Hata: " + e);
+        alert("Hata: " + e.message);
         btn.innerHTML = originalIcon;
         btn.disabled = false;
     }
@@ -186,4 +224,4 @@ window.filterPosts = () => {
         const txt = row.innerText.toLowerCase();
         row.style.display = txt.includes(filter) ? "" : "none";
     });
-}; 
+};
