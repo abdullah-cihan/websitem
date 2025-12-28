@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // ⚠️ BURAYI KENDİ BİLGİLERİNLE DOLDUR
     const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
-    const API_KEY = "Sifre2025"; 
+    //const API_KEY = "Sifre2025"; 
 
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
