@@ -1,13 +1,13 @@
-/* ADMIN POSTS MANAGER (FIXED & SECURE V2) */
+/* ADMIN POSTS MANAGER (LIST & UPDATE & DELETE) */
+
+let currentEditId = null; // Düzenlenen yazının ID'si burada tutulur
 
 document.addEventListener('DOMContentLoaded', () => {
     initQuill();
     loadCategories();
+    fetchPosts(); // Yazıları listele
     
-    // Eğer tablo varsa yazıları çek
-    if(document.getElementById('posts-table-body')) fetchPosts();
-    
-    // Tarih alanına bugünün tarihini otomatik ver
+    // Tarih alanına bugünün tarihini ver
     const dateInput = document.getElementById('post-date');
     if(dateInput && !dateInput.value) {
         dateInput.valueAsDate = new Date();
@@ -23,26 +23,148 @@ function initQuill() {
 function loadCategories() {
     const select = document.getElementById('post-category');
     if(!select) return;
-    let cats = JSON.parse(localStorage.getItem('categories') || '["Genel","Teknoloji","Yazılım"]');
+    let cats = JSON.parse(localStorage.getItem('categories') || '["Genel","Teknoloji","Yazılım","Felsefe"]');
     select.innerHTML = '';
-    cats.forEach(c => { const o = document.createElement('option'); o.value=c; o.innerText=c; select.appendChild(o); });
+    cats.forEach(c => { 
+        const o = document.createElement('option'); o.value=c; o.innerText=c; select.appendChild(o); 
+    });
 }
 
-window.addNewCategory = () => {
-    const n = prompt("Kategori adı:");
-    if(n) {
-        let cats = JSON.parse(localStorage.getItem('categories')||'[]');
-        cats.push(n); localStorage.setItem('categories', JSON.stringify(cats));
-        loadCategories();
-        document.getElementById('post-category').value = n;
+// ==========================================
+// 1. YAZILARI LİSTELEME (GÖRSELDEKİ GİBİ)
+// ==========================================
+async function fetchPosts() {
+    // Tablo yapısını bul ve gizle
+    const tableBody = document.getElementById('posts-table-body');
+    if(tableBody) {
+        const table = tableBody.closest('table');
+        if(table) table.style.display = 'none';
     }
-};
+
+    // Liste konteynerini bul veya oluştur
+    let container = document.getElementById('post-list-container');
+    if (!container && tableBody) {
+        container = document.createElement('div');
+        container.id = 'post-list-container';
+        container.className = 'post-list-container';
+        // Tablonun olduğu yere konteyneri ekle
+        tableBody.closest('div').appendChild(container);
+    }
+
+    if(!container) return;
+
+    container.innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Yükleniyor...</p>';
+    
+    try {
+        const res = await fetch(`${window.API_URL}?type=posts`);
+        const data = await res.json();
+        const posts = data.posts || [];
+        
+        container.innerHTML = '';
+        if(posts.length === 0) { 
+            container.innerHTML = '<p style="text-align:center; color:#94a3b8;">Henüz yazı yok.</p>'; 
+            return; 
+        }
+
+        // Yazıları listele (En yeni en üstte)
+        posts.reverse().forEach(p => {
+            let tarihGoster = p.tarih;
+            try { if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0]; } catch(e){}
+            
+            const statusClass = p.durum === 'Yayında' ? 'status-active' : 'status-draft';
+
+            // HTML Şablonu
+            const item = document.createElement('div');
+            item.className = 'post-item';
+            item.innerHTML = `
+                <div class="post-info">
+                    <div class="post-title-row">${p.baslik}</div>
+                    <div class="post-meta-row">
+                        <span><span class="post-status ${statusClass}"></span> ${p.durum}</span>
+                        <span><i class="fa-regular fa-calendar"></i> ${tarihGoster}</span>
+                        <span class="post-badge">${p.kategori}</span>
+                        ${p.one_cikan ? '<i class="fa-solid fa-star" style="color:gold" title="Öne Çıkan"></i>' : ''}
+                    </div>
+                </div>
+                <div class="post-actions">
+                   <i class="fa-solid fa-pen-to-square"></i>
+                </div>
+            `;
+            
+            // TIKLAMA OLAYI: Formu doldur ve yukarı kaydır
+            item.addEventListener('click', () => loadPostToEdit(p));
+            
+            container.appendChild(item);
+        });
+
+    } catch(e) { 
+        console.error(e); 
+        container.innerHTML = '<p style="color:red;text-align:center">Veri çekilemedi.</p>'; 
+    }
+}
 
 // ==========================================
-// YAZI KAYDETME FONKSİYONU (GÜNCELLENDİ)
+// 2. DÜZENLEME MODUNU AÇMA
+// ==========================================
+function loadPostToEdit(post) {
+    currentEditId = post.id; // ID'yi kaydet
+
+    // Formu doldur
+    document.getElementById("post-title").value = post.baslik;
+    document.getElementById("post-image").value = post.resim;
+    document.getElementById("post-category").value = post.kategori;
+    document.getElementById("post-desc").value = post.ozet;
+    document.getElementById("read-time").value = post.okuma_suresi;
+    document.getElementById("tags-input").value = post.etiketler;
+    document.getElementById("post-featured").checked = (String(post.one_cikan) === "true");
+
+    if(window.myQuill) window.myQuill.root.innerHTML = post.icerik;
+
+    let tarihVal = post.tarih;
+    if(tarihVal && tarihVal.includes('T')) tarihVal = tarihVal.split('T')[0];
+    document.getElementById("post-date").value = tarihVal;
+
+    // Butonu "Güncelle" yap
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Yazıyı Güncelle';
+    submitBtn.style.background = '#f59e0b'; // Turuncu renk
+
+    // İptal Butonunu Göster
+    let cancelBtn = document.getElementById('cancel-edit-btn');
+    if(!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancel-edit-btn';
+        cancelBtn.className = 'cancel-edit-btn';
+        cancelBtn.innerText = 'Vazgeç / Yeni Yazı';
+        cancelBtn.onclick = resetForm;
+        // Butonu "Kaydet" butonunun yanına ekle
+        submitBtn.parentNode.insertBefore(cancelBtn, submitBtn.nextSibling);
+    }
+    cancelBtn.style.display = 'inline-block';
+
+    // Sayfayı en yukarı (forma) kaydır
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Modu Sıfırla (Yeni Yazı Moduna Dön)
+function resetForm() {
+    currentEditId = null;
+    document.getElementById("add-post-form").reset();
+    if(window.myQuill) window.myQuill.setContents([]);
+    document.getElementById("post-date").valueAsDate = new Date();
+
+    const submitBtn = document.querySelector('.btn-submit');
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Kaydet';
+    submitBtn.style.background = ''; // Orijinal renk
+
+    const cancelBtn = document.getElementById('cancel-edit-btn');
+    if(cancelBtn) cancelBtn.style.display = 'none';
+}
+
+// ==========================================
+// 3. KAYDETME / GÜNCELLEME İŞLEMİ
 // ==========================================
 window.savePost = async (status) => {
-    // 1. ÖNCE TOKEN KONTROLÜ
     const token = localStorage.getItem('adminToken');
     if (!token) {
         alert("Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.");
@@ -51,28 +173,30 @@ window.savePost = async (status) => {
     }
 
     const btn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
-    const oldText = btn ? btn.innerText : "Kaydet";
+    const oldText = btn.innerHTML;
     
-    if(btn) { btn.innerText = "Gönderiliyor..."; btn.disabled = true; }
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+    btn.disabled = true;
     
     try {
         const baslik = document.getElementById("post-title").value;
         const editorContent = window.myQuill ? window.myQuill.root.innerHTML : "";
         
-        if(!baslik || !editorContent || editorContent === "<p><br></p>") { 
-            throw new Error("Başlık ve içerik zorunlu."); 
-        }
+        if(!baslik) throw new Error("Başlık zorunlu."); 
 
-        // Tarih kontrolü
         let tarihVal = document.getElementById("post-date").value;
         if(!tarihVal) {
             const now = new Date();
             tarihVal = now.toISOString().split('T')[0]; 
         }
 
+        // --- ID VARSA GÜNCELLEME, YOKSA EKLEME ---
+        const actionType = currentEditId ? "update_post" : "add_post";
+
         const postData = {
-            action: "add_post",
-            token: token, // Token burada gönderiliyor
+            action: actionType,
+            id: currentEditId, // Güncelleme için gerekli
+            token: token,
             baslik: baslik,
             icerik: editorContent,
             resim: document.getElementById("post-image").value,
@@ -85,143 +209,25 @@ window.savePost = async (status) => {
             one_cikan: document.getElementById("post-featured").checked
         };
 
-        // 2. FETCH İSTEĞİ ('no-cors' KALDIRILDI)
         const response = await fetch(window.API_URL, {
             method: "POST",
-            // mode: "no-cors", <--- BU SATIR HATALARI GİZLİYORDU, SİLDİK.
             body: JSON.stringify(postData)
         });
 
-        // 3. YANITI OKU VE KONTROL ET
         const result = await response.json();
 
         if (result.ok) {
-            alert("✅ Yazı başarıyla kaydedildi!");
-            
-            // Formu temizle
-            document.getElementById("add-post-form").reset();
-            window.myQuill.setContents([]);
-            document.getElementById("post-date").valueAsDate = new Date();
-
-            // Listeyi yenile
-            if(document.getElementById('posts-table-body')) setTimeout(fetchPosts, 1000);
+            alert(currentEditId ? "✅ Yazı başarıyla güncellendi!" : "✅ Yeni yazı eklendi!");
+            resetForm(); // Formu temizle
+            setTimeout(fetchPosts, 1000); // Listeyi yenile
         } else {
-            // Backend'den hata geldiyse göster
-            throw new Error(result.error || "Bilinmeyen bir hata oluştu.");
+            throw new Error(result.error || "İşlem başarısız.");
         }
 
     } catch (e) {
-        console.error("Save Post Hatası:", e);
         alert("HATA: " + e.message);
-        
-        // Eğer token geçersizse login'e at
-        if(e.message.includes("YETKİSİZ") || e.message.includes("Token")) {
-            window.location.href = "login.html";
-        }
     } finally {
-        if(btn) { btn.innerText = oldText; btn.disabled = false; }
-    }
-};
-
-// ==========================================
-// YAZILARI LİSTELEME
-// ==========================================
-async function fetchPosts() {
-    const tbody = document.getElementById('posts-table-body');
-    if(!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5">Yükleniyor...</td></tr>';
-    
-    try {
-        const res = await fetch(`${window.API_URL}?type=posts`);
-        const data = await res.json();
-        const posts = data.posts || [];
-        
-        tbody.innerHTML = '';
-        if(posts.length === 0) { tbody.innerHTML = '<tr><td colspan="5">Kayıt yok.</td></tr>'; return; }
-
-        posts.reverse().forEach(p => {
-            let img = p.resim && p.resim.startsWith('http') ? `<img src="${p.resim}" width="40" style="border-radius:4px">` : `<i class="fa-solid fa-image"></i>`;
-            
-            let tarihGoster = p.tarih;
-            try {
-                if(p.tarih.includes('T')) tarihGoster = p.tarih.split('T')[0];
-            } catch(err){}
-
-            tbody.innerHTML += `
-                <tr>
-                    <td>${img}</td>
-                    <td>${p.baslik}</td>
-                    <td>${p.kategori}</td>
-                    <td>${p.durum}</td>
-                    <td>
-                        <button onclick="deletePost('${p.id}', this)" class="action-btn" title="Sil"><i class="fa-solid fa-trash"></i></button>
-                    </td>
-                </tr>`;
-        });
-    } catch(e) { 
-        console.error(e); 
-        tbody.innerHTML = '<tr><td colspan="5" style="color:red">Veri çekilemedi. Bağlantıyı kontrol edin.</td></tr>'; 
-    }
-}
-
-// ==========================================
-// YAZI SİLME FONKSİYONU (GÜNCELLENDİ)
-// ==========================================
-window.deletePost = async (id, btn) => {
-    // 1. TOKEN KONTROLÜ
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-        alert("Hata: Token bulunamadı. Lütfen giriş yapın.");
-        return;
-    }
-
-    if(!confirm("Bu yazıyı silmek istediğinize emin misiniz?")) return;
-    
-    const originalIcon = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    btn.disabled = true;
-
-    try {
-        // 2. FETCH İSTEĞİ ('no-cors' KALDIRILDI)
-        const response = await fetch(window.API_URL, { 
-            method: "POST",
-            // mode: "no-cors", <--- SİLDİK
-            body: JSON.stringify({
-                token: token,
-                action: "delete_row",
-                type: "posts",
-                id: id
-            })
-        });
-        
-        // 3. YANIT KONTROLÜ
-        const result = await response.json();
-
-        if (result.ok) {
-            // UX için satırı silik yap
-            const row = btn.closest('tr');
-            if(row) row.style.opacity = "0.3";
-            
-            setTimeout(() => {
-                fetchPosts(); // Listeyi yenile
-                alert("Silme işlemi tamamlandı.");
-            }, 1000);
-        } else {
-            throw new Error(result.error || "Silinemedi.");
-        }
-
-    } catch (e) {
-        alert("Hata: " + e.message);
-        btn.innerHTML = originalIcon;
+        btn.innerHTML = oldText;
         btn.disabled = false;
     }
-};
-
-window.filterPosts = () => {
-    const filter = document.getElementById('search-posts').value.toLowerCase();
-    const rows = document.querySelectorAll('#posts-table-body tr');
-    rows.forEach(row => {
-        const txt = row.innerText.toLowerCase();
-        row.style.display = txt.includes(filter) ? "" : "none";
-    });
 };
