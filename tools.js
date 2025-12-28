@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec";
     const container = document.getElementById('tools-list-container');
     if (!container) return;
 
@@ -29,3 +29,4 @@ document.addEventListener('DOMContentLoaded', async () => {
         container.innerHTML = '<div class="tool-empty">Hata.</div>';
     }
 });
+
