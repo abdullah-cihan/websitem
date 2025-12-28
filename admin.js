@@ -4,7 +4,7 @@
 (function () {
     // ✅ URL VE GÜVENLİK ANAHTARI
     // Diğer dosyalar (posts, pages, tools) buradan okuyacak.
-    window.API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
+    window.API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec";
     window.API_KEY = "Sifre2025"; // Code.gs'deki şifrenin AYNISI olmalı
 
     document.addEventListener('DOMContentLoaded', () => {
