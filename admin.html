@@ -13,6 +13,28 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-pages.css"> <link rel="stylesheet" href="tools.css"> 
+    <script>
+  // --- GÜVENLİK KONTROLÜ ---
+  (function() {
+    const token = localStorage.getItem('adminToken');
+    
+    // Eğer token yoksa, giriş sayfasına geri gönder
+    if (!token || token === "undefined" || token === "null") {
+      alert("Oturum süreniz dolmuş veya giriş yapmamışsınız.");
+      window.location.href = "login.html"; 
+    }
+  })();
+
+  // ÇIKIŞ YAP (LOGOUT) FONKSİYONU
+  // Bu fonksiyonu bir "Çıkış" butonuna bağlayabilirsiniz: <button onclick="cikisYap()">Çıkış</button>
+  function cikisYap() {
+    if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('isAdmin');
+      window.location.href = "login.html";
+    }
+  }
+</script>
     <style>
         .hidden { display: none; }
         .action-btn { cursor: pointer; border: none; background: none; color: #ef4444; font-size: 1.1rem; }
