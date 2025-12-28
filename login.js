@@ -1,14 +1,12 @@
 /* ============================================================
-   BASİT LOGIN JS
+   GOOGLE SHEET BAĞLANTILI LOGIN JS
    ============================================================ */
+
+// ⚠️ BURAYA DİKKAT: Google Apps Script'ten aldığın URL'i buraya yapıştır!
+const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
 
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 👇 AYARLAR: KULLANICI ADI VE ŞİFREYİ BURADAN BELİRLE 👇
-    const ADMIN_USER = "admin";
-    const ADMIN_PASS = "123456"; 
-    // 👆 Burayı değiştirebilirsin 👆
-
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -21,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-            // İkonu değiştir
+            // İkonu değiştir (FontAwesome kullanıyorsan)
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
@@ -35,6 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
 
+            if(!user || !pass) {
+                alert("Lütfen alanları doldurun.");
+                return;
+            }
+
             // Mesajı gizle
             errorMsg.style.display = 'none';
 
@@ -43,25 +46,50 @@ document.addEventListener('DOMContentLoaded', () => {
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
-            // Ufak bir bekleme efekti (0.5 saniye)
-            setTimeout(() => {
-                if (user === ADMIN_USER && pass === ADMIN_PASS) {
+            // --- GOOGLE SHEET API İSTEĞİ BAŞLIYOR ---
+            const payload = {
+                action: "login",
+                username: user,
+                password: pass
+            };
+
+            // "no-cors" modu KULLANMA, Apps Script JSON dönmeli.
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Apps Script'ten yanıt geldi
+                if (data.ok) {
                     // ✅ GİRİŞ BAŞARILI
+                    // Tarayıcıya giriş yapıldığını kaydet
                     localStorage.setItem('isAdmin', 'true');
-                    localStorage.setItem('adminName', user);
+                    localStorage.setItem('adminToken', data.token); // Varsa token
                     
-                    // Admin paneline git
-                    window.location.href = "admin.html";
+                    // Başarılı mesajı (opsiyonel)
+                    loginBtn.innerHTML = '<i class="fa-solid fa-check"></i> Başarılı!';
+                    
+                    // Yönlendir
+                    setTimeout(() => {
+                        window.location.href = "admin.html";
+                    }, 1000);
                 } else {
-                    // ❌ HATA
-                    errorMsg.style.display = 'block';
-                    loginBtn.innerHTML = originalText;
-                    loginBtn.disabled = false;
-                    
-                    // Şifreyi temizle
-                    passwordInput.value = "";
+                    // ❌ HATA (Şifre yanlış vb.)
+                    throw new Error(data.error || "Giriş başarısız");
                 }
-            }, 500);
+            })
+            .catch(error => {
+                // Hata durumunda yapılacaklar
+                console.error("Login Hatası:", error);
+                errorMsg.textContent = "Hata: " + error.message;
+                errorMsg.style.display = 'block';
+                
+                // Butonu eski haline getir
+                loginBtn.innerHTML = originalText;
+                loginBtn.disabled = false;
+                passwordInput.value = ""; // Şifreyi temizle
+            });
         });
     }
 });
