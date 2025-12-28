@@ -1,12 +1,13 @@
 /* ============================================================
-   SECURE LOGIN JS - FINAL
+   BASİT LOGIN JS
    ============================================================ */
+
 document.addEventListener('DOMContentLoaded', () => {
     
-    // 👇 AZ ÖNCE ALDIĞIN URL'Yİ BURAYA YAPIŞTIR (Sonunda ? veya & olmasın, sadece /exec ile bitsin)
-    const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
-    
-    const API_KEY = "Sifre2025"; 
+    // 👇 AYARLAR: KULLANICI ADI VE ŞİFREYİ BURADAN BELİRLE 👇
+    const ADMIN_USER = "admin";
+    const ADMIN_PASS = "123456"; 
+    // 👆 Burayı değiştirebilirsin 👆
 
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
@@ -15,60 +16,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMsg = document.getElementById('error-msg');
     const togglePassword = document.getElementById('togglePassword');
 
+    // 1. Şifre Göster/Gizle Özelliği
     if(togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
+            // İkonu değiştir
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
     }
 
+    // 2. Form Gönderilince
     if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Sayfa yenilenmesin
 
-            const userInput = usernameInput.value.trim();
-            const passInput = passwordInput.value.trim();
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value.trim();
 
+            // Mesajı gizle
             errorMsg.style.display = 'none';
+
+            // Butonu yükleniyor yap
             const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
-            try {
-                // 🛠️ URL İNŞASI (Hata olmaması için burada birleştiriyoruz)
-                // exec'ten sonra '?' koyuyoruz, sonra parametreleri ekliyoruz.
-                const fullUrl = API_URL + "?type=settings&auth=" + API_KEY;
-                
-                // Konsola yazdıralım ki doğru URL gidiyor mu görelim (F12 -> Console)
-                console.log("İstek atılıyor:", fullUrl);
-
-                const response = await fetch(fullUrl);
-                const data = await response.json();
-
-                if (!data.ok) {
-                    throw new Error(data.error || "Sunucu hatası");
-                }
-
-                if (userInput === data.user && passInput === data.pass) {
+            // Ufak bir bekleme efekti (0.5 saniye)
+            setTimeout(() => {
+                if (user === ADMIN_USER && pass === ADMIN_PASS) {
+                    // ✅ GİRİŞ BAŞARILI
                     localStorage.setItem('isAdmin', 'true');
-                    localStorage.setItem('adminName', data.user); 
+                    localStorage.setItem('adminName', user);
+                    
+                    // Admin paneline git
                     window.location.href = "admin.html";
                 } else {
-                    throw new Error("Kullanıcı adı veya şifre hatalı!");
+                    // ❌ HATA
+                    errorMsg.style.display = 'block';
+                    loginBtn.innerHTML = originalText;
+                    loginBtn.disabled = false;
+                    
+                    // Şifreyi temizle
+                    passwordInput.value = "";
                 }
-
-            } catch (error) {
-                console.error("Hata:", error);
-                errorMsg.style.display = 'block';
-                errorMsg.innerHTML = error.message === "Failed to fetch" 
-                    ? "Bağlantı hatası! URL'yi kontrol et." 
-                    : "Giriş başarısız: Bilgiler yanlış.";
-                
-                loginBtn.innerHTML = originalText;
-                loginBtn.disabled = false;
-            }
+            }, 500);
         });
     }
 });
