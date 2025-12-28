@@ -1,4 +1,4 @@
-"/* ADMIN POSTS MANAGER (BLOGGER TARZI ODAK MODU) */
+/* ADMIN POSTS MANAGER (BLOGGER TARZI ODAK MODU) */
 
 let currentEditId = null;
 
@@ -306,4 +306,4 @@ window.deletePost = async (id, btn) => {
         alert("Hata: " + e.message);
         btn.innerHTML = originalIcon;
     }
-};" admin-post.js
+};
