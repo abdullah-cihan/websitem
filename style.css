@@ -37,7 +37,108 @@ body {
 #progress-bar {
     height: 100%; background: var(--gradient); width: 0%; transition: width 0.1s;
 }
+/* BLOGGER TARZI LİSTE VE GÜNCELLEME BUTONLARI */
+.post-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+}
 
+.post-item {
+    background: rgba(255, 255, 255, 0.05); /* Cam efekti */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.post-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(59, 130, 246, 0.5);
+    transform: translateX(5px);
+}
+
+.post-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: transparent;
+    transition: background 0.3s;
+}
+
+.post-item:hover::before {
+    background: #3b82f6; /* Hover'da mavi çizgi */
+}
+
+.post-info {
+    flex: 1;
+}
+
+.post-title-row {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 6px;
+}
+
+.post-meta-row {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.post-badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.post-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+.status-active { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
+.status-draft { background: #f59e0b; }
+
+.post-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+}
+
+/* Güncelleme Modunda Butonlar */
+.cancel-edit-btn {
+    background: #ef4444;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: 500;
+    display: none; /* Başlangıçta gizli */
+    transition: background 0.3s;
+}
+.cancel-edit-btn:hover { background: #dc2626; }
 /* --- GENEL DÜZEN (CONTAINER) --- */
 .container {
     max-width: 1400px; /* Genişletilmiş Ekran */
@@ -293,3 +394,4 @@ footer { text-align: center; padding: 40px 0; background: #0b1120; margin-top: 5
     
     .blog-list { grid-template-columns: 1fr; } /* Tekli kart */
 }
+
