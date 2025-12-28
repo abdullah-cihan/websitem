@@ -1,19 +1,14 @@
 /**
- * MODERN ADMIN TOOLS MANAGER (V3.2)
- * ------------------------------------------------
- * Özellikler: 
- * - CRUD (Ekle, Sil, Güncelle)
- * - Sürükle-Bırak Sıralama (SortableJS Entegrasyonu)
- * - Modern Toast Bildirimleri
- * - Optimistic UI (Anlık Arayüz Güncelleme)
+ * MODERN ADMIN TOOLS MANAGER (V-FINAL)
+ * Entegrasyon: admin.js (Core) ile tam uyumlu
  */
 
 class ToolsManager {
     constructor() {
-        // API URL ve KEY kontrolü (Global değişkenlerden veya direkt tanımlı)
-        this.API_URL = window.API_URL || "URL_YOKSA_BURAYA_YAZIN"; 
-        this.API_KEY = window.API_KEY || "GIZLI_ANAHTARINIZ"; 
-        
+        // admin.js tarafından tanımlanan global değişkenleri al
+        this.API_URL = window.API_URL;
+        this.API_KEY = window.API_KEY;
+
         this.state = {
             tools: [],
             isEditMode: false,
@@ -29,56 +24,53 @@ class ToolsManager {
             formContainer: document.getElementById('tools-manager')
         };
 
+        // Eğer admin.js yüklenmemişse veya URL yoksa uyar
+        if (!this.API_URL) {
+            console.error("HATA: API_URL bulunamadı! Lütfen önce admin.js dosyasının yüklendiğinden emin olun.");
+            return;
+        }
+
         this.init();
     }
 
     init() {
-        if (!this.elements.tbody) {
-            console.warn("Tools tablosu bulunamadı, script durduruldu.");
-            return;
-        }
-        
-        // İlk yükleme: Verileri çek
-        this.fetchTools();
-        
-        // Buton Event Listener
-        if(this.elements.submitBtn) {
+        if (!this.elements.tbody) return;
+
+        // Olay Dinleyicileri
+        if (this.elements.submitBtn) {
             this.elements.submitBtn.addEventListener('click', () => this.handleToolSubmit());
         }
-        
-        // Sürükle Bırak Başlatıcı (Kütüphane kontrolü ile)
+
+        // Sürükle Bırak Başlatıcı (SortableJS)
         if (typeof Sortable !== 'undefined') {
             this.initSortable();
         } else {
-            console.error("SortableJS kütüphanesi eksik! Sürükle-bırak çalışmayacak.");
+            console.warn("SortableJS kütüphanesi eksik. Sürükle-bırak çalışmayacak.");
         }
     }
 
-    // --- Sürükle Bırak Mantığı (SortableJS) ---
+    // --- Sürükle Bırak Mantığı ---
     initSortable() {
         new Sortable(this.elements.tbody, {
             animation: 150,
-            handle: '.drag-handle', // Sadece ikonundan tutunca sürüklenir
-            ghostClass: 'sortable-ghost', // Sürüklenen öğenin arkasındaki gölge stili
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
             onEnd: (evt) => this.handleReorder(evt)
         });
     }
 
     async handleReorder(evt) {
-        // Yeni sıralamayı algıla
         const newIndex = evt.newIndex;
         const oldIndex = evt.oldIndex;
 
-        // Yer değişikliği yoksa işlem yapma
         if (newIndex === oldIndex) return;
 
-        // 1. UI'da diziyi güncelle (Optimistic UI - Kullanıcı beklemesin)
+        // Optimistic UI Update (Arayüzü hemen güncelle)
         const movedItem = this.state.tools.splice(oldIndex, 1)[0];
         this.state.tools.splice(newIndex, 0, movedItem);
 
         this.showNotification("Sıralama güncelleniyor...", "info");
 
-        // 2. Backend'e yeni sırayı gönder
         try {
             await this.sendRequest({
                 action: "reorder_tools",
@@ -88,24 +80,24 @@ class ToolsManager {
             this.showNotification("✅ Sıralama kaydedildi!", "success");
         } catch (e) {
             console.error(e);
-            this.showNotification("⚠️ Sıralama kaydedilemedi. Sayfa yenileniyor...", "error");
-            // Hata olursa listeyi eski haline getirmek için tekrar çek
-            setTimeout(() => this.fetchTools(), 1000); 
+            this.showNotification("⚠️ Sıralama kaydedilemedi.", "error");
+            // Hata olursa veriyi geri çek
+            this.fetchTools();
         }
     }
 
-    // --- Veri Çekme ---
+    // --- Veri Çekme (admin.js tarafından tetiklenir) ---
     async fetchTools() {
         this.renderLoading();
         try {
-            const url = this.API_URL;
-            const res = await fetch(`${url}?type=tools`);
+            // GET isteği yaparken API_KEY gerekmez, sadece URL
+            const res = await fetch(`${this.API_URL}?type=tools`);
             const data = await res.json();
             this.state.tools = data.tools || [];
             this.renderTable();
         } catch (e) {
             console.error(e);
-            this.elements.tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:#ef4444; padding:20px;">Veri yüklenirken hata oluştu.</td></tr>';
+            this.elements.tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:#ef4444; padding:20px;">Veri yüklenemedi.</td></tr>';
         }
     }
 
@@ -123,8 +115,6 @@ class ToolsManager {
 
         this.state.tools.forEach((t, i) => {
             const tr = document.createElement('tr');
-            tr.setAttribute('data-id', i); 
-            // Tablo Satır HTML'i
             tr.innerHTML = `
                 <td class="drag-handle" style="cursor:grab; text-align:center; color:#64748b; width: 50px;">
                     <i class="fa-solid fa-grip-lines"></i>
@@ -141,11 +131,11 @@ class ToolsManager {
                     <button class="btn-delete action-btn" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
                 </td>
             `;
-            
-            // Event Listener'ları doğrudan elementlere bağlama
+
+            // Butonlara event bağlama
             tr.querySelector('.btn-edit').onclick = () => this.prepareEdit(i);
             tr.querySelector('.btn-delete').onclick = (e) => this.deleteTool(i, e.currentTarget);
-            
+
             this.elements.tbody.appendChild(tr);
         });
     }
@@ -163,7 +153,6 @@ class ToolsManager {
 
         const btn = this.elements.submitBtn;
         const originalText = btn.innerHTML;
-        
         this.setLoadingState(btn, true);
 
         const payload = {
@@ -177,12 +166,11 @@ class ToolsManager {
         try {
             await this.sendRequest(payload);
             this.showNotification(
-                this.state.isEditMode ? "✅ Başarıyla Güncellendi" : "✅ Başarıyla Eklendi", 
+                this.state.isEditMode ? "✅ Güncellendi" : "✅ Eklendi",
                 "success"
             );
             this.resetForm();
-            // Apps Script gecikmesi için biraz bekleyip yenile
-            setTimeout(() => this.fetchTools(), 1500); 
+            setTimeout(() => this.fetchTools(), 1000); // Gecikmeli yenileme
         } catch (e) {
             this.showNotification("İşlem başarısız: " + e, "error");
         } finally {
@@ -194,10 +182,8 @@ class ToolsManager {
     async deleteTool(index, btnElement) {
         if (!confirm("Bu aracı silmek istediğinize emin misiniz?")) return;
 
-        // Butonu yükleniyor moduna al
-        const originalContent = btnElement.innerHTML;
-        btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>'; 
-        btnElement.disabled = true;
+        const originalHTML = btnElement.innerHTML;
+        btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
         try {
             await this.sendRequest({
@@ -205,21 +191,20 @@ class ToolsManager {
                 type: "tools",
                 id: index
             });
-            this.showNotification("🗑️ Araç silindi.", "success");
+            this.showNotification("🗑️ Silindi", "success");
             
-            // Satırı UI'dan hemen kaldır (Backend yanıtını beklemeden)
+            // UI'dan hemen sil
             const row = this.elements.tbody.children[index];
-            if(row) row.style.opacity = '0';
-            
-            setTimeout(() => this.fetchTools(), 1500);
+            if(row) row.style.display = 'none';
+
+            setTimeout(() => this.fetchTools(), 1000);
         } catch (e) {
-            this.showNotification("Silme başarısız oldu.", "error");
-            btnElement.innerHTML = originalContent;
-            btnElement.disabled = false;
+            this.showNotification("Hata oluştu.", "error");
+            btnElement.innerHTML = originalHTML;
         }
     }
 
-    // --- Form Yönetimi ---
+    // --- Yardımcılar ---
     prepareEdit(index) {
         const tool = this.state.tools[index];
         this.state.isEditMode = true;
@@ -228,13 +213,9 @@ class ToolsManager {
         this.elements.formTitle.value = tool.baslik;
         this.elements.formIcon.value = tool.ikon;
         this.elements.formLink.value = tool.link;
-        
-        // Butonu güncelleme moduna çevir
+
         this.elements.submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Güncelle';
-        this.elements.submitBtn.style.background = '#f59e0b'; // Turuncu renk
-        this.elements.submitBtn.style.color = '#fff';
-        
-        // Form alanına scroll yap
+        this.elements.submitBtn.classList.add('btn-warning');
         this.elements.formContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
@@ -244,16 +225,13 @@ class ToolsManager {
         this.elements.formTitle.value = "";
         this.elements.formIcon.value = "";
         this.elements.formLink.value = "";
-        
-        // Butonu varsayılana çevir
         this.elements.submitBtn.innerText = "Ekle";
-        this.elements.submitBtn.style.background = ''; // CSS'ten gelen renge dön
-        this.elements.submitBtn.style.color = '';
+        this.elements.submitBtn.classList.remove('btn-warning');
     }
 
-    // --- API İsteği ---
+    // API İsteği (POST)
     async sendRequest(data) {
-        // Auth token'ı her isteğe ekle
+        // admin.js'den gelen API_KEY'i 'auth' parametresi olarak ekle
         return fetch(this.API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -262,7 +240,6 @@ class ToolsManager {
         });
     }
 
-    // --- UI Yardımcıları ---
     setLoadingState(btn, isLoading, originalText = "") {
         if (isLoading) {
             btn.disabled = true;
@@ -277,38 +254,32 @@ class ToolsManager {
         const div = document.createElement('div');
         div.className = `toast-msg toast-${type}`;
         div.innerText = msg;
-        
-        // Modern Stil (Inline CSS garantisi)
         Object.assign(div.style, {
-            position: 'fixed', bottom: '20px', right: '20px',
-            padding: '12px 24px', borderRadius: '8px', color: '#fff',
-            zIndex: 99999, boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-            transition: 'all 0.3s ease', opacity: '0', transform: 'translateY(20px)',
-            fontFamily: 'Inter, sans-serif', fontWeight: '500',
+            position: 'fixed', bottom: '20px', right: '20px', padding: '12px 24px',
+            borderRadius: '8px', color: '#fff', zIndex: 99999,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)', transition: 'all 0.3s ease',
+            opacity: '0', transform: 'translateY(20px)',
             backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
         });
-
         document.body.appendChild(div);
-        
-        requestAnimationFrame(() => {
-            div.style.opacity = '1';
-            div.style.transform = 'translateY(0)';
-        });
-
+        requestAnimationFrame(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; });
         setTimeout(() => {
-            div.style.opacity = '0';
-            div.style.transform = 'translateY(20px)';
+            div.style.opacity = '0'; div.style.transform = 'translateY(20px)';
             setTimeout(() => div.remove(), 300);
         }, 3000);
     }
 }
 
-// --- BAŞLATMA ---
+// BAŞLATMA VE ENTEGRASYON
 document.addEventListener('DOMContentLoaded', () => {
-    // Global değişkenler tanımlı mı kontrol et, değilse uyar
-    if (!window.API_URL || !window.API_KEY) {
-        console.error("HATA: API_URL veya API_KEY tanımlanmamış! Lütfen HTML dosyasında bu değişkenleri tanımlayın.");
-    }
-    
+    // Sınıfı başlat
     window.toolsManager = new ToolsManager();
+
+    // admin.js'nin aradığı global fonksiyonu tanımla
+    // admin.js showSection('tools-manager') çalıştığında bu fonksiyonu tetikler
+    window.fetchTools = () => {
+        if (window.toolsManager) {
+            window.toolsManager.fetchTools();
+        }
+    };
 });
