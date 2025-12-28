@@ -1,6 +1,5 @@
 /**
- * ADMIN POSTS MANAGER (MODERN)
- * Özellikler: ES6 Class Yapısı, Event Delegation, Async/Await
+ * ADMIN POSTS MANAGER (MODERN - LISTE GİZLENMEZ)
  */
 
 class PostManager {
@@ -81,7 +80,6 @@ class PostManager {
         }
 
         // Liste Üzerindeki Tıklamalar (Event Delegation)
-        // Düzenle ve Sil butonları için tek bir dinleyici
         if (this.dom.listContainer) {
             this.dom.listContainer.addEventListener('click', (e) => {
                 const target = e.target;
@@ -110,21 +108,22 @@ class PostManager {
     // --- 2. VERİ ÇEKME VE LİSTELEME ---
 
     async fetchPosts() {
-        // Tabloyu gizle, liste konteynerini hazırla
-        if (this.dom.tableBody) this.dom.tableBody.closest('table').style.display = 'none';
+        // Orijinal tabloyu gizle (eğer varsa)
+        if (this.dom.tableBody) {
+            const parentTable = this.dom.tableBody.closest('table');
+            if (parentTable) parentTable.style.display = 'none';
+        }
         
         if (!this.dom.listContainer) {
-            // Konteyner yoksa oluştur
             const wrapper = document.createElement('div');
             wrapper.id = 'post-list-container';
             wrapper.className = 'post-list-container';
-            this.dom.tableBody?.closest('div').appendChild(wrapper);
+            // Tablonun olduğu yere ekle
+            this.dom.tableBody?.closest('div')?.appendChild(wrapper);
             this.dom.listContainer = wrapper;
-            // Event listener'ı yeni elemana tekrar bağla
             this.bindGlobalEvents(); 
         }
 
-        // UI Reset
         this.dom.listContainer.style.display = 'block';
         this.dom.form.style.display = 'block';
         this.dom.listContainer.innerHTML = this.renderLoading();
@@ -147,26 +146,26 @@ class PostManager {
             return;
         }
 
-        // HTML string oluştur (Map kullanımı performanslıdır)
         const html = this.state.posts.slice().reverse().map(post => {
             const dateDisplay = new Date(post.tarih).toLocaleDateString('tr-TR');
             const statusClass = post.durum === 'Yayında' ? 'status-active' : 'status-draft';
             const starIcon = post.one_cikan ? '<i class="fa-solid fa-star text-yellow-400 ml-2"></i>' : '';
 
+            // Seçili olan satırı belirginleştirmek için logic eklenebilir ama şu an basit tutuyoruz
             return `
-                <div class="post-item" data-id="${post.id}">
+                <div class="post-item cursor-pointer hover:bg-gray-50 transition p-4 border-b" data-id="${post.id}">
                     <div class="post-info">
-                        <div class="post-title-row font-bold">${post.baslik}</div>
-                        <div class="post-meta-row text-sm text-gray-500 mt-1">
-                            <span class="mr-3"><span class="post-status ${statusClass} w-2 h-2 inline-block rounded-full mr-1"></span> ${post.durum}</span>
-                            <span class="mr-3"><i class="fa-regular fa-calendar"></i> ${dateDisplay}</span>
-                            <span class="post-badge bg-gray-200 px-2 py-0.5 rounded text-xs">${post.kategori}</span>
+                        <div class="post-title-row font-bold text-lg text-gray-800">${post.baslik}</div>
+                        <div class="post-meta-row text-sm text-gray-500 mt-1 flex items-center gap-3">
+                            <span><span class="post-status ${statusClass} w-2 h-2 inline-block rounded-full mr-1"></span> ${post.durum}</span>
+                            <span><i class="fa-regular fa-calendar"></i> ${dateDisplay}</span>
+                            <span class="post-badge bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">${post.kategori}</span>
                             ${starIcon}
                         </div>
                     </div>
-                    <div class="post-actions opacity-50 hover:opacity-100 transition-opacity">
-                        <button class="icon-btn delete-btn text-red-500 p-2 hover:bg-red-50 rounded"><i class="fa-solid fa-trash"></i></button>
-                        <i class="fa-solid fa-chevron-right ml-2"></i>
+                    <div class="post-actions mt-2 flex justify-end gap-2">
+                        <button class="icon-btn delete-btn text-red-500 hover:text-red-700 p-2"><i class="fa-solid fa-trash"></i></button>
+                        <i class="fa-solid fa-pen-to-square text-gray-400"></i>
                     </div>
                 </div>
             `;
@@ -179,17 +178,20 @@ class PostManager {
         return '<p class="text-center text-gray-400 p-5"><i class="fa-solid fa-circle-notch fa-spin"></i> Yükleniyor...</p>';
     }
 
-    // --- 3. DÜZENLEME MODU (FOCUS MODE) ---
+    // --- 3. DÜZENLEME MODU (LİSTE GİZLENMEZ) ---
 
     enableEditMode(post) {
         console.log("Düzenleme Modu:", post.baslik);
         this.state.currentEditId = post.id;
 
         // UI Değişiklikleri
-        this.dom.listContainer.style.display = 'none'; // Listeyi gizle
+        // DİKKAT: Listeyi gizleyen kod kaldırıldı (this.dom.listContainer.style.display = 'none'; SİLİNDİ)
+        
         this.updateFormTitle(`Yazıyı Düzenle: ${post.baslik}`);
-        this.toggleSubmitButtonState(true); // Buton rengini değiştir
+        this.toggleSubmitButtonState(true); 
         this.createOrShowCancelButton();
+        
+        // Kullanıcıyı formun başına kaydır
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Formu Doldur
@@ -204,11 +206,13 @@ class PostManager {
         if (this.quill) this.quill.setContents([]);
         this.dom.dateInput.valueAsDate = new Date();
 
-        this.dom.listContainer.style.display = 'block'; // Listeyi göster
-        this.updateFormTitle(null); // Orijinal başlığa dön
+        // Başlığı ve butonları eski haline getir
+        this.updateFormTitle(null); 
         this.toggleSubmitButtonState(false);
         
         if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
+        
+        // Scroll hareketi yapmaya gerek yok, kullanıcı zaten listede veya formda kalabilir.
     }
 
     fillForm(post) {
@@ -220,7 +224,6 @@ class PostManager {
         document.getElementById("tags-input").value = post.etiketler || "";
         document.getElementById("post-featured").checked = (String(post.one_cikan) === "true");
         
-        // Tarih (YYYY-MM-DD formatı input için gereklidir)
         if (post.tarih) {
             const isoDate = post.tarih.includes('T') ? post.tarih.split('T')[0] : post.tarih;
             this.dom.dateInput.value = isoDate;
@@ -233,11 +236,9 @@ class PostManager {
 
     updateFormTitle(text) {
         if (!this.dom.formTitle) return;
-        
         if (!this.dom.formTitle.dataset.original) {
             this.dom.formTitle.dataset.original = this.dom.formTitle.innerText;
         }
-        
         this.dom.formTitle.innerText = text || this.dom.formTitle.dataset.original;
     }
 
@@ -257,8 +258,9 @@ class PostManager {
         if (!this.dom.cancelBtn) {
             const btn = document.createElement('button');
             btn.type = "button";
-            btn.className = 'cancel-edit-btn mb-4 px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition';
-            btn.innerHTML = '<i class="fa-solid fa-arrow-left"></i> Vazgeç ve Listeye Dön';
+            btn.className = 'cancel-edit-btn mb-4 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition';
+            // Metni güncelledik:
+            btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç / Yeni Ekle';
             btn.onclick = () => this.disableEditMode();
             
             this.dom.form.insertBefore(btn, this.dom.form.firstChild);
@@ -297,8 +299,8 @@ class PostManager {
             const result = await response.json();
 
             if (result.ok) {
-                alert(this.state.currentEditId ? "✅ Yazı başarıyla güncellendi!" : "✅ Yeni yazı eklendi!");
-                this.disableEditMode(); // Resetle ve listeye dön
+                alert(this.state.currentEditId ? "✅ Yazı güncellendi!" : "✅ Yazı eklendi!");
+                this.disableEditMode(); // Formu temizle
                 setTimeout(() => this.fetchPosts(), 500); // Listeyi yenile
             } else {
                 throw new Error(result.error || "İşlem başarısız.");
@@ -355,7 +357,7 @@ class PostManager {
             const result = await response.json();
 
             if (result.ok) {
-                // UI'dan satırı sil (yeniden fetch etmeye gerek kalmadan)
+                // UI'dan satırı sil
                 const row = btnElement.closest('.post-item');
                 row.style.transition = "all 0.5s";
                 row.style.opacity = "0";
@@ -369,8 +371,6 @@ class PostManager {
             btnElement.innerHTML = originalIcon;
         }
     }
-
-    // --- YARDIMCI FONKSİYONLAR ---
 
     setLoading(btn, isLoading, originalText = '') {
         if (!btn) return;
