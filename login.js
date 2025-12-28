@@ -1,16 +1,13 @@
 /* ============================================================
-   SECURE LOGIN JS (Google Sheets Bağlantılı)
+   SECURE LOGIN JS - FINAL
    ============================================================ */
-
 document.addEventListener('DOMContentLoaded', () => {
     
-    // ⚠️ 1. WEB UYGULAMASI URL'Sİ (Az önce kopyaladığın yeni linki buraya yapıştır)
+    // 👇 AZ ÖNCE ALDIĞIN URL'Yİ BURAYA YAPIŞTIR (Sonunda ? veya & olmasın, sadece /exec ile bitsin)
     const API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec"; 
     
-    // ⚠️ 2. GÜVENLİK ANAHTARI (Code.gs ile AYNI olmalı)
     const API_KEY = "Sifre2025"; 
 
-    // DOM Elementleri
     const loginForm = document.getElementById('login-form');
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
@@ -18,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMsg = document.getElementById('error-msg');
     const togglePassword = document.getElementById('togglePassword');
 
-    // 1. Şifre Göster/Gizle
     if(togglePassword) {
         togglePassword.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -28,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 2. Giriş İşlemi
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -36,52 +31,43 @@ document.addEventListener('DOMContentLoaded', () => {
             const userInput = usernameInput.value.trim();
             const passInput = passwordInput.value.trim();
 
-            // Ekranı temizle ve yükleniyor göster
             errorMsg.style.display = 'none';
             const originalText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kontrol Ediliyor...';
             loginBtn.disabled = true;
 
             try {
-                // 🚀 ADIM 1: Google Sheets'ten veriyi çek
-                // auth=${API_KEY} parametresini ekliyoruz ki sunucu bizi içeri alsın
-                const response = await fetch(`${API_URL}?type=settings&auth=${API_KEY}`);
+                // 🛠️ URL İNŞASI (Hata olmaması için burada birleştiriyoruz)
+                // exec'ten sonra '?' koyuyoruz, sonra parametreleri ekliyoruz.
+                const fullUrl = API_URL + "?type=settings&auth=" + API_KEY;
+                
+                // Konsola yazdıralım ki doğru URL gidiyor mu görelim (F12 -> Console)
+                console.log("İstek atılıyor:", fullUrl);
+
+                const response = await fetch(fullUrl);
                 const data = await response.json();
 
                 if (!data.ok) {
                     throw new Error(data.error || "Sunucu hatası");
                 }
 
-                const realUser = data.user; 
-                const realPass = data.pass; 
-
-                // 🚀 ADIM 2: Karşılaştırma
-                if (userInput === realUser && passInput === realPass) {
-                    
-                    // ✅ GİRİŞ BAŞARILI
+                if (userInput === data.user && passInput === data.pass) {
                     localStorage.setItem('isAdmin', 'true');
-                    localStorage.setItem('adminName', realUser); 
-                    localStorage.setItem('adminUser', realUser); 
-                    localStorage.setItem('adminPass', realPass); 
-                    
-                    // Yönlendir
+                    localStorage.setItem('adminName', data.user); 
                     window.location.href = "admin.html";
-
                 } else {
                     throw new Error("Kullanıcı adı veya şifre hatalı!");
                 }
 
             } catch (error) {
-                // ❌ HATA
-                console.error(error);
+                console.error("Hata:", error);
                 errorMsg.style.display = 'block';
                 errorMsg.innerHTML = error.message === "Failed to fetch" 
-                    ? '<i class="fa-solid fa-triangle-exclamation"></i> Bağlantı hatası!' 
-                    : '<i class="fa-solid fa-circle-exclamation"></i> Giriş başarısız: Bilgiler yanlış.';
+                    ? "Bağlantı hatası! URL'yi kontrol et." 
+                    : "Giriş başarısız: Bilgiler yanlış.";
                 
                 loginBtn.innerHTML = originalText;
                 loginBtn.disabled = false;
-                passwordInput.value = "";
             }
         });
     }
