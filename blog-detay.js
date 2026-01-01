@@ -67,6 +67,40 @@ document.addEventListener('DOMContentLoaded', async () => {
         return array;
     }
 
+    /** Meta Etiketlerini (OG Tags) Güncelle - Paylaşım Önizlemeleri İçin */
+    function updateMetaTags(post) {
+        const summary = post.ozet || post.icerik.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
+        const imageUrl = post.resim || 'assets/default-cover.jpg';
+        const pageUrl = window.location.href;
+
+        // Sayfa Başlığı
+        document.title = `${post.baslik} | Abdullah Cihan`;
+
+        // Yardımcı: Meta tag varsa güncelle, yoksa oluştur
+        const setMeta = (keyType, keyName, content) => {
+            let element = document.querySelector(`meta[${keyType}="${keyName}"]`);
+            if (!element) {
+                element = document.createElement('meta');
+                element.setAttribute(keyType, keyName);
+                document.head.appendChild(element);
+            }
+            element.setAttribute('content', content);
+        };
+
+        // Open Graph (Facebook, WhatsApp, LinkedIn)
+        setMeta('property', 'og:title', post.baslik);
+        setMeta('property', 'og:description', summary);
+        setMeta('property', 'og:image', imageUrl);
+        setMeta('property', 'og:url', pageUrl);
+        setMeta('property', 'og:type', 'article');
+
+        // Twitter Cards (X)
+        setMeta('name', 'twitter:card', 'summary_large_image');
+        setMeta('name', 'twitter:title', post.baslik);
+        setMeta('name', 'twitter:description', summary);
+        setMeta('name', 'twitter:image', imageUrl);
+    }
+
     /** Toast Bildirimi (Modern Stil) */
     function showToast(message, type = 'success') {
         // Varsa eskisin sil
@@ -151,8 +185,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ======================================================
     
     function fillPageContent(post) {
-        // Meta SEO
-        document.title = `${post.baslik} | Abdullah Cihan`;
+        // Meta SEO ve Başlık Güncellemesi
+        updateMetaTags(post);
         
         // Skeletonları gizle, içeriği aç
         if(elements.headerSkeleton) elements.headerSkeleton.style.display = 'none';
