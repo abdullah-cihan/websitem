@@ -1,169 +1,236 @@
-document.addEventListener('DOMContentLoaded', async () => {
-
+document.addEventListener('DOMContentLoaded', () => {
+    
     // ==========================================
-    // 1. DAKTİLO EFEKTİ (API'den Bağımsız - Hemen Çalışır)
+    // 1. AYARLAR VE SEÇİCİLER
     // ==========================================
-    const TxtType = function(el, toRotate, period) {
-        this.toRotate = Array.isArray(toRotate) ? toRotate : [];
-        this.el = el;
-        this.loopNum = 0;
-        this.period = parseInt(period, 10) || 2000;
-        this.txt = '';
-        this.isDeleting = false;
-
-        // Güvenli span oluşturma
-        this.wrap = document.createElement('span');
-        this.wrap.className = 'wrap';
-        this.el.textContent = ''; 
-        this.el.appendChild(this.wrap);
-
-        this.tick();
+    const CONFIG = {
+        API_URL: "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec",
+        ANIMATION_THRESHOLD: 0.1
     };
 
-    TxtType.prototype.tick = function() {
-        if (!this.toRotate.length) return;
+    const DOM = {
+        featuredContainer: document.getElementById('featured-container'),
+        standardContainer: document.getElementById('standard-container'),
+        hamburger: document.querySelector('.hamburger'),
+        navLinks: document.querySelector('.nav-links'),
+        progressBar: document.getElementById('progress-bar'),
+        backToTop: document.querySelector('.back-to-top')
+    };
 
-        const i = this.loopNum % this.toRotate.length;
-        const fullTxt = String(this.toRotate[i] || '');
-
-        if (this.isDeleting) {
-            this.txt = fullTxt.substring(0, this.txt.length - 1);
-        } else {
-            this.txt = fullTxt.substring(0, this.txt.length + 1);
-        }
-
-        // textContent kullanarak güvenli yazım
-        this.wrap.textContent = this.txt;
-
-        let delta = 200 - Math.random() * 100;
-        if (this.isDeleting) delta /= 2;
-
-        if (!this.isDeleting && this.txt === fullTxt) {
-            delta = this.period;
-            this.isDeleting = true;
-        } else if (this.isDeleting && this.txt === '') {
+    // ==========================================
+    // 2. MODERN DAKTİLO EFEKTİ (Class Yapısı)
+    // ==========================================
+    class TypeWriter {
+        constructor(el, toRotate, period) {
+            this.toRotate = toRotate;
+            this.el = el;
+            this.loopNum = 0;
+            this.period = parseInt(period, 10) || 2000;
+            this.txt = '';
             this.isDeleting = false;
-            this.loopNum++;
-            delta = 500;
+            this.tick();
         }
 
-        setTimeout(() => this.tick(), delta);
-    };
+        tick() {
+            const i = this.loopNum % this.toRotate.length;
+            const fullTxt = this.toRotate[i];
 
-    // Daktiloyu sayfadaki elementlere uygula
-    const typewriteElements = document.getElementsByClassName('typewrite');
-    for (let i = 0; i < typewriteElements.length; i++) {
-        const toRotateStr = typewriteElements[i].getAttribute('data-type');
-        const period = typewriteElements[i].getAttribute('data-period');
-
-        if (toRotateStr) {
-            try {
-                new TxtType(typewriteElements[i], JSON.parse(toRotateStr), period);
-            } catch (e) {
-                console.error("Daktilo JSON hatası:", e);
+            if (this.isDeleting) {
+                this.txt = fullTxt.substring(0, this.txt.length - 1);
+            } else {
+                this.txt = fullTxt.substring(0, this.txt.length + 1);
             }
+
+            this.el.innerHTML = '<span class="wrap">' + this.txt + '</span>';
+
+            let delta = 200 - Math.random() * 100;
+            if (this.isDeleting) { delta /= 2; }
+
+            if (!this.isDeleting && this.txt === fullTxt) {
+                delta = this.period;
+                this.isDeleting = true;
+            } else if (this.isDeleting && this.txt === '') {
+                this.isDeleting = false;
+                this.loopNum++;
+                delta = 500;
+            }
+
+            setTimeout(() => this.tick(), delta);
+        }
+    }
+
+    // Daktiloyu Başlat
+    const elements = document.getElementsByClassName('typewrite');
+    for (let i = 0; i < elements.length; i++) {
+        const toRotate = elements[i].getAttribute('data-type');
+        const period = elements[i].getAttribute('data-period');
+        if (toRotate) {
+            new TypeWriter(elements[i], JSON.parse(toRotate), period);
         }
     }
 
     // ==========================================
-    // 2. ARAYÜZ ETKİLEŞİMLERİ (Menü & Scroll)
+    // 3. UI ETKİLEŞİMLERİ (Menü & Scroll)
     // ==========================================
     
-    // Mobil Menü (Hamburger)
-    const hamburger = document.querySelector('.hamburger');
-    const navLinks = document.querySelector('.nav-links');
-    if (hamburger && navLinks) {
-        hamburger.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
+    // Mobil Menü
+    if (DOM.hamburger && DOM.navLinks) {
+        DOM.hamburger.addEventListener('click', () => {
+            const isExpanded = DOM.hamburger.getAttribute('aria-expanded') === 'true';
+            DOM.hamburger.setAttribute('aria-expanded', !isExpanded);
+            DOM.navLinks.classList.toggle('active');
+            
+            // İkon Değişimi
+            const icon = DOM.hamburger.querySelector('i');
+            icon.classList.toggle('fa-bars');
+            icon.classList.toggle('fa-xmark');
+        });
+
+        // Linke tıklayınca menüyü kapat
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                DOM.navLinks.classList.remove('active');
+                DOM.hamburger.setAttribute('aria-expanded', 'false');
+                DOM.hamburger.querySelector('i').classList.add('fa-bars');
+                DOM.hamburger.querySelector('i').classList.remove('fa-xmark');
+            });
         });
     }
 
-    // Scroll Bar & Yukarı Çık Butonu
+    // Scroll Olayları (Progress Bar & Back to Top)
     window.addEventListener('scroll', () => {
         const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
         const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
         
-        // İlerleme Çubuğu
-        const progressBar = document.getElementById('progress-bar');
-        if (progressBar && scrollHeight > 0) {
-            progressBar.style.width = (scrollTop / scrollHeight) * 100 + "%";
+        // Progress Bar
+        if (DOM.progressBar && scrollHeight > 0) {
+            const scrolled = (scrollTop / scrollHeight) * 100;
+            DOM.progressBar.style.width = `${scrolled}%`;
         }
 
-        // Yukarı Çık Butonu
-        const backToTop = document.querySelector('.back-to-top');
-        if (backToTop) {
-            if (scrollTop > 300) backToTop.classList.add('active');
-            else backToTop.classList.remove('active');
+        // Back To Top Butonu
+        if (DOM.backToTop) {
+            DOM.backToTop.classList.toggle('active', scrollTop > 300);
         }
     });
 
     // ==========================================
-    // 3. API VERİLERİ (GOOGLE APPS SCRIPT - KORUNDU)
+    // 4. API VERİ İŞLEMLERİ
     // ==========================================
-    const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec";
-    const container = document.getElementById('standard-container');
-    const featuredContainer = document.getElementById('featured-container');
 
-    // Yükleniyor mesajı
-    if (container) container.innerHTML = "<p style='color:white;text-align:center'>Yükleniyor...</p>";
+    // Skeleton (Yükleme) Kartı Oluşturucu
+    const createSkeletonCard = () => `
+        <article class="blog-card glass skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="blog-content">
+                <div class="skeleton-text w-50"></div>
+                <div class="skeleton-title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-btn"></div>
+            </div>
+        </article>
+    `;
 
-    try {
-        const res = await fetch(`${API_URL}?type=posts`);
-        const data = await res.json();
-        const posts = data.posts || [];
-        const activePosts = posts.filter(p => p.durum === "Yayında");
-        
-        // Temizlik
-        if (container) container.innerHTML = "";
-        if (featuredContainer) featuredContainer.innerHTML = "";
-        
-        if (activePosts.length === 0 && container) {
-            container.innerHTML = "<p style='color:#94a3b8;text-align:center'>Henüz yazı yok.</p>";
+    // Yükleniyor durumunu göster
+    const showLoading = () => {
+        if (DOM.standardContainer) {
+            // 3 tane skeleton kart ekle
+            DOM.standardContainer.innerHTML = createSkeletonCard().repeat(3);
         }
+    };
 
-        // --- KARTLARI OLUŞTURMA (SENİN ORİJİNAL YAPIN) ---
-        activePosts.forEach(post => {
-            const isFeatured = (String(post.one_cikan).toLowerCase() === "true");
-            const target = isFeatured && featuredContainer ? featuredContainer : container;
-            if (!target) return;
+    // Tekil Blog Kartı HTML'i
+    const createBlogCard = (post, isFeatured = false) => {
+        const dateStr = post.tarih ? new Date(post.tarih).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+        
+        // Resim mi İkon mu?
+        const isImage = post.resim && post.resim.startsWith("http");
+        const mediaHtml = isImage 
+            ? `<img src="${post.resim}" alt="${post.baslik}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">`
+            : `<i class="${post.resim || 'fa-solid fa-pen'}" style="font-size:2.5rem; color:#3b82f6; display:flex; align-items:center; justify-content:center; height:100%;"></i>`;
 
-            const dateStr = post.tarih ? new Date(post.tarih).toLocaleDateString('tr-TR') : '';
+        // Kategori Rengi
+        const catLower = (post.kategori || '').toLowerCase();
+        let catClass = "cat-blue"; // Varsayılan
+        if (catLower.includes("felsefe")) catClass = "cat-purple";
+        if (catLower.includes("teknoloji")) catClass = "cat-green";
+        if (catLower.includes("video")) catClass = "cat-red";
+
+        return `
+            <article class="blog-card glass ${isFeatured ? 'featured-card' : ''} hidden">
+                <div class="blog-thumb" style="${isImage ? 'padding:0; background:none;' : ''}">
+                    ${mediaHtml}
+                </div>
+                <div class="blog-content">
+                    <div class="meta">
+                        <span class="category ${catClass}">${post.kategori || 'Genel'}</span>
+                        <span class="date"><i class="fa-regular fa-calendar"></i> ${dateStr}</span>
+                    </div>
+                    <h3>
+                        <a href="blog-detay.html?id=${post.id}">${post.baslik}</a>
+                    </h3>
+                    <p>${post.ozet || ''}</p>
+                    <a href="blog-detay.html?id=${post.id}" class="btn-read-modern">
+                        Devamını Oku <i class="fa-solid fa-arrow-right"></i>
+                    </a>
+                </div>
+            </article>
+        `;
+    };
+
+    // Ana Veri Çekme Fonksiyonu
+    const fetchPosts = async () => {
+        showLoading();
+
+        try {
+            const res = await fetch(`${CONFIG.API_URL}?type=posts`);
+            if (!res.ok) throw new Error('Ağ hatası');
             
-            // Resim/İkon Mantığı
-            let mediaHtml = "";
-            if (post.resim && post.resim.startsWith("http")) {
-                mediaHtml = `<img src="${post.resim}" alt="${post.baslik}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;">`;
-            } else {
-                mediaHtml = `<i class="${post.resim || 'fa-solid fa-pen'}" style="font-size:2rem; color:#3b82f6;"></i>`;
+            const data = await res.json();
+            const posts = data.posts || [];
+            const activePosts = posts.filter(p => p.durum === "Yayında");
+
+            // Konteynerları Temizle
+            if (DOM.standardContainer) DOM.standardContainer.innerHTML = "";
+            if (DOM.featuredContainer) DOM.featuredContainer.innerHTML = "";
+
+            if (activePosts.length === 0) {
+                if (DOM.standardContainer) DOM.standardContainer.innerHTML = `<div class="empty-state">Henüz yazı bulunmuyor.</div>`;
+                return;
             }
-            
-            // Kategori Renkleri
-            let catColor = "cat-blue";
-            if (post.kategori === "Felsefe") catColor = "cat-purple";
-            if (post.kategori === "Teknoloji") catColor = "cat-green";
 
-            const html = `
-                <article class="blog-card glass ${!isFeatured ? '' : 'featured-card'}">
-                    <div class="blog-thumb" style="${post.resim && post.resim.startsWith('http') ? 'padding:0; background:none' : ''}">
-                        ${mediaHtml}
-                    </div>
-                    <div class="blog-content">
-                        <div class="meta">
-                            <span class="category ${catColor}">${post.kategori}</span>
-                            <span class="date">${dateStr}</span>
-                        </div>
-                        <h3>${post.baslik}</h3>
-                        ${isFeatured ? `<p>${post.ozet || ''}</p>` : ''}
-                        <a href="blog-detay.html?id=${post.id}" class="btn-read-modern">Oku <i class="fa-solid fa-arrow-right"></i></a>
-                    </div>
-                </article>
-            `;
-            target.innerHTML += html;
-        });
+            // Kartları Dağıt (Öne Çıkanlar ve Standart)
+            activePosts.forEach(post => {
+                const isFeatured = String(post.one_cikan).toLowerCase() === "true";
+                const cardHtml = createBlogCard(post, isFeatured);
+                
+                if (isFeatured && DOM.featuredContainer) {
+                    DOM.featuredContainer.innerHTML += cardHtml;
+                } else if (DOM.standardContainer) {
+                    DOM.standardContainer.innerHTML += cardHtml;
+                }
+            });
 
-        // ==========================================
-        // 4. ANİMASYON TETİKLEYİCİSİ (Veriler geldikten sonra)
-        // ==========================================
+            // Animasyonları Başlat
+            initObserver();
+
+        } catch (error) {
+            console.error("Veri çekme hatası:", error);
+            if (DOM.standardContainer) {
+                DOM.standardContainer.innerHTML = `
+                    <div class="error-state glass">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <p>Yazılar yüklenirken bir sorun oluştu.</p>
+                        <button onclick="location.reload()" class="btn-sidebar">Tekrar Dene</button>
+                    </div>`;
+            }
+        }
+    };
+
+    // ==========================================
+    // 5. ANİMASYON GÖZLEMCİSİ (Intersection Observer)
+    // ==========================================
+    const initObserver = () => {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -172,19 +239,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     observer.unobserve(entry.target);
                 }
             });
-        });
+        }, { threshold: CONFIG.ANIMATION_THRESHOLD });
 
-        // Hem yeni gelen kartları hem de gizli sidebar elemanlarını seç
-        const blogCards = document.querySelectorAll('.blog-card');
-        const hiddenStaticElements = document.querySelectorAll('.hidden');
+        // Blog kartlarını izle
+        document.querySelectorAll('.blog-card').forEach(el => observer.observe(el));
+        
+        // Sayfadaki diğer gizli statik elementleri izle (Hero, About vs.)
+        document.querySelectorAll('.hidden').forEach(el => observer.observe(el));
+    };
 
-        blogCards.forEach(el => observer.observe(el));
-        hiddenStaticElements.forEach(el => observer.observe(el));
-
-    } catch (e) {
-        console.error("API Hatası:", e);
-        if (container) container.innerHTML = "<p style='color:red;text-align:center'>Veriler yüklenemedi.</p>";
-        // Hata durumunda sidebarlar kaybolmasın diye göster
-        document.querySelectorAll('.hidden').forEach(el => el.classList.add('show'));
-    }
+    // ==========================================
+    // 6. BAŞLAT
+    // ==========================================
+    fetchPosts(); // Verileri çek
+    initObserver(); // Statik elementler için gözlemciyi hemen başlat
 });
