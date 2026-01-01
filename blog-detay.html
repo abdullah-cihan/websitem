@@ -3,24 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Abdullah Cihan Blog Yazısı">
-    <meta name="author" content="Abdullah Cihan">
     
+    <meta name="description" content="Teknoloji ve yazılım blogu.">
+    <meta name="author" content="Abdullah Cihan">
+
     <meta property="og:type" content="article">
     <meta property="og:title" content="Blog Detay | Abdullah Cihan">
-    <meta property="og:description" content="Teknoloji ve yazılım üzerine notlar.">
-    <meta property="og:image" content="assets/default-blog-cover.jpg">
+    <meta property="og:description" content="İçerik yükleniyor...">
+    <meta property="og:image" content="assets/default-cover.jpg">
     <meta property="og:url" content="https://abdullahcihan.com">
 
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Blog Detay | Abdullah Cihan">
+    <meta name="twitter:description" content="İçerik yükleniyor...">
+    <meta name="twitter:image" content="assets/default-cover.jpg">
 
-    <title>Blog Detay | Abdullah Cihan</title>
+    <title>Yükleniyor... | Abdullah Cihan</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <link rel="stylesheet" href="style.css">        
     <link rel="stylesheet" href="blog-detay.css">  
 </head>
@@ -53,9 +58,9 @@
                 <a href="index.html#blog" class="back-link"><i class="fa-solid fa-arrow-left"></i> Blog'a Dön</a>
                 
                 <div id="header-skeleton" class="skeleton-wrapper">
-                    <div class="skeleton skeleton-text skeleton-category"></div>
-                    <div class="skeleton skeleton-title"></div>
-                    <div class="skeleton skeleton-title w-75"></div>
+                    <div class="skeleton skeleton-text skeleton-category" style="margin: 0 auto 15px auto;"></div>
+                    <div class="skeleton skeleton-title" style="margin: 0 auto 10px auto; max-width: 600px;"></div>
+                    <div class="skeleton skeleton-title w-75" style="margin: 0 auto;"></div>
                 </div>
 
                 <div id="header-content" style="display: none;">
@@ -64,7 +69,7 @@
                         <span class="divider">•</span>
                         <span id="detail-date" class="date">Tarih</span>
                         <span class="divider">•</span>
-                        <span id="reading-time" class="reading-time"><i class="fa-regular fa-clock"></i> 5 dk okuma</span>
+                        <span id="reading-time" class="reading-time"><i class="fa-regular fa-clock"></i> ...</span>
                     </div>
                     <h1 id="detail-title" class="article-main-title"></h1>
                 </div>
@@ -91,6 +96,7 @@
                             <br>
                             <div class="skeleton skeleton-text"></div>
                             <div class="skeleton skeleton-text w-60"></div>
+                            <div class="skeleton skeleton-text"></div>
                         </div>
                     </div>
 
@@ -98,23 +104,39 @@
                         </div>
 
                     <div class="share-box">
-                        <span class="share-title">Bu yazıyı paylaş:</span>
+                        <span class="share-title">Bu yazıyı beğendin mi? Arkadaşlarınla paylaş:</span>
                         <div class="share-actions">
-                            <a class="share-btn share-x" href="#" id="share-x" target="_blank" aria-label="X'te paylaş"><i class="fa-brands fa-x-twitter"></i></a>
-                            <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank" aria-label="LinkedIn'de paylaş"><i class="fa-brands fa-linkedin-in"></i></a>
-                            <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank" aria-label="WhatsApp'ta paylaş"><i class="fa-brands fa-whatsapp"></i></a>
-                            <button class="share-btn share-copy" type="button" id="share-copy" aria-label="Linki kopyala"><i class="fa-solid fa-link"></i></button>
+                            <a class="share-btn share-x" href="#" id="share-x" target="_blank" aria-label="X'te paylaş">
+                                <i class="fa-brands fa-x-twitter"></i> <span>X</span>
+                            </a>
+
+                            <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank" aria-label="LinkedIn'de paylaş">
+                                <i class="fa-brands fa-linkedin-in"></i> <span>LinkedIn</span>
+                            </a>
+
+                            <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank" aria-label="WhatsApp'ta paylaş">
+                                <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
+                            </a>
+                            
+                            <a class="share-btn share-facebook" href="#" id="share-facebook" target="_blank" aria-label="Facebook'ta paylaş" style="border-color: rgba(24, 119, 242, 0.35); color:#1877F2;">
+                                <i class="fa-brands fa-facebook-f"></i> <span>Facebook</span>
+                            </a>
+
+                            <button class="share-btn share-copy" type="button" id="share-copy" aria-label="Linki kopyala">
+                                <i class="fa-solid fa-link"></i> <span>Kopyala</span>
+                            </button>
                         </div>
+                        
                         <div class="share-toast" id="share-toast" aria-live="polite">Link kopyalandı!</div>
                     </div>
 
                     <div class="author-card">
                         <div class="author-img">
-                            <img src="assets/avatar.jpg" alt="Abdullah Cihan" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan'">
+                            <img src="assets/avatar.jpg" alt="Abdullah Cihan" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan&background=random'">
                         </div>
                         <div class="author-info">
                             <h4>Abdullah Cihan</h4>
-                            <p>Yazılım geliştirici ve içerik üreticisi. Teknoloji dünyasındaki deneyimlerimi paylaşıyorum.</p>
+                            <p>Yazılım geliştirici ve içerik üreticisi. Teknoloji dünyasındaki notlarımı burada paylaşıyorum.</p>
                         </div>
                     </div>
 
@@ -122,6 +144,7 @@
 
                 <aside class="sidebar">
                     <div class="sidebar-sticky">
+                        
                         <div class="sidebar-widget glass">
                             <h3>Kategoriler</h3>
                             <ul class="cat-list">
@@ -134,7 +157,7 @@
 
                         <div class="sidebar-widget glass youtube-widget">
                             <h3><i class="fa-brands fa-youtube" style="color:red;"></i> Abone Ol</h3>
-                            <p class="small-text">En yeni videoları kaçırmamak için kanalıma katılın.</p>
+                            <p class="small-text">Yeni videoları kaçırmamak için kanalıma göz atın.</p>
                             <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn-sidebar">Kanalı Gör</a>
                         </div>
                     </div>
@@ -146,18 +169,16 @@
             <div class="container">
                 <h3 class="section-title">Bunları da Beğenebilirsin</h3>
                 <div class="related-grid" id="related-posts-container">
-                    <div class="related-card glass skeleton-card"></div>
-                    <div class="related-card glass skeleton-card"></div>
-                    <div class="related-card glass skeleton-card"></div>
+                    <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
+                    <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
+                    <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
                 </div>
             </div>
         </section>
 
         <footer id="iletisim">
             <div class="container footer-content">
-                <div class="copyright">&copy; 2025 Abdullah Cihan.</div>
-                <div class="social-footer">
-                     </div>
+                <div class="copyright">&copy; 2025 Abdullah Cihan. Tüm hakları saklıdır.</div>
             </div>
         </footer>
     </main>
@@ -165,6 +186,7 @@
     <a href="#" class="back-to-top" aria-label="Yukarı Çık"><i class="fa-solid fa-arrow-up"></i></a>
     
     <script src="blog-detay.js"></script>
+    
     <script>
         const hamburger = document.querySelector('.hamburger');
         const navLinks = document.querySelector('.nav-links');
@@ -175,7 +197,6 @@
                 hamburger.setAttribute('aria-expanded', !isExpanded);
                 navLinks.classList.toggle('active');
                 
-                // İkon değişimi
                 const icon = hamburger.querySelector('i');
                 if(navLinks.classList.contains('active')){
                     icon.classList.remove('fa-bars');
