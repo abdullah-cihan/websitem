@@ -1,17 +1,37 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // ============================
-    // 1. AYARLAR VE HELPERS
+    // 1. AYARLAR VE SABİTLER
     // ============================
     const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec"; 
+    
+    // DOM Elementleri
+    const elements = {
+        title: document.getElementById('detail-title'),
+        date: document.getElementById('detail-date'),
+        category: document.getElementById('detail-category'),
+        content: document.getElementById('detail-content'),
+        image: document.getElementById('detail-img'),
+        coverLoader: document.getElementById('cover-loader'), // Resim yüklenirken dönen/skeleton kısım
+        headerSkeleton: document.getElementById('header-skeleton'), // Başlık yükleniyor efekti
+        headerContent: document.getElementById('header-content'), // Gerçek başlık alanı
+        skeletonContent: document.querySelector('.skeleton-content'), // İçerik yükleniyor efekti
+        tagsContainer: document.getElementById('article-tags'),
+        readingTime: document.getElementById('reading-time'),
+        relatedContainer: document.getElementById('related-posts-container'),
+        progressBar: document.getElementById('progress-bar')
+    };
 
-    // HTML Temizleme (Güvenlik - XSS Azaltma)
+    // ============================
+    // 2. YARDIMCI FONKSİYONLAR
+    // ============================
+
+    // HTML Temizleme (Güvenlik)
     function sanitizeHtml(dirtyHtml) {
         const html = String(dirtyHtml || '');
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        // Tehlikeli tagları sil
-        const badTags = ['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta'];
+        const badTags = ['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'form'];
         badTags.forEach(tag => doc.querySelectorAll(tag).forEach(n => n.remove()));
-        // Tehlikeli attributeleri temizle (onclick vb.)
+        
         doc.querySelectorAll('*').forEach(el => {
             [...el.attributes].forEach(attr => {
                 const name = attr.name.toLowerCase();
@@ -25,193 +45,267 @@ document.addEventListener('DOMContentLoaded', async () => {
         return doc.body.innerHTML;
     }
 
-    // Kategori Renklendirme Yardımcısı
-    function setCategoryBadge(category, catEl) {
-        if (!catEl) return;
-        const c = String(category || 'Genel');
-        catEl.textContent = c;
-        // Kategori ismine göre renk sınıfları (CSS'inde tanımlı olmalı)
-        if (['Python', 'Yazılım', 'OOP'].includes(c)) catEl.className = 'category cat-blue';
-        else if (c === 'Felsefe') catEl.className = 'category cat-purple';
-        else if (['Teknoloji', 'Kariyer'].includes(c)) catEl.className = 'category cat-green';
-        else catEl.className = 'category cat-red';
+    // Okuma Süresi Hesaplama
+    function calculateReadingTime(text) {
+        const wordsPerMinute = 200; // Ortalama okuma hızı
+        const textLength = text.split(/\s+/).length; 
+        const minutes = Math.ceil(textLength / wordsPerMinute);
+        return minutes;
     }
 
-    // Toast Bildirim Göstericisi (Paylaşım için)
-    const showShareToast = (msg) => {
-        const toast = document.getElementById('share-toast');
-        if (!toast) return;
-        toast.textContent = msg;
-        toast.classList.add('show');
-        clearTimeout(window.__share_toast_t);
-        window.__share_toast_t = setTimeout(() => toast.classList.remove('show'), 1600);
-    };
+    // Meta Etiketlerini Güncelle (SEO ve Paylaşım İçin)
+    function updateMetaTags(post) {
+        document.title = `${post.baslik} | Abdullah Cihan`;
+        
+        // Helper: Meta tag bul veya oluştur
+        const setMeta = (property, content) => {
+            let element = document.querySelector(`meta[property="${property}"]`) || document.querySelector(`meta[name="${property}"]`);
+            if (!element) {
+                element = document.createElement('meta');
+                element.setAttribute('property', property);
+                document.head.appendChild(element);
+            }
+            element.setAttribute('content', content);
+        };
+
+        const pageUrl = window.location.href;
+        const imageUrl = post.resim && post.resim.startsWith('http') ? post.resim : 'assets/default-cover.jpg'; // Varsayılan resim yolu
+        const summary = post.ozet || post.icerik.substring(0, 150).replace(/<[^>]*>?/gm, '') + '...';
+
+        // Open Graph (Facebook, LinkedIn, WhatsApp)
+        setMeta('og:title', post.baslik);
+        setMeta('og:description', summary);
+        setMeta('og:image', imageUrl);
+        setMeta('og:url', pageUrl);
+        setMeta('og:type', 'article');
+
+        // Twitter Card
+        setMeta('twitter:card', 'summary_large_image');
+        setMeta('twitter:title', post.baslik);
+        setMeta('twitter:description', summary);
+        setMeta('twitter:image', imageUrl);
+    }
+
+    // Kategori Rengi Ayarla
+    function setCategoryColor(category) {
+        if (!elements.category) return;
+        elements.category.textContent = category;
+        // CSS dosyasındaki sınıflara göre renk ata
+        // Örnek CSS classları: .cat-blue, .cat-purple...
+        let colorClass = 'cat-default';
+        const catLower = String(category).toLowerCase();
+        
+        if (['python', 'yazılım', 'kodlama'].some(k => catLower.includes(k))) colorClass = 'cat-blue';
+        else if (['tasarım', 'sanat'].some(k => catLower.includes(k))) colorClass = 'cat-purple';
+        else if (['teknoloji', 'yapay zeka'].some(k => catLower.includes(k))) colorClass = 'cat-green';
+        else if (['video', 'youtube'].some(k => catLower.includes(k))) colorClass = 'cat-red';
+        
+        elements.category.className = `category ${colorClass}`;
+    }
 
     // ============================
-    // 2. SCROLL PROGRESS BAR
+    // 3. SCROLL PROGRESS BAR
     // ============================
     window.addEventListener('scroll', () => {
         const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
         const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
         const scrolled = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-        const progressBar = document.getElementById('progress-bar');
-        if (progressBar) progressBar.style.width = scrolled + "%";
+        if (elements.progressBar) elements.progressBar.style.width = scrolled + "%";
     });
 
     // ============================
-    // 3. VERİ ÇEKME VE İŞLEME
+    // 4. PAYLAŞIM BUTONLARI
     // ============================
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('id');
-    const titleEl = document.getElementById('detail-title');
-    const articleBodySection = document.getElementById('detail-content')?.parentElement || document.body; // Hata mesajı için kapsayıcı
-
-    // Yükleniyor durumu
-    if(titleEl) titleEl.textContent = "Yükleniyor...";
-
-    // Eğer ID hiç yoksa direkt hata göster
-    if (!id) { 
-        renderNotFound("Yazı Bulunamadı", "Geçersiz parametre.");
-        return; 
-    }
-
-    try {
-        // --- GOOGLE SHEETS VERİ TABANI BAĞLANTISI (DEĞİŞTİRİLMEDİ) ---
-        const res = await fetch(`${API_URL}?type=posts`);
-        const data = await res.json();
-        const posts = data.posts || [];
-        // ID eşleşmesi (Hem number hem string uyumu için String() kullanıldı)
-        const post = posts.find(p => String(p.id) === String(id));
-
-        if (!post) {
-            renderNotFound("Yazı Bulunamadı", "Aradığınız içerik silinmiş veya yayından kaldırılmış olabilir.");
-            return;
-        }
-
-        // --- VERİYİ DOLDUR (RENDER) ---
-        
-        // 1. Başlık ve Meta
-        document.title = post.baslik;
-        if(titleEl) titleEl.textContent = post.baslik;
-        
-        // 2. Kategori (Renkli Badge ile)
-        const catEl = document.getElementById('detail-category');
-        setCategoryBadge(post.kategori, catEl);
-
-        // 3. Tarih
-        const dateEl = document.getElementById('detail-date');
-        if(dateEl) {
-            dateEl.textContent = post.tarih ? new Date(post.tarih).toLocaleDateString('tr-TR', {year:'numeric', month:'long', day:'numeric'}) : '';
-        }
-
-        // 4. İçerik (XSS Korumalı)
-        const contentEl = document.getElementById('detail-content');
-        if(contentEl) {
-            contentEl.innerHTML = sanitizeHtml(post.icerik);
-        }
-
-        // 5. Görsel Yönetimi (URL ise resim, değilse ikon)
-        const imgEl = document.getElementById('detail-img');
-        const iconContainer = document.querySelector('.cover-placeholder');
-        
-        if (post.resim && post.resim.startsWith('http')) {
-            // Resim varsa
-            if(imgEl) {
-                imgEl.src = post.resim;
-                imgEl.style.display = 'block';
-            }
-            if(iconContainer) iconContainer.style.display = 'none';
-        } else {
-            // Resim yoksa ikon göster
-            if(imgEl) imgEl.style.display = 'none';
-            if(iconContainer) {
-                iconContainer.style.display = 'flex';
-                // Google sheets'den gelen ikon sınıfı veya varsayılan
-                const iconClass = post.resim || 'fa-solid fa-pen';
-                iconContainer.innerHTML = `<i class="${iconClass}" style="font-size:4rem; color:#3b82f6;"></i>`;
-            }
-        }
-        
-        // 6. Code Highlight (Eğer varsa)
-        if(window.hljs) hljs.highlightAll();
-
-        // 7. Paylaşım Butonlarını Güncelle (Veri geldikten sonra başlık değiştiği için)
-        setupShareButtons(post.baslik);
-
-    } catch (e) {
-        console.error(e);
-        renderNotFound("Hata Oluştu", "Veriler yüklenirken bir sorun oluştu. Lütfen bağlantınızı kontrol edin.");
-    }
-
-    // ============================
-    // 4. FONKSİYONLAR (UI)
-    // ============================
-
-    // Paylaşım butonlarını ayarlayan fonksiyon
-    function setupShareButtons(title) {
+    function setupShareButtons(post) {
         const pageUrl = encodeURIComponent(window.location.href);
-        const pageTitle = encodeURIComponent(title || document.title);
+        const pageTitle = encodeURIComponent(post.baslik);
+        
+        // Linkleri güncelle
+        const links = {
+            x: `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`,
+            linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`,
+            whatsapp: `https://api.whatsapp.com/send?text=${pageTitle}%20-%20${pageUrl}`
+        };
 
         const xBtn = document.getElementById('share-x');
         const liBtn = document.getElementById('share-linkedin');
         const waBtn = document.getElementById('share-whatsapp');
         const copyBtn = document.getElementById('share-copy');
 
-        if (xBtn) xBtn.href = `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`;
-        if (liBtn) liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
-        if (waBtn) waBtn.href = `https://api.whatsapp.com/send?text=${pageTitle}%20-%20${pageUrl}`;
+        if (xBtn) xBtn.href = links.x;
+        if (liBtn) liBtn.href = links.linkedin;
+        if (waBtn) waBtn.href = links.whatsapp;
 
+        // Kopyala Butonu
         if (copyBtn) {
-            // Olası eski event listener'ları temizlemek için clone
-            const newCopyBtn = copyBtn.cloneNode(true);
-            copyBtn.parentNode.replaceChild(newCopyBtn, copyBtn);
-            
-            newCopyBtn.addEventListener('click', async () => {
+            const newBtn = copyBtn.cloneNode(true);
+            copyBtn.parentNode.replaceChild(newBtn, copyBtn);
+            newBtn.addEventListener('click', async () => {
                 try {
                     await navigator.clipboard.writeText(window.location.href);
-                    showShareToast('✅ Link kopyalandı!');
-                } catch {
-                    // Fallback (eski tarayıcılar için)
-                    const ta = document.createElement('textarea');
-                    ta.value = window.location.href;
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    ta.remove();
-                    showShareToast('✅ Link kopyalandı!');
+                    showToast('Bağlantı kopyalandı! 🎉');
+                } catch (err) {
+                    showToast('Kopyalama başarısız oldu.');
                 }
             });
         }
     }
 
-    // Gelişmiş 404 Ekranı (İkinci koddan uyarlandı)
-    function renderNotFound(title, message) {
-        document.title = "Yazı Bulunamadı";
-        // Başlık elementlerini gizle
-        if(titleEl) titleEl.style.display = 'none';
-        const dateEl = document.getElementById('detail-date');
-        const catEl = document.getElementById('detail-category');
-        if(dateEl) dateEl.style.display = 'none';
-        if(catEl) catEl.style.display = 'none';
+    function showToast(message) {
+        const toast = document.getElementById('share-toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ============================
+    // 5. ANA İŞLEMLER (FETCH & RENDER)
+    // ============================
+    
+    // URL'den ID al
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+
+    if (!id) { 
+        renderError("Parametre Hatası", "Geçerli bir yazı ID'si bulunamadı.");
+        return; 
+    }
+
+    try {
+        const res = await fetch(`${API_URL}?type=posts`);
+        const data = await res.json();
+        const posts = data.posts || [];
+        const post = posts.find(p => String(p.id) === String(id));
+
+        if (!post) {
+            renderError("Yazı Bulunamadı", "Aradığınız içerik silinmiş veya adresi değişmiş olabilir.");
+            return;
+        }
+
+        // --- A. İÇERİĞİ DOLDUR ---
         
-        // Hata kartını bas
-        const container = document.getElementById('detail-content') ? document.getElementById('detail-content').parentElement : document.body;
+        // 1. Meta ve Başlık
+        updateMetaTags(post); // Share preview için meta tagları güncelle
+        elements.title.textContent = post.baslik;
+
+        // 2. UI Değişimi (Skeletonları gizle, içeriği aç)
+        if(elements.headerSkeleton) elements.headerSkeleton.style.display = 'none';
+        if(elements.headerContent) elements.headerContent.style.display = 'block';
+        if(elements.skeletonContent) elements.skeletonContent.style.display = 'none';
         
-        container.innerHTML = `
-            <div class="container" style="display:flex; justify-content:center; align-items:center; min-height:400px; padding:20px;">
-              <div class="glass" style="text-align:center; padding:50px; border-radius:20px; max-width:600px; width:100%; background:rgba(255,255,255,0.05); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size: 5rem; color: #ef4444; margin-bottom: 25px;"></i>
-                <h2 style="font-size: 2rem; margin-bottom: 15px; color: #fff; font-family: 'Space Grotesk', sans-serif;">
-                  ${title}
-                </h2>
-                <p style="color: #ccc; margin-bottom: 30px; font-size: 1.1rem;">
-                  ${message}
-                </p>
-                <a href="index.html" class="btn-read-modern" style="display:inline-flex; align-items:center; justify-content:center; padding: 12px 30px; text-decoration:none; background:#3b82f6; color:white; border-radius:8px;">
-                  <i class="fa-solid fa-arrow-left" style="margin-right: 10px;"></i> Ana Sayfaya Dön
-                </a>
-              </div>
-            </div>
-        `;
+        // 3. Tarih ve Kategori
+        if(elements.date) elements.date.textContent = new Date(post.tarih).toLocaleDateString('tr-TR', {year:'numeric', month:'long', day:'numeric'});
+        setCategoryColor(post.kategori);
+
+        // 4. Okuma Süresi
+        const sanitizedContent = sanitizeHtml(post.icerik);
+        if(elements.readingTime) {
+            // HTML taglarını temizleyip sadece metin uzunluğunu al
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = sanitizedContent;
+            const pureText = tempDiv.textContent || tempDiv.innerText || "";
+            const minutes = calculateReadingTime(pureText);
+            elements.readingTime.innerHTML = `<i class="fa-regular fa-clock"></i> ${minutes} dk okuma`;
+        }
+
+        // 5. İçeriği Yaz
+        if(elements.content) elements.content.innerHTML = sanitizedContent;
+
+        // 6. Görsel Yönetimi
+        if (post.resim && post.resim.startsWith('http')) {
+            elements.image.src = post.resim;
+            // Resim yüklendiğinde loader'ı gizle
+            elements.image.onload = () => {
+                elements.image.style.display = 'block';
+                if(elements.coverLoader) elements.coverLoader.style.display = 'none';
+            };
+            // Resim hataya düşerse
+            elements.image.onerror = () => {
+                elements.image.style.display = 'none';
+                if(elements.coverLoader) elements.coverLoader.innerHTML = '<i class="fa-solid fa-image" style="font-size:3rem; opacity:0.5;"></i>';
+            };
+        } else {
+            // Resim yoksa komple gizle veya ikon göster
+            if(elements.coverLoader) elements.coverLoader.style.display = 'none';
+            if(elements.image) elements.image.style.display = 'none';
+        }
+
+        // 7. Kod Bloklarını Renklendir (Highlight.js varsa)
+        if(window.hljs) hljs.highlightAll();
+
+        // 8. Etiketler (Opsiyonel - Eğer sheets'de 'etiketler' kolonu varsa)
+        if(post.etiketler && elements.tagsContainer) {
+            const tags = post.etiketler.split(',').map(t => t.trim());
+            elements.tagsContainer.innerHTML = tags.map(tag => `<span class="tag">#${tag}</span>`).join('');
+        }
+
+        // --- B. DİĞER FONKSİYONLARI ÇALIŞTIR ---
+        setupShareButtons(post);
+        renderRelatedPosts(posts, post.id, post.kategori);
+
+    } catch (e) {
+        console.error(e);
+        renderError("Bağlantı Hatası", "Veriler yüklenirken bir sorun oluştu. Lütfen internet bağlantınızı kontrol edin.");
+    }
+
+    // ============================
+    // 6. BENZER YAZILAR (RELATED POSTS)
+    // ============================
+    function renderRelatedPosts(allPosts, currentId, currentCategory) {
+        if(!elements.relatedContainer) return;
+
+        // Mevcut yazıyı çıkar
+        let filtered = allPosts.filter(p => String(p.id) !== String(currentId));
+        
+        // Aynı kategoridekileri öne al, yoksa karışık getir
+        let related = filtered.filter(p => p.kategori === currentCategory);
+        
+        // Eğer aynı kategoride yeterince yazı yoksa, diğerlerinden tamamla
+        if(related.length < 3) {
+            const others = filtered.filter(p => p.kategori !== currentCategory);
+            related = related.concat(others);
+        }
+
+        // İlk 3 tanesini al
+        const finalPosts = related.slice(0, 3);
+
+        if(finalPosts.length === 0) {
+            document.querySelector('.related-posts-section').style.display = 'none';
+            return;
+        }
+
+        // HTML oluştur
+        elements.relatedContainer.innerHTML = finalPosts.map(p => `
+            <a href="blog-detay.html?id=${p.id}" class="related-card glass">
+                <div class="related-content">
+                    <span class="related-cat">${p.kategori}</span>
+                    <h4 class="related-title">${p.baslik}</h4>
+                    <span class="related-date">${new Date(p.tarih).toLocaleDateString('tr-TR')}</span>
+                </div>
+            </a>
+        `).join('');
+    }
+
+    // ============================
+    // 7. HATA EKRANI
+    // ============================
+    function renderError(title, message) {
+        document.title = "Hata | Abdullah Cihan";
+        // Skeletonları ve loaderları temizle
+        if(elements.headerSkeleton) elements.headerSkeleton.style.display = 'none';
+        if(elements.skeletonContent) elements.skeletonContent.style.display = 'none';
+        
+        const container = document.querySelector('.detail-layout');
+        if(container) {
+            container.innerHTML = `
+                <div class="error-container glass">
+                    <i class="fa-solid fa-triangle-exclamation error-icon"></i>
+                    <h2>${title}</h2>
+                    <p>${message}</p>
+                    <a href="index.html" class="btn-error">Ana Sayfaya Dön</a>
+                </div>
+            `;
+        }
     }
 });
