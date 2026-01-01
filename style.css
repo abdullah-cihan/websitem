@@ -1,9 +1,9 @@
-/* MODERN DARK THEME - ANA STİL DOSYASI (V3.2 - POLISHED) */
+/* MODERN DARK THEME - ANA STİL DOSYASI (V3.2 - POLISHED & SKELETON READY) */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap');
 
 :root {
     --bg-dark: #0f172a;
-    --bg-card: rgba(30, 41, 59, 0.75); /* Biraz daha opak */
+    --bg-card: rgba(30, 41, 59, 0.75);
     --primary: #3b82f6;        /* Elektrik Mavisi */
     --accent: #8b5cf6;         /* Neon Mor */
     --text-main: #f1f5f9;      /* Beyazımsı Metin */
@@ -54,49 +54,6 @@ body {
     box-shadow: 0 0 10px var(--primary);
 }
 
-/* --- BLOGGER TARZI LİSTE (Admin Paneli İçin) --- */
-.post-list-container {
-    display: flex; flex-direction: column; gap: 12px; margin-top: 20px;
-}
-.post-item {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 15px;
-    display: flex; justify-content: space-between; align-items: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative; overflow: hidden;
-}
-.post-item:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(59, 130, 246, 0.4);
-    transform: translateX(4px);
-}
-.post-item::before {
-    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-    background: transparent; transition: background 0.3s;
-}
-.post-item:hover::before { background: var(--primary); }
-.post-info { flex: 1; }
-.post-title-row { font-size: 1.1rem; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; }
-.post-meta-row { font-size: 0.85rem; color: #94a3b8; display: flex; gap: 15px; align-items: center; }
-.post-badge {
-    padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;
-    background: rgba(59, 130, 246, 0.15); color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.2);
-}
-.post-status { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
-.status-active { background: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.6); }
-.status-draft { background: #f59e0b; }
-.post-actions { display: flex; align-items: center; gap: 10px; color: #64748b; }
-.cancel-edit-btn {
-    background: #ef4444; color: white; padding: 8px 16px; border-radius: 6px;
-    border: none; cursor: pointer; margin-left: 10px; font-weight: 500;
-    display: none; transition: background 0.2s; font-size: 0.9rem;
-}
-.cancel-edit-btn:hover { background: #dc2626; }
-
 /* --- GENEL DÜZEN --- */
 .container {
     max-width: 1400px; margin: 0 auto; padding: 0 30px; width: 100%;
@@ -132,14 +89,14 @@ body {
     border-radius: 50px; font-weight: 600; font-size: 0.9rem; border: none;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
-.btn-cta:hover::after { width: 0; } /* Nav link çizgisini iptal et */
+.btn-cta:hover::after { width: 0; }
 .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5); }
 .hamburger { display: none; color: var(--text-main); font-size: 1.5rem; cursor: pointer; }
 
 /* --- HERO BÖLÜMÜ --- */
 .hero-section {
     min-height: 60vh; display: flex; align-items: center; 
-    padding-top: 110px; padding-bottom: 50px; /* Header payı */
+    padding-top: 110px; padding-bottom: 50px;
 }
 .hero-container { display: grid; grid-template-columns: 1.5fr 1fr; gap: 50px; align-items: center; }
 .badge { 
@@ -173,7 +130,7 @@ h1 { font-family: 'Space Grotesk'; font-size: 3.5rem; line-height: 1.1; margin-b
     box-shadow: var(--shadow-soft); animation: float 6s ease-in-out infinite; 
 }
 .python-card { top: 10%; right: -20px; color: #fbbf24; animation-delay: 0s; }
-.js-card { bottom: 10%; left: -20px; color: #ef4444; animation-delay: 2s; font-size: 1.5rem; } /* Örnek 2. kart */
+.js-card { bottom: 10%; left: -20px; color: #ef4444; animation-delay: 2s; font-size: 1.5rem; }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
 
 /* --- DAKTİLO EFEKTİ --- */
@@ -237,10 +194,6 @@ h1 { font-family: 'Space Grotesk'; font-size: 3.5rem; line-height: 1.1; margin-b
 }
 .blog-card:hover .blog-thumb { transform: scale(1.02); }
 
-.thumb-purple { background: rgba(139, 92, 246, 0.15); color: var(--accent); }
-.thumb-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-.thumb-green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-
 .blog-content { display: flex; flex-direction: column; flex-grow: 1; }
 .meta { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
 .date { color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
@@ -269,7 +222,6 @@ p { color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; margin-botto
 }
 
 /* --- SOL ARAÇLAR MENÜSÜ --- */
-.tools-sidebar { /* Sabitlenmesi için sticky kullanılabilir */ }
 .tools-widget h3 {
     font-size: 1.2rem; margin-bottom: 20px; padding-bottom: 10px;
     border-bottom: 1px solid var(--glass-border); color: var(--text-main); font-family: 'Space Grotesk';
@@ -361,6 +313,70 @@ footer { text-align: center; padding: 50px 0; background: #0b1120; margin-top: 8
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
+/* =========================================
+   SKELETON LOADING VE HATA DURUMLARI
+   ========================================= */
+.skeleton-card {
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.skeleton-img {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: 12px 12px 0 0;
+}
+
+.skeleton-text {
+    height: 15px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+.skeleton-title {
+    height: 24px;
+    margin-bottom: 15px;
+    width: 80%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+.skeleton-btn {
+    height: 40px;
+    width: 120px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    margin-top: 20px;
+}
+
+.w-50 { width: 50%; }
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.error-state {
+    text-align: center;
+    padding: 40px;
+    color: #ef4444;
+}
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #94a3b8;
+    font-size: 1.2rem;
+}
+
 /* --- RESPONSIVE / MOBİL --- */
 
 /* 1. Large Laptop (1500px altı) */
@@ -372,7 +388,7 @@ footer { text-align: center; padding: 50px 0; background: #0b1120; margin-top: 8
 /* 2. Laptop/Tablet (1200px altı) */
 @media (max-width: 1200px) {
     .blog-layout { grid-template-columns: 1fr 300px; }
-    .tools-sidebar { display: none; } /* Yan menü gizle */
+    .tools-sidebar { display: none; }
     .featured-grid { grid-template-columns: 1fr; } 
     h1 { font-size: 2.8rem; }
 }
@@ -397,13 +413,12 @@ footer { text-align: center; padding: 50px 0; background: #0b1120; margin-top: 8
     .hero-container { grid-template-columns: 1fr; gap: 40px; }
     .hero-buttons { justify-content: center; }
     .img-wrapper img { width: 200px; height: 200px; }
-    .floating-card { display: none; } /* Mobilde float kartları gizle */
+    .floating-card { display: none; } 
     
     /* Blog Düzeni */
     .blog-layout { grid-template-columns: 1fr; gap: 40px; } 
     .sidebar { display: none; }
     
-    /* Mobilde Araçları Geri Getir (Opsiyonel) */
     .tools-sidebar { display: block; order: 2; margin-top: 0; }
     .blog-main-content { order: 1; }
     
