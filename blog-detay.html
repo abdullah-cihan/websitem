@@ -3,695 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Varsayılan Meta Etiketleri (JS ile güncellense de Crawlerlar burayı görür) -->
-    <title>Yükleniyor... | Abdullah Cihan</title>
     <meta name="description" content="Abdullah Cihan Blog Yazısı">
+    <meta name="author" content="Abdullah Cihan">
     
-    <!-- Google Fonts -->
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Blog Detay | Abdullah Cihan">
+    <meta property="og:description" content="Teknoloji ve yazılım üzerine notlar.">
+    <meta property="og:image" content="assets/default-blog-cover.jpg">
+    <meta property="og:url" content="https://abdullahcihan.com">
+
+    <meta name="twitter:card" content="summary_large_image">
+
+    <title>Blog Detay | Abdullah Cihan</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Highlight.js (Kod blokları renklendirmesi için) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
-
-    <style>
-        /* ============================
-           1. CSS DEĞİŞKENLERİ & RESET
-           ============================ */
-        :root {
-            --bg-body: #0f172a;
-            --bg-card: rgba(30, 41, 59, 0.7);
-            --bg-glass: rgba(255, 255, 255, 0.03);
-            --border-glass: rgba(255, 255, 255, 0.08);
-            
-            --primary: #3b82f6;
-            --primary-hover: #2563eb;
-            --secondary: #64748b;
-            
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            
-            --font-main: 'Inter', sans-serif;
-            --font-display: 'Space Grotesk', sans-serif;
-            
-            --container-width: 1200px;
-            --header-height: 80px;
-            
-            --radius-lg: 16px;
-            --radius-md: 12px;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            font-family: var(--font-main);
-            line-height: 1.7;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
-            min-height: 100vh;
-        }
-
-        a { text-decoration: none; color: inherit; transition: 0.3s ease; }
-        ul { list-style: none; }
-
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-        /* ============================
-           2. LAYOUT & HEADER
-           ============================ */
-        .container {
-            width: 90%;
-            max-width: var(--container-width);
-            margin: 0 auto;
-        }
-
-        .header {
-            height: var(--header-height);
-            display: flex;
-            align-items: center;
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            z-index: 100;
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border-glass);
-            background: rgba(15, 23, 42, 0.8);
-        }
-
-        .nav-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-family: var(--font-display);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #fff;
-        }
-        .logo span { color: var(--primary); }
-
-        .nav-links { display: flex; gap: 2rem; }
-        .nav-links a { 
-            font-size: 0.95rem; 
-            color: var(--text-muted); 
-            font-weight: 500;
-        }
-        .nav-links a:hover, .nav-links a.active { color: #fff; }
-
-        /* Mobil Menü Butonu */
-        .hamburger { display: none; font-size: 1.5rem; cursor: pointer; color: #fff; }
-
-        /* ============================
-           3. PROGRESS BAR
-           ============================ */
-        #progress-container {
-            position: fixed; top: var(--header-height); left: 0; width: 100%; height: 3px;
-            background: transparent; z-index: 99;
-        }
-        #progress-bar {
-            height: 100%; width: 0%;
-            background: linear-gradient(90deg, var(--primary), #8b5cf6);
-            transition: width 0.1s;
-        }
-
-        /* ============================
-           4. BLOG DETAY HEADER (HERO)
-           ============================ */
-        .article-header-section {
-            padding-top: calc(var(--header-height) + 60px);
-            padding-bottom: 40px;
-            text-align: center;
-            position: relative;
-        }
-
-        .back-link {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255,0.05);
-            padding: 8px 16px; border-radius: 20px;
-            font-size: 0.9rem; color: var(--text-muted);
-            margin-bottom: 30px; border: 1px solid var(--border-glass);
-        }
-        .back-link:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
-
-        .article-meta {
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-bottom: 20px;
-            font-size: 0.9rem; color: var(--text-muted);
-        }
-        .badge {
-            padding: 4px 12px; border-radius: 6px; font-weight: 600; font-size: 0.8rem;
-            text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .cat-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
-        .cat-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
-        .cat-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-        .cat-default { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; }
-
-        .article-title {
-            font-family: var(--font-display);
-            font-size: clamp(2rem, 5vw, 3.5rem);
-            line-height: 1.1;
-            margin-bottom: 20px;
-            background: linear-gradient(to bottom right, #ffffff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 700;
-        }
-
-        /* Okuma Süresi */
-        .read-time { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-muted); }
-
-        /* ============================
-           5. ANA İÇERİK YAPISI (GRID)
-           ============================ */
-        .layout-grid {
-            display: grid;
-            grid-template-columns: 1fr 320px; /* İçerik - Sidebar */
-            gap: 40px;
-            align-items: start;
-            padding-bottom: 80px;
-        }
-
-        /* --- Sol Taraf: İçerik --- */
-        .content-card {
-            background: var(--bg-glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border-glass);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            padding: 0;
-            animation: fadeIn 0.8s ease-out;
-        }
-
-        /* Kapak Görseli */
-        .cover-wrapper {
-            width: 100%;
-            height: 400px;
-            position: relative;
-            background: #020617;
-            overflow: hidden;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .cover-wrapper img {
-            width: 100%; height: 100%; object-fit: cover;
-            transition: transform 0.5s;
-        }
-        .cover-wrapper:hover img { transform: scale(1.02); }
-        
-        .cover-icon {
-            font-size: 5rem;
-            color: var(--primary);
-            opacity: 0.8;
-            filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));
-        }
-
-        /* Makale Metni */
-        .article-body {
-            padding: 40px;
-            font-size: 1.125rem;
-            color: #e2e8f0;
-        }
-        
-        /* Tipografi İyileştirmeleri */
-        .article-body h2 { 
-            font-family: var(--font-display); font-size: 1.8rem; margin: 40px 0 20px; color: #fff; 
-            border-left: 4px solid var(--primary); padding-left: 15px;
-        }
-        .article-body h3 { font-family: var(--font-display); font-size: 1.4rem; margin: 30px 0 15px; color: #f1f5f9; }
-        .article-body p { margin-bottom: 24px; color: #cbd5e1; }
-        .article-body ul, .article-body ol { margin-bottom: 24px; padding-left: 20px; color: #cbd5e1; }
-        .article-body li { margin-bottom: 10px; }
-        
-        .article-body blockquote {
-            border-left: 4px solid var(--primary);
-            background: rgba(59, 130, 246, 0.05);
-            padding: 20px;
-            margin: 30px 0;
-            font-style: italic;
-            border-radius: 0 8px 8px 0;
-        }
-
-        /* Kod Blokları */
-        .article-body pre {
-            background: #1e293b !important;
-            padding: 20px;
-            border-radius: 10px;
-            overflow-x: auto;
-            margin: 30px 0;
-            border: 1px solid var(--border-glass);
-            position: relative;
-        }
-        
-        /* Resimler */
-        .article-body img {
-            max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        /* --- Sağ Taraf: Sidebar --- */
-        .sidebar { position: sticky; top: 120px; }
-        
-        .sidebar-widget {
-            background: var(--bg-glass);
-            border: 1px solid var(--border-glass);
-            padding: 25px;
-            border-radius: var(--radius-md);
-            margin-bottom: 20px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .sidebar-title {
-            font-family: var(--font-display);
-            font-size: 1.1rem; color: #fff; margin-bottom: 20px;
-            padding-bottom: 10px; border-bottom: 1px solid var(--border-glass);
-        }
-
-        /* İçindekiler Tablosu (TOC) */
-        .toc-list li a {
-            display: block; padding: 6px 0; font-size: 0.9rem; color: var(--text-muted);
-            border-left: 2px solid transparent; padding-left: 15px; margin-left: -15px;
-        }
-        .toc-list li a:hover { color: var(--primary); border-left-color: var(--primary); }
-
-        /* Paylaş Butonları (Gelişmiş) */
-        .share-grid {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-        }
-        .share-btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 12px; border-radius: 8px;
-            font-size: 0.9rem; font-weight: 500;
-            color: #fff; transition: transform 0.2s, opacity 0.2s;
-            border: 1px solid rgba(255,255,255,0.1);
-            cursor: pointer;
-        }
-        .share-btn:hover { transform: translateY(-3px); }
-        
-        .btn-whatsapp { background: rgba(37, 211, 102, 0.1); color: #4ade80; border-color: rgba(37, 211, 102, 0.3); }
-        .btn-x { background: rgba(0, 0, 0, 0.3); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
-        .btn-linkedin { background: rgba(10, 102, 194, 0.1); color: #60a5fa; border-color: rgba(10, 102, 194, 0.3); }
-        .btn-copy { background: rgba(139, 92, 246, 0.1); color: #a78bfa; border-color: rgba(139, 92, 246, 0.3); }
-
-        /* Toast Message */
-        .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px);
-            background: #10b981; color: white; padding: 12px 24px; border-radius: 30px;
-            font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            opacity: 0; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000; display: flex; align-items: center; gap: 10px;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-        /* Skeleton Loading (Yüklenirken) */
-        .skeleton {
-            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-            border-radius: 6px;
-        }
-        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-        /* ============================
-           6. RESPONSIVE MEDIA QUERIES
-           ============================ */
-        @media (max-width: 900px) {
-            .layout-grid { grid-template-columns: 1fr; } /* Tek sütun */
-            .sidebar { position: static; margin-top: 40px; } /* Sidebar aşağı iner */
-            .article-header-section { padding-top: 100px; }
-            .cover-wrapper { height: 280px; }
-        }
-
-        @media (max-width: 600px) {
-            .article-body { padding: 25px; font-size: 1rem; }
-            .article-title { font-size: 2rem; }
-            .nav-links { display: none; flex-direction: column; position: absolute; top: 80px; left: 0; width: 100%; background: #0f172a; padding: 20px; border-bottom: 1px solid var(--border-glass); }
-            .nav-links.active { display: flex; }
-            .hamburger { display: block; }
-        }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
+    <link rel="stylesheet" href="style.css">        
+    <link rel="stylesheet" href="blog-detay.css">  
 </head>
 <body>
 
-    <!-- Yükleme Çubuğu -->
     <div id="progress-container"><div id="progress-bar"></div></div>
+    
+    <div class="background-glow"></div>
 
-    <!-- Header -->
     <header class="header">
         <div class="container nav-container">
-            <a href="index.html" class="logo">A. Cihan<span>.</span></a>
-            <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+            <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
+            <button class="hamburger" aria-label="Menüyü Aç" aria-expanded="false">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.html">Ana Sayfa</a></li>
                     <li><a href="index.html#blog" class="active">Blog</a></li>
                     <li><a href="#youtube">YouTube</a></li>
-                    <li><a href="#iletisim">İletişim</a></li>
+                    <li><a href="#iletisim" class="btn-cta">İletişim</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
     <main>
-        <!-- Başlık Bölümü -->
         <section class="article-header-section">
             <div class="container">
-                <a href="index.html#blog" class="back-link">
-                    <i class="fa-solid fa-arrow-left"></i> Blog'a Dön
-                </a>
+                <a href="index.html#blog" class="back-link"><i class="fa-solid fa-arrow-left"></i> Blog'a Dön</a>
                 
-                <div class="article-meta">
-                    <span id="detail-category" class="badge cat-default skeleton" style="min-width:80px; height:24px; display:inline-block;">&nbsp;</span>
-                    <span id="detail-date" style="display:flex; align-items:center; gap:5px;">
-                        <i class="fa-regular fa-calendar"></i> <span class="skeleton" style="width:100px; display:inline-block;">&nbsp;</span>
-                    </span>
-                    <span class="read-time">
-                        <i class="fa-regular fa-clock"></i> <span id="read-time-val">... dk okuma</span>
-                    </span>
+                <div id="header-skeleton" class="skeleton-wrapper">
+                    <div class="skeleton skeleton-text skeleton-category"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-title w-75"></div>
                 </div>
 
-                <h1 id="detail-title" class="article-title skeleton" style="min-height: 60px; margin-bottom: 20px;">
-                    <!-- Başlık JS ile gelecek -->
-                </h1>
+                <div id="header-content" style="display: none;">
+                    <div class="article-meta">
+                        <span id="detail-category" class="category">Kategori</span>
+                        <span class="divider">•</span>
+                        <span id="detail-date" class="date">Tarih</span>
+                        <span class="divider">•</span>
+                        <span id="reading-time" class="reading-time"><i class="fa-regular fa-clock"></i> 5 dk okuma</span>
+                    </div>
+                    <h1 id="detail-title" class="article-main-title"></h1>
+                </div>
             </div>
         </section>
 
-        <!-- İçerik Grid -->
-        <section class="container layout-grid">
-            
-            <!-- SOL: İçerik -->
-            <article class="content-card">
-                <!-- Kapak -->
-                <div class="cover-wrapper">
-                    <div id="cover-placeholder" class="cover-placeholder">
-                        <i id="detail-icon" class="fa-solid fa-spinner fa-spin cover-icon"></i>
-                    </div>
-                    <img id="detail-img" src="" alt="" style="display:none;" onerror="this.style.display='none'; document.getElementById('cover-placeholder').style.display='flex';">
-                </div>
-
-                <!-- Yazı Gövdesi -->
-                <div id="detail-content" class="article-body">
-                    <!-- Skeleton Loader (İçerik gelene kadar görünür) -->
-                    <div class="skeleton" style="width:100%; height:20px; margin-bottom:15px;"></div>
-                    <div class="skeleton" style="width:90%; height:20px; margin-bottom:15px;"></div>
-                    <div class="skeleton" style="width:95%; height:20px; margin-bottom:30px;"></div>
-                    <div class="skeleton" style="width:60%; height:20px; margin-bottom:15px;"></div>
-                </div>
-            </article>
-
-            <!-- SAĞ: Sidebar -->
-            <aside class="sidebar">
+        <section id="article-body-section" class="section article-body">
+            <div class="container detail-layout">
                 
-                <!-- İçindekiler (JS ile Otomatik Dolar) -->
-                <div class="sidebar-widget" id="toc-widget" style="display:none;">
-                    <h3 class="sidebar-title">İçindekiler</h3>
-                    <ul class="toc-list" id="toc-list"></ul>
-                </div>
-
-                <!-- Paylaşım -->
-                <div class="sidebar-widget">
-                    <h3 class="sidebar-title">Paylaş</h3>
-                    <div class="share-grid">
-                        <button class="share-btn btn-x" id="share-x">
-                            <i class="fa-brands fa-x-twitter"></i> <span>X</span>
-                        </button>
-                        <button class="share-btn btn-whatsapp" id="share-whatsapp">
-                            <i class="fa-brands fa-whatsapp"></i> <span>Wp</span>
-                        </button>
-                        <button class="share-btn btn-linkedin" id="share-linkedin">
-                            <i class="fa-brands fa-linkedin-in"></i> <span>In</span>
-                        </button>
-                        <button class="share-btn btn-copy" id="share-copy">
-                            <i class="fa-solid fa-link"></i> <span>Link</span>
-                        </button>
+                <article class="article-content glass">
+                    
+                    <div class="article-cover">
+                        <div class="cover-placeholder" id="cover-loader">
+                            <div class="skeleton skeleton-img"></div>
+                        </div>
+                        <img id="detail-img" src="" style="display:none;" alt="Kapak Görseli" loading="lazy">
                     </div>
-                </div>
 
-                <!-- Yazar / Kanal -->
-                <div class="sidebar-widget text-center" style="text-align:center;">
-                    <div style="width:80px; height:80px; background:#334155; border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center;">
-                        <i class="fa-solid fa-user-astronaut" style="font-size:2rem; color:#94a3b8;"></i>
+                    <div id="detail-content" class="content-text">
+                        <div class="skeleton-content">
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text w-80"></div>
+                            <br>
+                            <div class="skeleton skeleton-text"></div>
+                            <div class="skeleton skeleton-text w-60"></div>
+                        </div>
                     </div>
-                    <h3 style="font-size:1.1rem; color:#fff; margin-bottom:5px;">Abdullah Cihan</h3>
-                    <p style="font-size:0.9rem; color:#94a3b8; margin-bottom:15px;">Teknoloji ve yazılım üzerine içerikler üretiyorum.</p>
-                    <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" style="display:inline-block; padding:8px 20px; background:#ef4444; color:white; border-radius:6px; font-size:0.9rem; font-weight:600;">
-                        <i class="fa-brands fa-youtube"></i> YouTube
-                    </a>
-                </div>
 
-            </aside>
+                    <div class="article-tags" id="article-tags">
+                        </div>
+
+                    <div class="share-box">
+                        <span class="share-title">Bu yazıyı paylaş:</span>
+                        <div class="share-actions">
+                            <a class="share-btn share-x" href="#" id="share-x" target="_blank" aria-label="X'te paylaş"><i class="fa-brands fa-x-twitter"></i></a>
+                            <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank" aria-label="LinkedIn'de paylaş"><i class="fa-brands fa-linkedin-in"></i></a>
+                            <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank" aria-label="WhatsApp'ta paylaş"><i class="fa-brands fa-whatsapp"></i></a>
+                            <button class="share-btn share-copy" type="button" id="share-copy" aria-label="Linki kopyala"><i class="fa-solid fa-link"></i></button>
+                        </div>
+                        <div class="share-toast" id="share-toast" aria-live="polite">Link kopyalandı!</div>
+                    </div>
+
+                    <div class="author-card">
+                        <div class="author-img">
+                            <img src="assets/avatar.jpg" alt="Abdullah Cihan" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan'">
+                        </div>
+                        <div class="author-info">
+                            <h4>Abdullah Cihan</h4>
+                            <p>Yazılım geliştirici ve içerik üreticisi. Teknoloji dünyasındaki deneyimlerimi paylaşıyorum.</p>
+                        </div>
+                    </div>
+
+                </article>
+
+                <aside class="sidebar">
+                    <div class="sidebar-sticky">
+                        <div class="sidebar-widget glass">
+                            <h3>Kategoriler</h3>
+                            <ul class="cat-list">
+                                <li><a href="#">Python <span class="count">12</span></a></li>
+                                <li><a href="#">Teknoloji <span class="count">8</span></a></li>
+                                <li><a href="#">Felsefe <span class="count">5</span></a></li>
+                                <li><a href="#">Video <span class="count">15</span></a></li>
+                            </ul>
+                        </div>
+
+                        <div class="sidebar-widget glass youtube-widget">
+                            <h3><i class="fa-brands fa-youtube" style="color:red;"></i> Abone Ol</h3>
+                            <p class="small-text">En yeni videoları kaçırmamak için kanalıma katılın.</p>
+                            <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn-sidebar">Kanalı Gör</a>
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </section>
+
+        <section class="section related-posts-section">
+            <div class="container">
+                <h3 class="section-title">Bunları da Beğenebilirsin</h3>
+                <div class="related-grid" id="related-posts-container">
+                    <div class="related-card glass skeleton-card"></div>
+                    <div class="related-card glass skeleton-card"></div>
+                    <div class="related-card glass skeleton-card"></div>
+                </div>
+            </div>
+        </section>
+
+        <footer id="iletisim">
+            <div class="container footer-content">
+                <div class="copyright">&copy; 2025 Abdullah Cihan.</div>
+                <div class="social-footer">
+                     </div>
+            </div>
+        </footer>
     </main>
 
-    <!-- Kopyalandı Bildirimi -->
-    <div id="share-toast" class="toast">
-        <i class="fa-solid fa-check-circle"></i> Link panoya kopyalandı!
-    </div>
-
+    <a href="#" class="back-to-top" aria-label="Yukarı Çık"><i class="fa-solid fa-arrow-up"></i></a>
+    
+    <script src="blog-detay.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            // ============================
-            // 1. AYARLAR & SELECTORS
-            // ============================
-            const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec"; 
-            
-            // DOM Elemanları
-            const els = {
-                title: document.getElementById('detail-title'),
-                date: document.getElementById('detail-date'),
-                category: document.getElementById('detail-category'),
-                content: document.getElementById('detail-content'),
-                img: document.getElementById('detail-img'),
-                coverPlaceholder: document.getElementById('cover-placeholder'),
-                icon: document.getElementById('detail-icon'),
-                readTime: document.getElementById('read-time-val'),
-                tocWidget: document.getElementById('toc-widget'),
-                tocList: document.getElementById('toc-list')
-            };
-
-            // ============================
-            // 2. YARDIMCI FONKSİYONLAR
-            // ============================
-            
-            // HTML Temizleme (Basit XSS Koruması)
-            function sanitizeHtml(html) {
-                if(!html) return '';
-                const temp = document.createElement('div');
-                temp.innerHTML = html;
-                // Script ve tehlikeli tagları sil
-                const badTags = ['script', 'iframe', 'object', 'embed', 'form'];
-                badTags.forEach(tag => temp.querySelectorAll(tag).forEach(el => el.remove()));
-                // Onclick gibi eventleri sil
-                temp.querySelectorAll('*').forEach(el => {
-                    [...el.attributes].forEach(attr => {
-                        if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
-                    });
-                });
-                return temp.innerHTML;
-            }
-
-            // Kategori Badge Ayarı
-            function setCategoryStyle(category) {
-                els.category.textContent = category || 'Genel';
-                els.category.className = 'badge'; // Reset
-                const cat = (category || '').toLowerCase();
-                if(cat.includes('python') || cat.includes('yazılım')) els.category.classList.add('cat-blue');
-                else if(cat.includes('felsefe') || cat.includes('düşünce')) els.category.classList.add('cat-purple');
-                else if(cat.includes('teknoloji')) els.category.classList.add('cat-green');
-                else els.category.classList.add('cat-default');
-            }
-
-            // Okuma Süresi Hesaplama
-            function calculateReadTime(text) {
-                const wordsPerMinute = 200;
-                const words = text.trim().split(/\s+/).length;
-                const time = Math.ceil(words / wordsPerMinute);
-                els.readTime.textContent = `${time} dk okuma`;
-            }
-
-            // İçindekiler (TOC) Oluşturma
-            function generateTOC() {
-                const headers = els.content.querySelectorAll('h2, h3');
-                if (headers.length < 2) return; // Az başlık varsa gösterme
-
-                els.tocWidget.style.display = 'block';
-                headers.forEach((header, index) => {
-                    const id = `header-${index}`;
-                    header.id = id;
-                    
-                    const li = document.createElement('li');
-                    const a = document.createElement('a');
-                    a.href = `#${id}`;
-                    a.textContent = header.textContent;
-                    // H3 ise biraz içeri girintili olsun
-                    if(header.tagName === 'H3') a.style.paddingLeft = '25px';
-                    
-                    // Smooth scroll için
-                    a.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        document.getElementById(id).scrollIntoView({behavior: 'smooth', block: 'start'});
-                    });
-
-                    li.appendChild(a);
-                    els.tocList.appendChild(li);
-                });
-            }
-
-            // Hata Ekranı
-            function renderError(title, msg) {
-                document.querySelector('.layout-grid').innerHTML = `
-                    <div style="grid-column: 1/-1; text-align:center; padding:50px; background:var(--bg-card); border-radius:16px; border:1px solid var(--border-glass);">
-                        <i class="fa-solid fa-triangle-exclamation" style="font-size:4rem; color:#ef4444; margin-bottom:20px;"></i>
-                        <h2 style="color:#fff; margin-bottom:10px;">${title}</h2>
-                        <p style="color:var(--text-muted);">${msg}</p>
-                        <a href="index.html" class="back-link" style="margin-top:20px; display:inline-block;">Ana Sayfaya Dön</a>
-                    </div>
-                `;
-                els.title.textContent = "Hata";
-            }
-
-            // ============================
-            // 3. PAYLAŞIM BUTONLARI (MODERN FIX)
-            // ============================
-            function setupShareButtons(postTitle) {
-                const currentUrl = window.location.href;
-                // Başlık ve URL'yi güvenli formata çevir
-                const text = encodeURIComponent(postTitle); 
-                const url = encodeURIComponent(currentUrl);
-
-                // WhatsApp: "Başlık - Link" formatında mesaj oluşturur
-                const wpUrl = `https://api.whatsapp.com/send?text=${text}%20-%20${url}`;
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+        
+        if(hamburger){
+            hamburger.addEventListener('click', () => {
+                const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+                hamburger.setAttribute('aria-expanded', !isExpanded);
+                navLinks.classList.toggle('active');
                 
-                // X (Twitter): Kart çıkmasa bile metin olarak Başlık ve Link yazar
-                const xUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
-                
-                // LinkedIn
-                const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
-
-                document.getElementById('share-whatsapp').onclick = () => window.open(wpUrl, '_blank');
-                document.getElementById('share-x').onclick = () => window.open(xUrl, '_blank');
-                document.getElementById('share-linkedin').onclick = () => window.open(liUrl, '_blank');
-
-                // Kopyala Butonu
-                document.getElementById('share-copy').onclick = async () => {
-                    try {
-                        await navigator.clipboard.writeText(currentUrl);
-                        const toast = document.getElementById('share-toast');
-                        toast.classList.add('show');
-                        setTimeout(() => toast.classList.remove('show'), 2000);
-                    } catch (err) {
-                        console.error('Kopyalama başarısız', err);
-                    }
-                };
-            }
-
-            // ============================
-            // 4. VERİ ÇEKME VE BAŞLATMA
-            // ============================
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-
-            if (!id) {
-                renderError("İçerik Bulunamadı", "Geçersiz parametre.");
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API_URL}?type=posts`);
-                const data = await res.json();
-                const posts = data.posts || [];
-                // ID string veya number olabilir, ikisini de kontrol et
-                const post = posts.find(p => String(p.id) === String(id));
-
-                if (!post) {
-                    renderError("Yazı Bulunamadı", "Bu içerik silinmiş olabilir.");
-                    return;
-                }
-
-                // --- UI GÜNCELLEME ---
-                
-                // 1. Meta (Browser Tab)
-                document.title = `${post.baslik} | Abdullah Cihan`;
-                
-                // 2. Başlık & Tarih & Kategori
-                els.title.textContent = post.baslik;
-                els.title.classList.remove('skeleton'); // Efekti kaldır
-                
-                if (post.tarih) {
-                    const d = new Date(post.tarih);
-                    els.date.innerHTML = `<i class="fa-regular fa-calendar"></i> ${d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}`;
-                }
-                
-                setCategoryStyle(post.kategori);
-
-                // 3. İçerik
-                const safeContent = sanitizeHtml(post.icerik);
-                els.content.innerHTML = safeContent;
-                calculateReadTime(els.content.textContent);
-
-                // 4. Görsel
-                if (post.resim && post.resim.startsWith('http')) {
-                    els.img.src = post.resim;
-                    els.img.style.display = 'block';
-                    els.coverPlaceholder.style.display = 'none';
+                // İkon değişimi
+                const icon = hamburger.querySelector('i');
+                if(navLinks.classList.contains('active')){
+                    icon.classList.remove('fa-bars');
+                    icon.classList.add('fa-xmark');
                 } else {
-                    // İkon varsa onu kullan, yoksa varsayılan kalem ikonu
-                    const iconClass = post.resim || 'fa-solid fa-pen-nib';
-                    // FontAwesome sınıfını temizle ve yenisini ekle
-                    els.icon.className = `${iconClass} cover-icon`;
+                    icon.classList.remove('fa-xmark');
+                    icon.classList.add('fa-bars');
                 }
-
-                // 5. Ekstra Özellikler
-                if (window.hljs) hljs.highlightAll(); // Kod renklendirme
-                generateTOC(); // İçindekiler
-                setupShareButtons(post.baslik); // Paylaşım linklerini güncelle
-
-            } catch (error) {
-                console.error(error);
-                renderError("Bağlantı Hatası", "Veriler yüklenirken bir sorun oluştu.");
-            }
-
-            // ============================
-            // 5. SCROLL PROGRESS & MENU
-            // ============================
-            window.addEventListener('scroll', () => {
-                const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-                const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-                const scrolled = (scrollTop / scrollHeight) * 100;
-                document.getElementById('progress-bar').style.width = scrolled + "%";
             });
-
-            // Mobil Menü
-            const hamburger = document.querySelector('.hamburger');
-            const navLinks = document.querySelector('.nav-links');
-            if(hamburger) {
-                hamburger.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                    const icon = hamburger.querySelector('i');
-                    if(navLinks.classList.contains('active')) {
-                        icon.classList.remove('fa-bars');
-                        icon.classList.add('fa-xmark');
-                    } else {
-                        icon.classList.remove('fa-xmark');
-                        icon.classList.add('fa-bars');
-                    }
-                });
-            }
-        });
+        }
     </script>
 </body>
 </html>
