@@ -14,8 +14,12 @@ document.addEventListener('DOMContentLoaded', () => {
         hamburger: document.querySelector('.hamburger'),
         navLinks: document.querySelector('.nav-links'),
         progressBar: document.getElementById('progress-bar'),
-        backToTop: document.querySelector('.back-to-top')
+        backToTop: document.querySelector('.back-to-top'),
+        themeToggle: document.getElementById('theme-toggle'),
+        body: document.body
     };
+
+    let allPosts = []; // Tüm yazıları hafızada tutmak için
 
     // ==========================================
     // 2. MODERN DAKTİLO EFEKTİ (Class Yapısı)
@@ -70,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ==========================================
-    // 3. UI ETKİLEŞİMLERİ (Menü & Scroll)
+    // 3. UI ETKİLEŞİMLERİ (Menü, Scroll, Tema)
     // ==========================================
     
     // Mobil Menü
@@ -102,6 +106,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Tema Değiştirme (Güneş/Ay)
+    if (DOM.themeToggle) {
+        // Kayıtlı temayı kontrol et
+        const savedTheme = localStorage.getItem('theme');
+        const themeIcon = DOM.themeToggle.querySelector('i');
+
+        // Varsayılan HTML dark-mode ile geliyor. Eğer kullanıcı light seçmişse sınıfı kaldır.
+        if (savedTheme === 'light') {
+            DOM.body.classList.remove('dark-mode');
+            if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+        }
+
+        DOM.themeToggle.addEventListener('click', () => {
+            DOM.body.classList.toggle('dark-mode');
+            const isDark = DOM.body.classList.contains('dark-mode');
+
+            if (isDark) {
+                // Karanlık mod aktif -> Güneş ikonu (Aydınlığa geçiş için)
+                if (themeIcon) themeIcon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                // Aydınlık mod aktif -> Ay ikonu (Karanlığa geçiş için)
+                if (themeIcon) themeIcon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
     // Scroll Olayları (Progress Bar & Back to Top)
     window.addEventListener('scroll', () => {
         const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
@@ -123,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. API VERİ İŞLEMLERİ
     // ==========================================
 
-    // Skeleton (Yükleme) Kartı Oluşturucu
+    // Skeleton (Yükleme) Kartı
     const createSkeletonCard = () => `
         <article class="blog-card glass skeleton-card">
             <div class="skeleton-img"></div>
@@ -139,7 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Yükleniyor durumunu göster
     const showLoading = () => {
         if (DOM.standardContainer) {
-            // 3 tane skeleton kart ekle
             DOM.standardContainer.innerHTML = createSkeletonCard().repeat(3);
         }
     };
@@ -148,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const createBlogCard = (post, isFeatured = false) => {
         const dateStr = post.tarih ? new Date(post.tarih).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
         
-        // Resim mi İkon mu?
+        // Resim kontrolü
         const isImage = post.resim && post.resim.startsWith("http");
         const mediaHtml = isImage 
             ? `<img src="${post.resim}" alt="${post.baslik}" loading="lazy" style="width:100%; height:100%; object-fit:cover;">`
@@ -156,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Kategori Rengi
         const catLower = (post.kategori || '').toLowerCase();
-        let catClass = "cat-blue"; // Varsayılan
+        let catClass = "cat-blue";
         if (catLower.includes("felsefe")) catClass = "cat-purple";
         if (catLower.includes("teknoloji")) catClass = "cat-green";
         if (catLower.includes("video")) catClass = "cat-red";
@@ -183,7 +214,41 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     };
 
-    // Ana Veri Çekme Fonksiyonu
+    // Yazıları Ekrana Bas (Filtreleme Destekli)
+    const renderPosts = (category = null) => {
+        // Konteynerları temizle
+        if (DOM.standardContainer) DOM.standardContainer.innerHTML = "";
+        if (DOM.featuredContainer) DOM.featuredContainer.innerHTML = "";
+
+        let filteredPosts = allPosts;
+
+        // Kategori Filtresi Uygula
+        if (category) {
+            filteredPosts = allPosts.filter(p => (p.kategori || '').toLowerCase().includes(category.toLowerCase()));
+        }
+
+        if (filteredPosts.length === 0) {
+            if (DOM.standardContainer) DOM.standardContainer.innerHTML = `<div class="empty-state glass" style="padding:20px; text-align:center;">Bu kategoride henüz içerik bulunmuyor.</div>`;
+            return;
+        }
+
+        filteredPosts.forEach(post => {
+            // Filtre varsa "Öne Çıkan" ayrımı yapma, hepsini standart listeye ekle
+            const isFeatured = !category && String(post.one_cikan).toLowerCase() === "true";
+            const cardHtml = createBlogCard(post, isFeatured);
+            
+            if (isFeatured && DOM.featuredContainer) {
+                DOM.featuredContainer.innerHTML += cardHtml;
+            } else if (DOM.standardContainer) {
+                DOM.standardContainer.innerHTML += cardHtml;
+            }
+        });
+
+        // Yeni eklenenler için animasyonları başlat
+        initObserver();
+    };
+
+    // Ana Veri Çekme
     const fetchPosts = async () => {
         showLoading();
 
@@ -193,31 +258,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await res.json();
             const posts = data.posts || [];
-            const activePosts = posts.filter(p => p.durum === "Yayında");
+            allPosts = posts.filter(p => p.durum === "Yayında");
 
-            // Konteynerları Temizle
-            if (DOM.standardContainer) DOM.standardContainer.innerHTML = "";
-            if (DOM.featuredContainer) DOM.featuredContainer.innerHTML = "";
-
-            if (activePosts.length === 0) {
-                if (DOM.standardContainer) DOM.standardContainer.innerHTML = `<div class="empty-state">Henüz yazı bulunmuyor.</div>`;
-                return;
-            }
-
-            // Kartları Dağıt (Öne Çıkanlar ve Standart)
-            activePosts.forEach(post => {
-                const isFeatured = String(post.one_cikan).toLowerCase() === "true";
-                const cardHtml = createBlogCard(post, isFeatured);
-                
-                if (isFeatured && DOM.featuredContainer) {
-                    DOM.featuredContainer.innerHTML += cardHtml;
-                } else if (DOM.standardContainer) {
-                    DOM.standardContainer.innerHTML += cardHtml;
-                }
-            });
-
-            // Animasyonları Başlat
-            initObserver();
+            // İlk açılışta hepsini render et
+            renderPosts();
 
         } catch (error) {
             console.error("Veri çekme hatası:", error);
@@ -233,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ==========================================
-    // 5. ANİMASYON GÖZLEMCİSİ (Intersection Observer)
+    // 5. ANİMASYON GÖZLEMCİSİ
     // ==========================================
     const initObserver = () => {
         const observer = new IntersectionObserver((entries) => {
@@ -246,16 +290,26 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }, { threshold: CONFIG.ANIMATION_THRESHOLD });
 
-        // Blog kartlarını izle
-        document.querySelectorAll('.blog-card').forEach(el => observer.observe(el));
-        
-        // Sayfadaki diğer gizli statik elementleri izle (Hero, About vs.)
+        document.querySelectorAll('.blog-card.hidden').forEach(el => observer.observe(el));
         document.querySelectorAll('.hidden').forEach(el => observer.observe(el));
     };
 
     // ==========================================
-    // 6. BAŞLAT
+    // 6. GLOBAL FONKSİYONLAR
     // ==========================================
-    fetchPosts(); // Verileri çek
-    initObserver(); // Statik elementler için gözlemciyi hemen başlat
+    // HTML'den onclick="filterByCategory('Python')" çağrısı için global fonksiyon
+    window.filterByCategory = (category) => {
+        // Sayfayı blog bölümüne kaydır
+        const blogSection = document.getElementById('blog');
+        if(blogSection) blogSection.scrollIntoView({ behavior: 'smooth' });
+        
+        // Filtrele ve yeniden çiz
+        renderPosts(category);
+    };
+
+    // ==========================================
+    // 7. BAŞLAT
+    // ==========================================
+    fetchPosts(); 
+    initObserver();
 });
