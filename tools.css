@@ -14,14 +14,18 @@
   padding: 10px 12px;
   border-radius: 10px;
   text-decoration: none;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.25); /* Daha koyu ve belirgin arka plan */
+  /* Yazı rengini muted yerine main yaparak daha belirgin/koyu hale getirdim */
+  color: var(--text-main);
+  font-weight: 500; /* Yazıyı biraz daha dolgunlaştırır */
+  
+  /* Arka planı eski hafif haline döndürdüm */
+  background: rgba(125, 125, 125, 0.05);
   border: 1px solid var(--glass-border);
   transition: all 0.2s ease;
 }
 
 .tool-item:hover {
-  background: rgba(59,130,246,0.2); /* Hover durumu da biraz daha belirgin */
+  background: rgba(59,130,246,0.12);
   border-color: var(--primary);
   color: var(--primary);
   transform: translateX(4px);
