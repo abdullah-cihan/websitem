@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ======================================================
     // 1. AYARLAR VE ELEMENT SEÇİMLERİ
     // ======================================================
+    // NOT: Bu URL'in Google Apps Script tarafında "Web App" olarak dağıtıldığından
+    // ve "Who has access" (Erişim kimde) ayarının "Anyone" (Herkes) olduğundan emin olun.
     const API_URL = "https://script.google.com/macros/s/AKfycbwtiUrv7lemb76DBO7AYjGDchwu1SDB-B7l2QA1FHI3ruG1FfS56Z-qrxvBkaba1KeMpg/exec"; 
     
     const elements = {
@@ -23,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         readingTime: document.getElementById('reading-time'),
         
         // Alt Alanlar
-        shareContainer: document.getElementById('share-area-bottom'), // YENİ: Paylaşım butonları buraya gelecek
+        shareContainer: document.getElementById('share-area-bottom'),
         relatedContainer: document.getElementById('related-posts-container'),
         progressBar: document.getElementById('progress-bar')
     };
@@ -58,25 +60,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         return Math.ceil(textLength / wordsPerMinute);
     }
 
-    /** Array Karıştırma (Benzer yazılar hep aynı gelmesin diye) */
+    /** Array Karıştırma */
     function shuffleArray(array) {
-        for (let i = array.length - 1; i > 0; i--) {
+        const newArr = [...array]; // Orijinal diziyi bozmamak için kopya al
+        for (let i = newArr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
+            [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
         }
-        return array;
+        return newArr;
     }
 
-    /** Meta Etiketlerini (OG Tags) Güncelle - Paylaşım Önizlemeleri İçin */
+    /** Meta Etiketlerini Güncelle */
     function updateMetaTags(post) {
         const summary = post.ozet || post.icerik.replace(/<[^>]*>?/gm, '').substring(0, 150) + '...';
         const imageUrl = post.resim || 'assets/default-cover.jpg';
         const pageUrl = window.location.href;
 
-        // Sayfa Başlığı
         document.title = `${post.baslik} | Abdullah Cihan`;
 
-        // Yardımcı: Meta tag varsa güncelle, yoksa oluştur
         const setMeta = (keyType, keyName, content) => {
             let element = document.querySelector(`meta[${keyType}="${keyName}"]`);
             if (!element) {
@@ -87,23 +88,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             element.setAttribute('content', content);
         };
 
-        // Open Graph (Facebook, WhatsApp, LinkedIn)
         setMeta('property', 'og:title', post.baslik);
         setMeta('property', 'og:description', summary);
         setMeta('property', 'og:image', imageUrl);
         setMeta('property', 'og:url', pageUrl);
         setMeta('property', 'og:type', 'article');
-
-        // Twitter Cards (X)
         setMeta('name', 'twitter:card', 'summary_large_image');
         setMeta('name', 'twitter:title', post.baslik);
         setMeta('name', 'twitter:description', summary);
         setMeta('name', 'twitter:image', imageUrl);
     }
 
-    /** Toast Bildirimi (Modern Stil) */
+    /** Toast Bildirimi */
     function showToast(message, type = 'success') {
-        // Varsa eskisin sil
         const existingToast = document.querySelector('.custom-toast');
         if(existingToast) existingToast.remove();
 
@@ -114,7 +111,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span>${message}</span>
         `;
         
-        // CSS ile stil verilmeli (.custom-toast)
         Object.assign(toast.style, {
             position: 'fixed', bottom: '30px', left: '50%', transform: 'translateX(-50%)',
             background: 'rgba(25, 25, 35, 0.95)', color: '#fff', padding: '12px 24px',
@@ -125,7 +121,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         document.body.appendChild(toast);
         
-        // Animasyon
         requestAnimationFrame(() => {
             toast.style.opacity = '1';
             toast.style.marginTop = '0';
@@ -138,46 +133,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ======================================================
-    // 3. İÇERİK YÖNETİMİ VE RENDER
+    // 3. İÇERİK YÖNETİMİ VE RENDER (Fetch Güncellendi)
     // ======================================================
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
 
     if (!id) { 
-        renderError("Parametre Eksik", "Görüntülenecek yazı bulunamadı.");
+        renderError("Parametre Eksik", "Görüntülenecek yazı bulunamadı. Lütfen ana sayfadan bir yazı seçin.");
         return; 
     }
 
     try {
-        const res = await fetch(`${API_URL}?type=posts`);
-        if(!res.ok) throw new Error("API Hatası");
+        // Fetch İşlemi (GÜNCELLENMİŞ VE SAĞLAMLAŞTIRILMIŞ KISIM)
+        const res = await fetch(`${API_URL}?type=posts`, {
+            method: 'GET',
+            mode: 'cors', // Açıkça CORS belirtiyoruz
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // HTTP Hatası kontrolü
+        if(!res.ok) throw new Error(`Sunucu Hatası: ${res.status} ${res.statusText}`);
         
-        const data = await res.json();
+        // Önce text olarak alıyoruz (Google Script bazen HTML hata sayfası döner)
+        const responseText = await res.text();
+        
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (jsonError) {
+            console.error("JSON Parse Hatası:", jsonError);
+            console.error("Sunucudan gelen ham veri:", responseText);
+            throw new Error("Sunucudan geçersiz veri formatı geldi (Muhtemelen Google Script izin hatası).");
+        }
+
         const posts = data.posts || [];
-        const post = posts.find(p => String(p.id) === String(id));
+        // String dönüşümü yaparak ID karşılaştırması yapıyoruz
+        const post = posts.find(p => String(p.id).trim() === String(id).trim());
 
         if (!post) {
             renderError("İçerik Bulunamadı", "Bu yazı yayından kaldırılmış veya taşınmış olabilir.");
             return;
         }
 
-        // --- Sayfayı Doldur ---
         fillPageContent(post);
-        
-        // --- Modern Paylaşım Alanını Oluştur ---
         renderBottomShareArea(post);
-        
-        // --- Benzer Yazıları Getir ---
         renderRelatedPosts(posts, post.id, post.kategori);
-
-        // --- Modern Efektleri Başlat ---
         initScrollAnimations();
         initImageZoom();
 
     } catch (e) {
-        console.error(e);
-        renderError("Bağlantı Sorunu", "Veriler sunucudan çekilemedi. Lütfen internet bağlantınızı kontrol edin.");
+        console.error("Detay sayfası hatası:", e);
+        renderError("Bağlantı Sorunu", `Veriler yüklenirken bir hata oluştu: ${e.message}`);
     }
 
     // ======================================================
@@ -185,27 +194,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ======================================================
     
     function fillPageContent(post) {
-        // Meta SEO ve Başlık Güncellemesi
         updateMetaTags(post);
         
-        // Skeletonları gizle, içeriği aç
         if(elements.headerSkeleton) elements.headerSkeleton.style.display = 'none';
         if(elements.headerContent) elements.headerContent.style.display = 'block';
         if(elements.skeletonContent) elements.skeletonContent.style.display = 'none';
 
-        // Başlık & Info
-        elements.title.textContent = post.baslik;
-        elements.date.innerHTML = `<i class="fa-regular fa-calendar"></i> ${new Date(post.tarih).toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'})}`;
+        if(elements.title) elements.title.textContent = post.baslik;
+        if(elements.date) elements.date.innerHTML = `<i class="fa-regular fa-calendar"></i> ${new Date(post.tarih).toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'})}`;
         
-        // Kategori Renklendirme
-        elements.category.textContent = post.kategori;
-        elements.category.className = `category-badge ${getCategoryColor(post.kategori)}`;
+        if(elements.category) {
+            elements.category.textContent = post.kategori;
+            elements.category.className = `category-badge ${getCategoryColor(post.kategori)}`;
+        }
 
-        // Kapak Resmi
         if (post.resim && post.resim.startsWith('http')) {
             elements.image.src = post.resim;
             elements.image.onload = () => {
-                elements.image.parentElement.classList.add('loaded'); // CSS Fade-in için
+                elements.image.parentElement.classList.add('loaded');
+                if(elements.coverLoader) elements.coverLoader.style.display = 'none';
+            };
+            elements.image.onerror = () => {
+                // Resim yüklenemezse varsayılan göster veya gizle
+                elements.image.style.display = 'none';
                 if(elements.coverLoader) elements.coverLoader.style.display = 'none';
             };
         } else {
@@ -213,22 +224,18 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(elements.coverLoader) elements.coverLoader.style.display = 'none';
         }
 
-        // İçerik İşleme
         const cleanContent = sanitizeHtml(post.icerik);
-        elements.content.innerHTML = cleanContent;
+        if(elements.content) elements.content.innerHTML = cleanContent;
         
-        // Okuma Süresi
         if(elements.readingTime) {
             const pureText = elements.content.textContent || "";
             elements.readingTime.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${calculateReadingTime(pureText)} dk okuma`;
         }
 
-        // Kod Bloklarını Renklendir (Highlight.js)
         if(window.hljs) hljs.highlightAll();
 
-        // Etiketler
         if(post.etiketler && elements.tagsContainer) {
-            const tags = post.etiketler.split(',').map(t => t.trim());
+            const tags = String(post.etiketler).split(',').map(t => t.trim());
             elements.tagsContainer.innerHTML = tags.map(tag => `
                 <a href="index.html?tag=${tag}" class="modern-tag">#${tag}</a>
             `).join('');
@@ -245,19 +252,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ======================================================
-    // 5. YENİ: MODERN PAYLAŞIM ALANI (EN ALTTA)
+    // 5. MODERN PAYLAŞIM ALANI
     // ======================================================
     
     function renderBottomShareArea(post) {
         const pageUrl = encodeURIComponent(window.location.href);
         const pageTitle = encodeURIComponent(post.baslik);
         
-        // Eğer HTML'de özel bir container yoksa, içeriğin hemen sonuna ekle
         let targetContainer = elements.shareContainer;
         if (!targetContainer) {
             targetContainer = document.createElement('div');
             targetContainer.id = 'share-area-bottom';
-            elements.content.parentNode.insertBefore(targetContainer, elements.relatedContainer); // Benzer yazılardan önce
+            if(elements.content && elements.content.parentNode) {
+                elements.content.parentNode.insertBefore(targetContainer, elements.relatedContainer);
+            }
         }
 
         targetContainer.innerHTML = `
@@ -280,25 +288,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         `;
 
-        // Kopyala Butonu Olayı
-        document.getElementById('btn-copy-link').addEventListener('click', async function() {
-            try {
-                await navigator.clipboard.writeText(window.location.href);
-                this.innerHTML = '<i class="fa-solid fa-check"></i>';
-                this.classList.add('copied');
-                showToast('Link panoya kopyalandı!');
-                setTimeout(() => {
-                    this.innerHTML = '<i class="fa-regular fa-clone"></i>';
-                    this.classList.remove('copied');
-                }, 2000);
-            } catch (err) {
-                showToast('Kopyalama başarısız', 'error');
-            }
-        });
+        const copyBtn = document.getElementById('btn-copy-link');
+        if(copyBtn) {
+            copyBtn.addEventListener('click', async function() {
+                try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    this.innerHTML = '<i class="fa-solid fa-check"></i>';
+                    this.classList.add('copied');
+                    showToast('Link panoya kopyalandı!');
+                    setTimeout(() => {
+                        this.innerHTML = '<i class="fa-regular fa-clone"></i>';
+                        this.classList.remove('copied');
+                    }, 2000);
+                } catch (err) {
+                    showToast('Kopyalama başarısız', 'error');
+                }
+            });
+        }
     }
 
     // ======================================================
-    // 6. BENZER YAZILAR (Shuffle Özellikli)
+    // 6. BENZER YAZILAR
     // ======================================================
     
     function renderRelatedPosts(allPosts, currentId, currentCategory) {
@@ -307,10 +317,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let filtered = allPosts.filter(p => String(p.id) !== String(currentId));
         let related = filtered.filter(p => p.kategori === currentCategory);
         
-        // Önce kategori eşleşmelerini karıştır
         related = shuffleArray(related);
 
-        // Yetersiz kalırsa rastgele diğerlerinden ekle
         if(related.length < 3) {
             let others = filtered.filter(p => p.kategori !== currentCategory);
             others = shuffleArray(others);
@@ -320,19 +328,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         const finalPosts = related.slice(0, 3);
 
         if(finalPosts.length === 0) {
-            document.querySelector('.related-section').style.display = 'none';
+            const section = document.querySelector('.related-section');
+            if(section) section.style.display = 'none';
             return;
         }
 
-        // --- BAŞLIK EKLEME (YENİ) ---
-        // Eğer başlık daha önce eklenmemişse dinamik olarak oluştur
         if (!document.getElementById('related-posts-title')) {
             const titleEl = document.createElement('h3');
             titleEl.id = 'related-posts-title';
             titleEl.textContent = 'İlginizi Çekebilir';
-            titleEl.className = 'related-title'; // CSS class
+            titleEl.className = 'related-title';
             
-            // Modern Stil
             Object.assign(titleEl.style, {
                 marginTop: '50px',
                 marginBottom: '20px',
@@ -343,7 +349,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 paddingLeft: '15px'
             });
             
-            // Container'ın hemen öncesine ekle
             elements.relatedContainer.parentNode.insertBefore(titleEl, elements.relatedContainer);
         }
 
@@ -362,10 +367,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // ======================================================
-    // 7. UI ETKİLEŞİMLERİ (Scroll & Zoom)
+    // 7. UI ETKİLEŞİMLERİ
     // ======================================================
 
-    // İlerleme Çubuğu
     window.addEventListener('scroll', () => {
         if (!elements.progressBar) return;
         const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
@@ -374,7 +378,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         elements.progressBar.style.width = scrolled + "%";
     });
 
-    // Yazı içindeki görsellere zoom özelliği (Lightbox)
     function initImageZoom() {
         const contentImages = document.querySelectorAll('#detail-content img');
         contentImages.forEach(img => {
@@ -384,7 +387,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 overlay.className = 'lightbox-overlay';
                 overlay.innerHTML = `<img src="${img.src}" class="lightbox-img">`;
                 
-                // Stil (JS içinde hızlıca tanımladık, CSS'e taşınabilir)
                 Object.assign(overlay.style, {
                     position:'fixed', top:0, left:0, width:'100%', height:'100%',
                     background:'rgba(0,0,0,0.85)', zIndex:10000, display:'flex',
@@ -402,7 +404,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // İçeriğin kaydırdıkça gelmesi (Fade In Up)
     function initScrollAnimations() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -413,10 +414,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }, { threshold: 0.1 });
 
-        // Animasyonlanacak elementleri seç
         const animatedElements = document.querySelectorAll('#detail-content p, #detail-content h2, #detail-content img, .share-wrapper, .related-card, #related-posts-title');
         animatedElements.forEach(el => {
-            el.classList.add('scroll-hidden'); // CSS'de opacity: 0 olmalı
+            el.classList.add('scroll-hidden'); 
             observer.observe(el);
         });
     }
