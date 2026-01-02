@@ -38,15 +38,9 @@ body {
   margin-bottom: 40px;
   color: #ffffff; /* Tam Beyaz */
 }
-.sidebar-header h3 {
-  font-family: 'Space Grotesk';
-  font-size: 1.8rem;
-  margin-bottom: 40px;
-  color: #ffffff; /* Tam Beyaz */
-}
-/* GÜNCELLEME: Span rengi artık beyaz (Eskiden mavi #3b82f6 idi) */
+
 .sidebar-header span { 
-  color: #ffffff; 
+  color: #ffffff; /* Tam Beyaz */
 }
 
 .admin-menu { list-style: none; padding: 0; margin: 0; }
@@ -110,7 +104,7 @@ body {
 .header-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #ffffff; /* Tam Beyaz yapıldı */
+    color: #ffffff; /* Tam Beyaz */
 }
 
 .user-info {
@@ -525,4 +519,3 @@ input:focus, select:focus, textarea:focus {
   background: #3b82f6;
   color: white;
 }
-
