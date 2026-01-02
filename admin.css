@@ -36,11 +36,11 @@ body {
   font-family: 'Space Grotesk';
   font-size: 1.8rem;
   margin-bottom: 40px;
-  color: #ffffff; /* Tam Beyaz */
+  color: #ffffff !important; /* Tam Beyaz - Zorla */
 }
 
 .sidebar-header span { 
-  color: #ffffff; /* Tam Beyaz */
+  color: #ffffff !important; /* Tam Beyaz - Zorla */
 }
 
 .admin-menu { list-style: none; padding: 0; margin: 0; }
@@ -104,7 +104,7 @@ body {
 .header-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #ffffff; /* Tam Beyaz */
+    color: #ffffff !important; /* Tam Beyaz - Zorla */
 }
 
 .user-info {
