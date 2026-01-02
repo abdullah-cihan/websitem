@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="tools.css">
 </head>
-<body>
+<body class="dark-mode"> <!-- Varsayılan olarak dark-mode sınıfı eklenebilir veya JS ile yönetilebilir -->
 
     <!-- Yükleme Çubuğu -->
     <div id="progress-container"><div id="progress-bar"></div></div>
@@ -43,14 +43,21 @@
         <div class="container nav-container">
             <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
             
-            <button class="hamburger" aria-label="Menüyü Aç" aria-expanded="false">
-                <i class="fa-solid fa-bars"></i>
-            </button>
+            <div class="nav-controls">
+                <!-- Tema Değiştirme Butonu (Güneş/Ay) -->
+                <button id="theme-toggle" class="theme-btn" aria-label="Temayı Değiştir">
+                    <i class="fa-solid fa-sun"></i>
+                </button>
+
+                <button class="hamburger" aria-label="Menüyü Aç" aria-expanded="false">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
             
             <nav>
                 <ul class="nav-links">
                     <li><a href="#anasayfa">Ana Sayfa</a></li>
-                    <li><a href="#hakkimda">Hakkımda</a></li>
+                    <!-- Hakkımda linki kaldırıldı -->
                     <li><a href="#blog">Blog</a></li>
                     <li><a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank">YouTube</a></li>
                     <li><a href="#iletisim" class="btn-cta">İletişim</a></li>
@@ -85,9 +92,6 @@
                 </div>
             </div>
         </section>
-
-        <!-- Hakkımda Bölümü -->
-
 
         <!-- Blog Bölümü -->
         <section id="blog" class="section">
@@ -139,17 +143,6 @@
                                 <input type="email" placeholder="Email adresi" aria-label="Email Adresi" style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05); color:white;">
                                 <button type="submit" aria-label="Gönder" style="background:var(--primary); color:white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer;"><i class="fa-solid fa-paper-plane"></i></button>
                             </form>
-                                <section id="hakkimda" class="section">
-            <div class="container">
-                <div class="section-header hidden">
-                    <h2 class="section-title">Hakkımda</h2>
-                    <p>Teknoloji ve düşünce dünyası arasındaki köprü.</p>
-                </div>
-                <div class="about-content glass hidden" style="padding: 40px; border-radius: 20px;">
-                    <p>Merhaba, ben Abdullah. Yazılım geliştirme süreçleri, yapay zeka araçları ve teknolojinin felsefi boyutları üzerine çalışıyorum. Öğrendiklerimi paylaşmak ve teknoloji okuryazarlığını artırmak en büyük motivasyonum.</p>
-                </div>
-            </div>
-        </section>
                         </div>
 
                         <!-- Kategoriler -->
@@ -231,4 +224,3 @@
     </script>
 </body>
 </html>
-
