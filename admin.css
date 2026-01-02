@@ -36,9 +36,12 @@ body {
   font-family: 'Space Grotesk';
   font-size: 1.8rem;
   margin-bottom: 40px;
-  color: #fff;
+  color: #ffffff; /* Tam Beyaz */
 }
-.sidebar-header span { color: #3b82f6; }
+/* GÜNCELLEME: Span rengi artık beyaz (Eskiden mavi #3b82f6 idi) */
+.sidebar-header span { 
+  color: #ffffff; 
+}
 
 .admin-menu { list-style: none; padding: 0; margin: 0; }
 .admin-menu li {
@@ -84,7 +87,6 @@ body {
 }
 
 /* --- HEADER & PROFİL --- */
-/* GÜNCELLEME: Header artık koyu renk arkaplana sahip */
 .admin-header {
   display: flex;
   justify-content: space-between;
@@ -102,7 +104,7 @@ body {
 .header-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #f1f5f9;
+    color: #ffffff; /* Tam Beyaz yapıldı */
 }
 
 .user-info {
@@ -174,7 +176,6 @@ body {
   gap: 20px;
 }
 
-/* GÜNCELLEME: İstatistik kartları artık koyu */
 .stat-card {
   padding: 25px;
   border-radius: 15px;
@@ -274,7 +275,6 @@ body {
 }
 
 /* --- FORMLAR (Yeni Yazı / Sayfa Editör) --- */
-/* GÜNCELLEME: Editör çerçevesi artık koyu */
 .editor-wrapper {
   max-width: 900px;
   margin: 0 auto;
@@ -327,7 +327,6 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
 }
 
-/* Placeholder rengini düzeltelim */
 ::placeholder {
   color: #64748b;
   opacity: 1;
