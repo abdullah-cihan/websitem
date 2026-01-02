@@ -8,27 +8,37 @@
     <meta name="description" content="Abdullah Cihan'ın teknoloji, yazılım ve hayat üzerine blog yazıları.">
     <meta name="author" content="Abdullah Cihan">
 
+    <!-- Open Graph / Facebook / WhatsApp -->
     <meta property="og:type" content="article">
     <meta property="og:title" content="Abdullah Cihan Blog">
     <meta property="og:description" content="Teknoloji ve yazılım üzerine incelemeler.">
-    <meta property="og:image" content="https://abdullahcihan.com/assets/default-cover.jpg"> 
+    <meta property="og:image" content="assets/default-cover.jpg"> 
     <meta property="og:url" content="https://abdullahcihan.com">
 
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Abdullah Cihan Blog">
     <meta name="twitter:description" content="Teknoloji ve yazılım üzerine incelemeler.">
-    <meta name="twitter:image" content="https://abdullahcihan.com/assets/default-cover.jpg">
+    <meta name="twitter:image" content="assets/default-cover.jpg">
 
+    <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Kod Blokları için Highlight.js Teması (Yazılım blogları için şart) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+
+    <!-- CSS Dosyaları -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="blog-detay.css">
 </head>
 <body>
+    <!-- Okuma İlerleme Çubuğu -->
     <div id="progress-container"><div id="progress-bar"></div></div>
     
     <div class="background-glow"></div>
 
+    <!-- Header -->
     <header class="header">
         <div class="container nav-container">
             <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
@@ -47,17 +57,20 @@
     </header>
 
     <main>
+        <!-- Başlık Alanı (Hero) -->
         <section class="article-header-section">
             <div class="container">
                 <a href="index.html#blog" class="back-link"><i class="fa-solid fa-arrow-left"></i> Blog'a Dön</a>
                 
+                <!-- Skeleton Loading (Başlık) -->
                 <div id="header-skeleton" class="skeleton-wrapper">
                     <div class="skeleton skeleton-text w-50" style="margin: 0 auto 15px auto; height: 30px; border-radius: 20px;"></div>
                     <div class="skeleton skeleton-title" style="margin: 0 auto 10px auto; max-width: 600px;"></div>
                     <div class="skeleton skeleton-title w-75" style="margin: 0 auto;"></div>
                 </div>
 
-                <div id="header-content" style="display: none; animation: fadeIn 0.8s ease;">
+                <!-- Gerçek İçerik (Başlık) -->
+                <div id="header-content" style="display: none;">
                     <div class="article-meta">
                         <span id="detail-category" class="category">Kategori</span>
                         <span class="divider">•</span>
@@ -70,11 +83,13 @@
             </div>
         </section>
 
+        <!-- İçerik Alanı -->
         <section id="article-body-section" class="section article-body">
             <div class="container detail-layout">
                 
                 <article class="article-content glass">
                     
+                    <!-- Kapak Resmi -->
                     <div class="article-cover">
                         <div class="cover-placeholder" id="cover-loader">
                             <div class="skeleton skeleton-img"></div>
@@ -82,7 +97,9 @@
                         <img id="detail-img" src="" style="display:none;" alt="Kapak Görseli" loading="lazy">
                     </div>
 
+                    <!-- Yazı İçeriği -->
                     <div id="detail-content" class="content-text">
+                        <!-- Skeleton Loading (İçerik) -->
                         <div class="skeleton-content" id="content-loader">
                             <div class="skeleton skeleton-text"></div>
                             <div class="skeleton skeleton-text"></div>
@@ -91,35 +108,31 @@
                             <div class="skeleton skeleton-text"></div>
                             <div class="skeleton skeleton-text w-60"></div>
                         </div>
-                        </div>
+                    </div>
 
+                    <!-- Etiketler -->
                     <div class="article-tags" id="article-tags"></div>
 
+                    <!-- Statik Paylaşım Kutusu (Opsiyonel - JS ayrıca alta bir tane daha ekliyor) -->
                     <div class="share-box">
                         <span class="share-title">Bu yazıyı beğendin mi? Arkadaşlarınla paylaş:</span>
                         <div class="share-actions">
                             <a class="share-btn share-x" id="share-x" href="#" target="_blank" aria-label="X'te paylaş">
                                 <i class="fa-brands fa-x-twitter"></i> <span>X</span>
                             </a>
-
                             <a class="share-btn share-linkedin" id="share-linkedin" href="#" target="_blank" aria-label="LinkedIn'de paylaş">
                                 <i class="fa-brands fa-linkedin-in"></i> <span>LinkedIn</span>
                             </a>
-
                             <a class="share-btn share-whatsapp" id="share-whatsapp" href="#" target="_blank" aria-label="WhatsApp'ta paylaş">
                                 <i class="fa-brands fa-whatsapp"></i> <span>WhatsApp</span>
                             </a>
-
-                            <a class="share-btn share-facebook" id="share-facebook" href="#" target="_blank" aria-label="Facebook'ta paylaş" style="border-color: rgba(24, 119, 242, 0.35); color:#1877F2;">
-                                <i class="fa-brands fa-facebook-f"></i> <span>Facebook</span>
-                            </a>
-                            
                             <button class="share-btn share-copy" id="share-copy" aria-label="Linki kopyala">
                                 <i class="fa-solid fa-link"></i> <span>Kopyala</span>
                             </button>
                         </div>
                     </div>
 
+                    <!-- Yazar Kartı -->
                     <div class="author-card">
                         <div class="author-img">
                             <img src="assets/avatar.jpg" alt="Abdullah Cihan" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan&background=random'">
@@ -129,17 +142,20 @@
                             <p>Full Stack Geliştirici & Teknoloji Yazarı. Karmaşık sorunlara basit çözümler üretmeyi severim.</p>
                         </div>
                     </div>
+                    
+                    <!-- JS Tarafından Dinamik Paylaşım Alanı (share-area-bottom) Buraya Eklenecek -->
 
                 </article>
 
+                <!-- Sidebar (Yan Menü) -->
                 <aside class="sidebar">
                     <div class="sidebar-sticky">
                         <div class="sidebar-widget glass">
                             <h3>Kategoriler</h3>
                             <ul class="cat-list">
-                                <li><a href="#">Python <span class="count">12</span></a></li>
-                                <li><a href="#">Yapay Zeka <span class="count">8</span></a></li>
-                                <li><a href="#">Web Geliştirme <span class="count">15</span></a></li>
+                                <li><a href="index.html?cat=Python">Python</a></li>
+                                <li><a href="index.html?cat=Yapay Zeka">Yapay Zeka</a></li>
+                                <li><a href="index.html?cat=Web">Web Geliştirme</a></li>
                             </ul>
                         </div>
                         <div class="sidebar-widget glass youtube-widget">
@@ -152,10 +168,12 @@
             </div>
         </section>
 
+        <!-- Benzer Yazılar -->
         <section class="section related-posts-section">
             <div class="container">
-                <h3 class="section-title">Bunları da Beğenebilirsin</h3>
+                <!-- JS Başlığı Dinamik Ekliyor -->
                 <div class="related-grid" id="related-posts-container">
+                    <!-- Skeleton Cards -->
                     <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
                     <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
                     <div class="related-card glass skeleton-card"><div class="skeleton" style="width:100%; height:100%;"></div></div>
@@ -170,16 +188,21 @@
         </footer>
     </main>
     
-    <div class="share-toast" id="share-toast" aria-live="polite">Link kopyalandı!</div>
-
+    <!-- Scripts -->
+    <!-- Kod renklendirme kütüphanesi -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    
+    <!-- Ana Script -->
     <script src="blog-detay.js"></script>
     
+    <!-- Mobil Menü Scripti -->
     <script>
         const hamburger = document.querySelector('.hamburger');
         const navLinks = document.querySelector('.nav-links');
         if(hamburger){
             hamburger.addEventListener('click', () => {
-                hamburger.setAttribute('aria-expanded', hamburger.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');
+                const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+                hamburger.setAttribute('aria-expanded', !isExpanded);
                 navLinks.classList.toggle('active');
             });
         }
