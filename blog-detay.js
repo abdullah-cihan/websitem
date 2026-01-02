@@ -28,17 +28,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         return doc.body.innerHTML;
     }
 
-    // Kategori Renklendirme Yardımcısı
+    // Kategori Renklendirme Yardımcısı (GÜNCELLENDİ: Dinamik Renk Seçimi)
     function setCategoryBadge(category, catEl) {
         if (!catEl) return;
         const c = String(category || 'Genel');
         catEl.textContent = c;
         
-        // Kategori ismine göre renk sınıfları (CSS'inde tanımlı olmalı)
-        if (['Python', 'Yazılım', 'OOP'].includes(c)) catEl.className = 'category cat-blue';
-        else if (c === 'Felsefe') catEl.className = 'category cat-purple';
-        else if (['Teknoloji', 'Kariyer'].includes(c)) catEl.className = 'category cat-green';
-        else catEl.className = 'category cat-red';
+        // Sabit tanımlar (Mevcut renkleri korumak için)
+        const fixedColors = {
+            'Python': 'cat-blue', 'Yazılım': 'cat-blue', 'OOP': 'cat-blue',
+            'Felsefe': 'cat-purple',
+            'Teknoloji': 'cat-green', 'Kariyer': 'cat-green',
+            'Video': 'cat-red'
+        };
+
+        if (fixedColors[c]) {
+            catEl.className = `category ${fixedColors[c]}`;
+        } else {
+            // Bilinmeyen kategori gelirse: İsme göre hash üretip mevcut 4 renkten birini ata.
+            // Böylece "YeniKategori" her zaman aynı rengi alır ama admin panelinden eklenince kod değiştirmek gerekmez.
+            const colors = ['cat-blue', 'cat-purple', 'cat-green', 'cat-red'];
+            let hash = 0;
+            for (let i = 0; i < c.length; i++) {
+                hash += c.charCodeAt(i);
+            }
+            const colorIndex = hash % colors.length;
+            catEl.className = `category ${colors[colorIndex]}`;
+        }
+    }
+
+    // Okuma Süresi Hesaplama Yardımcısı (YENİ)
+    function calculateReadingTime(htmlContent) {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = htmlContent;
+        const text = tempDiv.textContent || tempDiv.innerText || "";
+        const wordCount = text.trim().split(/\s+/).length;
+        const readingTime = Math.ceil(wordCount / 200); // Ortalama 200 kelime/dk
+        return readingTime > 0 ? readingTime : 1;
     }
 
     // Toast Bildirim Göstericisi (Paylaşım için)
@@ -103,7 +129,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.title = post.baslik;
         if(titleEl) titleEl.textContent = post.baslik;
         
-        // 2. Kategori (Renkli Badge ile)
+        // 2. Kategori (Renkli Badge ile - Dinamik)
         const catEl = document.getElementById('detail-category');
         setCategoryBadge(post.kategori, catEl);
 
@@ -111,6 +137,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dateEl = document.getElementById('detail-date');
         if(dateEl) {
             dateEl.textContent = post.tarih ? new Date(post.tarih).toLocaleDateString('tr-TR', {year:'numeric', month:'long', day:'numeric'}) : '';
+        }
+
+        // 3.1. Okuma Süresi (YENİ: Otomatik Hesaplama ve Ekleme)
+        const metaContainer = document.querySelector('.article-meta');
+        if (metaContainer && post.icerik) {
+            const readingTime = calculateReadingTime(post.icerik);
+            
+            // Mevcut tarih elementinin yanına ekle
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'date'; // Mevcut tarih stilini kullan (uyumlu görünmesi için)
+            timeSpan.innerHTML = `<i class="fa-regular fa-clock"></i> ${readingTime} dk okuma`;
+            timeSpan.style.marginLeft = '15px'; // Tarih ile arasına boşluk
+            
+            metaContainer.appendChild(timeSpan);
         }
 
         // 4. İçerik (XSS Korumalı)
