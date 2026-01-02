@@ -14,17 +14,17 @@
   padding: 10px 12px;
   border-radius: 10px;
   text-decoration: none;
-  color: var(--text-muted); /* Sabit renk yerine değişken */
-  background: rgba(125, 125, 125, 0.05); /* Hem dark hem light modda hafif görünür */
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.25); /* Daha koyu ve belirgin arka plan */
   border: 1px solid var(--glass-border);
   transition: all 0.2s ease;
 }
 
 .tool-item:hover {
-  background: rgba(59,130,246,0.12);
+  background: rgba(59,130,246,0.2); /* Hover durumu da biraz daha belirgin */
   border-color: var(--primary);
-  color: var(--primary); /* Hover durumunda ana renk */
-  transform: translateX(4px); /* Ufak bir kayma efekti */
+  color: var(--primary);
+  transform: translateX(4px);
 }
 
 .tool-item i {
