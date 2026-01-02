@@ -82,8 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // İkon Değişimi
             const icon = DOM.hamburger.querySelector('i');
-            icon.classList.toggle('fa-bars');
-            icon.classList.toggle('fa-xmark');
+            if (icon) {
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-xmark');
+            }
         });
 
         // Linke tıklayınca menüyü kapat
@@ -91,8 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
             link.addEventListener('click', () => {
                 DOM.navLinks.classList.remove('active');
                 DOM.hamburger.setAttribute('aria-expanded', 'false');
-                DOM.hamburger.querySelector('i').classList.add('fa-bars');
-                DOM.hamburger.querySelector('i').classList.remove('fa-xmark');
+                const icon = DOM.hamburger.querySelector('i');
+                if (icon) {
+                    icon.classList.add('fa-bars');
+                    icon.classList.remove('fa-xmark');
+                }
             });
         });
     }
