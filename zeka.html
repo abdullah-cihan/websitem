@@ -21,7 +21,7 @@
         /* 2. ADIM: Layout Entegrasyonu için Ayarlar */
         body { 
             font-family: 'Inter', sans-serif; 
-            /* Arka plan zaten koyu, React componentiyle uyumlu */
+            /* Arka plan koyu mod */
             background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             background-attachment: fixed;
             color: #f8fafc;
@@ -78,6 +78,7 @@
         const User = (props) => <IconBase {...props} d={<><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} />;
         const Trees = (props) => <IconBase {...props} d={<><path d="M10 10v.2A3 3 0 0 1 8.9 16v0H5v0h0a3 3 0 0 1-1-5.8V10a3 3 0 0 1 5.3-2.1"/><path d="M7 16v6"/><path d="M13 19v3"/><path d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .6-1.7L13.2 3.2a1 1 0 0 0-1.4 0L8.8 7.3a1 1 0 0 0 .6 1.7H10l-2.5 3.3a1 1 0 0 0 .7 1.7H11l-2 3.3a1 1 0 0 0 .7 1.7H12z"/></>} />;
         const ArrowRight = (props) => <IconBase {...props} d={<><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></>} />;
+        const ArrowLeft = (props) => <IconBase {...props} d={<><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></>} />;
         const CheckCircle = (props) => <IconBase {...props} d={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></>} />;
         const RefreshCcw = (props) => <IconBase {...props} d={<><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></>} />;
         const Download = (props) => <IconBase {...props} d={<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>} />;
@@ -266,6 +267,9 @@
             const [questions, setQuestions] = useState([]);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
             
+            // Tarihçe state'i eklendi (Geri alma işlemi için)
+            const [history, setHistory] = useState([]);
+
             const questionCounts = rawQuestions.reduce((acc, q) => {
                 acc[q.type] = (acc[q.type] || 0) + 1;
                 return acc;
@@ -280,6 +284,7 @@
                 setQuestions(shuffleArray(rawQuestions));
                 setGameState('quiz');
                 setCurrentQuestionIndex(0);
+                setHistory([]); // Tarihçeyi sıfırla
                 setScores({
                     linguistic: 0, logical: 0, spatial: 0, musical: 0, 
                     bodily: 0, interpersonal: 0, intrapersonal: 0, naturalist: 0
@@ -287,6 +292,9 @@
             };
 
             const handleAnswer = (value, type) => {
+                // Cevabı tarihçeye ekle
+                setHistory(prev => [...prev, { type, value }]);
+
                 setScores(prev => ({
                     ...prev,
                     [type]: prev[type] + value
@@ -296,6 +304,26 @@
                     setTimeout(() => setCurrentQuestionIndex(prev => prev + 1), 200);
                 } else {
                     setGameState('results');
+                }
+            };
+
+            // Önceki soruya dönme fonksiyonu
+            const handlePrevious = () => {
+                if (currentQuestionIndex > 0 && history.length > 0) {
+                    // Son yapılan işlemi al
+                    const lastAction = history[history.length - 1];
+                    
+                    // Puanı geri al
+                    setScores(prev => ({
+                        ...prev,
+                        [lastAction.type]: prev[lastAction.type] - lastAction.value
+                    }));
+                    
+                    // Tarihçeden son işlemi sil
+                    setHistory(prev => prev.slice(0, -1));
+                    
+                    // Bir önceki soruya git
+                    setCurrentQuestionIndex(prev => prev - 1);
                 }
             };
 
@@ -353,6 +381,7 @@
                                 <QuizScreen 
                                     question={questions[currentQuestionIndex]} 
                                     onAnswer={handleAnswer} 
+                                    onPrevious={handlePrevious} // Yeni prop
                                     currentIndex={currentQuestionIndex}
                                     total={questions.length}
                                 />
@@ -423,9 +452,9 @@
             )
         }
 
-        function QuizScreen({ question, onAnswer, currentIndex, total }) {
+        function QuizScreen({ question, onAnswer, onPrevious, currentIndex, total }) {
             return (
-                <div key={question.text} className="flex flex-col items-center h-full max-w-3xl mx-auto w-full slide-in py-4">
+                <div key={question.text} className="flex flex-col items-center h-full max-w-3xl mx-auto w-full slide-in py-4 relative">
                     
                     {/* Mobil İlerleme Göstergesi - Artık Header'da var ama yine de kalabilir */}
                     <div className="w-full flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 md:hidden">
@@ -443,13 +472,26 @@
                         <p className="mt-6 text-slate-400 font-medium">Bu ifade sizi ne kadar yansıtıyor?</p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 w-full mb-16">
                         <OptionButton value={1} label="Hiç" onClick={() => onAnswer(1, question.type)} color="border-red-900/30 text-red-400 hover:bg-red-900/20" />
                         <OptionButton value={2} label="Az" onClick={() => onAnswer(2, question.type)} color="border-orange-900/30 text-orange-400 hover:bg-orange-900/20" />
                         <OptionButton value={3} label="Orta" onClick={() => onAnswer(3, question.type)} color="border-slate-600 text-slate-400 hover:bg-slate-700/50" />
                         <OptionButton value={4} label="Çok" onClick={() => onAnswer(4, question.type)} color="border-green-900/30 text-green-400 hover:bg-green-900/20" />
                         <OptionButton value={5} label="Tamamen" onClick={() => onAnswer(5, question.type)} color="border-indigo-900/30 text-indigo-400 hover:bg-indigo-900/20" />
                     </div>
+
+                    {/* ÖNCEKİ SORU BUTONU (Sol Alt) */}
+                    {currentIndex > 0 && (
+                        <div className="w-full flex justify-start absolute bottom-0 left-0">
+                            <button 
+                                onClick={onPrevious}
+                                className="flex items-center gap-2 px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-sm font-medium"
+                            >
+                                <ArrowLeft className="w-4 h-4" />
+                                Önceki Soru
+                            </button>
+                        </div>
+                    )}
                 </div>
             );
         }
