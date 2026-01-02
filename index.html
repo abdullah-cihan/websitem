@@ -4,29 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Abdullah Cihan | Teknoloji & Felsefe</title>
-    <meta name="description" content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
-    <meta name="theme-color" content="#0f172a">
     
+    <!-- SEO ve Meta Etiketleri -->
+    <meta name="description" content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
+    <meta name="keywords" content="Abdullah Cihan, Teknoloji Blog, Yazılım, Python, Felsefe, YouTube">
+    <meta name="author" content="Abdullah Cihan">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Open Graph / Sosyal Medya -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Abdullah Cihan | Teknoloji & Felsefe">
+    <meta property="og:description" content="Karmaşık teknolojik problemleri sadeleştiriyor, çözümleri analiz ediyorum.">
+    <meta property="og:url" content="https://abdullahcihan.com">
+    <meta property="og:image" content="assets/avatar.jpg">
+
+    <!-- Fontlar -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     
+    <!-- İkonlar -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- CSS Dosyaları -->
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="tools.css">
 </head>
 <body>
 
+    <!-- Yükleme Çubuğu -->
     <div id="progress-container"><div id="progress-bar"></div></div>
     
+    <!-- Arka Plan Efekti -->
     <div class="background-glow"></div>
 
+    <!-- Header / Navigasyon -->
     <header class="header">
         <div class="container nav-container">
             <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
             
-            <button class="hamburger" aria-label="Menüyü Aç">
+            <button class="hamburger" aria-label="Menüyü Aç" aria-expanded="false">
                 <i class="fa-solid fa-bars"></i>
             </button>
             
@@ -43,6 +60,7 @@
     </header>
 
     <main>
+        <!-- Hero (Giriş) Bölümü -->
         <section id="anasayfa" class="hero-section">
             <div class="container hero-container">
                 <div class="hero-text hidden">
@@ -61,13 +79,14 @@
                 
                 <div class="hero-image hidden">
                     <div class="img-wrapper">
-                        <img src="assets/avatar.jpg" onerror="this.src='https://placehold.co/500x500/1e293b/white?text=AC'" alt="Abdullah Cihan">
+                        <img src="assets/avatar.jpg" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan&background=0D8ABC&color=fff&size=500'" alt="Abdullah Cihan">
                         <div class="floating-card python-card"><i class="fa-brands fa-python"></i></div>
                     </div>
                 </div>
             </div>
         </section>
 
+        <!-- Hakkımda Bölümü -->
         <section id="hakkimda" class="section">
             <div class="container">
                 <div class="section-header hidden">
@@ -80,6 +99,7 @@
             </div>
         </section>
 
+        <!-- Blog Bölümü -->
         <section id="blog" class="section">
             <div class="container">
                 <div class="section-header hidden">
@@ -89,22 +109,39 @@
 
                 <div class="blog-layout">
                     
+                    <!-- Sol Sidebar (Araçlar) -->
                     <aside class="tools-sidebar hidden">
                         <div class="sidebar-widget glass tools-widget">
                             <h3><i class="fa-solid fa-toolbox"></i> Hızlı Araçlar</h3>
-                            <div id="tools-list-container"></div>
+                            <div id="tools-list-container">
+                                <!-- Araçlar buraya tools.js ile yüklenecek -->
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text"></div>
+                            </div>
                         </div>
                     </aside>
 
+                    <!-- Ana İçerik (Blog Listesi) -->
                     <div class="blog-main-content">
-                        <div id="featured-container" class="featured-grid"></div>
+                        <!-- Öne Çıkanlar -->
+                        <div id="featured-container" class="featured-grid">
+                            <!-- JS ile doldurulacak -->
+                            <div class="skeleton-card glass" style="height: 300px;"></div>
+                        </div>
 
                         <h3 class="sub-heading">Diğer İçerikler</h3>
                         
-                        <div id="standard-container" class="blog-list"></div>
+                        <!-- Standart Liste -->
+                        <div id="standard-container" class="blog-list">
+                            <!-- JS ile doldurulacak -->
+                            <div class="skeleton-card glass" style="height: 150px; margin-bottom: 20px;"></div>
+                            <div class="skeleton-card glass" style="height: 150px; margin-bottom: 20px;"></div>
+                        </div>
                     </div>
 
+                    <!-- Sağ Sidebar -->
                     <aside class="sidebar hidden">
+                        <!-- E-Bülten Widget -->
                         <div class="sidebar-widget glass">
                             <h3>📬 E-Bülten</h3>
                             <p class="small-text">Yeni yazılardan haberdar olmak için katıl.</p>
@@ -114,16 +151,18 @@
                             </form>
                         </div>
 
+                        <!-- Kategoriler -->
                         <div class="sidebar-widget glass">
                             <h3>Kategoriler</h3>
                             <ul class="cat-list">
-                                <li><a href="#">Python <span>(12)</span></a></li>
-                                <li><a href="#">Teknoloji <span>(8)</span></a></li>
-                                <li><a href="#">Felsefe <span>(5)</span></a></li>
-                                <li><a href="#">Video <span>(15)</span></a></li>
+                                <li><a href="#" onclick="filterByCategory('Python'); return false;">Python</a></li>
+                                <li><a href="#" onclick="filterByCategory('Teknoloji'); return false;">Teknoloji</a></li>
+                                <li><a href="#" onclick="filterByCategory('Felsefe'); return false;">Felsefe</a></li>
+                                <li><a href="#" onclick="filterByCategory('Video'); return false;">Video</a></li>
                             </ul>
                         </div>
                         
+                        <!-- YouTube Widget -->
                         <div class="sidebar-widget glass text-center">
                             <h3>Abone Ol</h3>
                             <p class="small-text">YouTube kanalıma beklerim.</p>
@@ -135,11 +174,12 @@
             </div>
         </section>
 
+        <!-- Footer -->
         <footer id="iletisim">
             <div class="container footer-content hidden">
                 <div class="social-box">
                     <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="s-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                    <a href="#" class="s-link" aria-label="Twitter"><i class="fa-brands fa-twitter"></i></a>
+                    <a href="#" class="s-link" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
                     <a href="#" class="s-link" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
                     <a href="mailto:iletisim@abdullahcihan.com" class="s-link" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
                 </div>
@@ -148,17 +188,43 @@
         </footer>
     </main>
 
+    <!-- Yukarı Çık Butonu -->
     <a href="#" class="back-to-top" aria-label="Yukarı Çık"><i class="fa-solid fa-arrow-up"></i></a>
 
+    <!-- Scripts -->
     <script src="script.js"></script> 
     <script src="tools.js"></script>
     
+    <!-- Inline JS: Hamburger Menu -->
     <script>
         const hamburger = document.querySelector('.hamburger');
         const navLinks = document.querySelector('.nav-links');
-        if(hamburger){
+        
+        if(hamburger && navLinks){
             hamburger.addEventListener('click', () => {
+                const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+                hamburger.setAttribute('aria-expanded', !isExpanded);
                 navLinks.classList.toggle('active');
+                
+                // İkon değişimi
+                const icon = hamburger.querySelector('i');
+                if(icon) {
+                    icon.classList.toggle('fa-bars');
+                    icon.classList.toggle('fa-times');
+                }
+            });
+
+            // Linke tıklayınca menüyü kapat
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', () => {
+                    navLinks.classList.remove('active');
+                    hamburger.setAttribute('aria-expanded', 'false');
+                    const icon = hamburger.querySelector('i');
+                    if(icon) {
+                        icon.classList.add('fa-bars');
+                        icon.classList.remove('fa-times');
+                    }
+                });
             });
         }
     </script>
