@@ -1,4 +1,4 @@
-/* tools.css - Hızlı Araçlar */
+/* tools.css - Hızlı Araçlar (Tema Uyumlu) */
 
 .tools-list {
   display: flex;
@@ -14,26 +14,29 @@
   padding: 10px 12px;
   border-radius: 10px;
   text-decoration: none;
-  color: #cbd5e1;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: 0.2s;
+  color: var(--text-muted); /* Sabit renk yerine değişken */
+  background: rgba(125, 125, 125, 0.05); /* Hem dark hem light modda hafif görünür */
+  border: 1px solid var(--glass-border);
+  transition: all 0.2s ease;
 }
 
 .tool-item:hover {
   background: rgba(59,130,246,0.12);
-  border-color: rgba(59,130,246,0.35);
-  color: #fff;
+  border-color: var(--primary);
+  color: var(--primary); /* Hover durumunda ana renk */
+  transform: translateX(4px); /* Ufak bir kayma efekti */
 }
 
 .tool-item i {
   width: 18px;
   text-align: center;
-  color: #60a5fa;
+  color: var(--primary);
 }
 
 .tool-empty {
   margin-top: 12px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 0.9rem;
+  text-align: center;
+  font-style: italic;
 }
