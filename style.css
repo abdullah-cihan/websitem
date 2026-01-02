@@ -477,3 +477,20 @@ footer { text-align: center; padding: 50px 0; background: var(--bg-body); margin
     .blog-list { grid-template-columns: 1fr; }
     .featured-card .blog-thumb { height: 180px; }
 }
+/* style.css dosyasının en altına ekleyin */
+
+.center-icon-wrapper {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Mobil cihazlarda orta ikonu gizleyelim veya menünün içine alalım ki üst üste binmesin */
+@media (max-width: 900px) {
+    .center-icon-wrapper {
+        position: static; /* Mobilde statik olsun */
+        transform: none;
+        margin-right: auto; /* Logodan sonra boşluk bırakır */
+    }
+}
+
