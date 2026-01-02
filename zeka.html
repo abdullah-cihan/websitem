@@ -21,10 +21,11 @@
         /* 2. ADIM: Layout Entegrasyonu için Ayarlar */
         body { 
             font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #1e1b4b 100%);
+            /* Arka plan zaten koyu, React componentiyle uyumlu */
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             background-attachment: fixed;
             color: #f8fafc;
-            margin: 0; /* Reset */
+            margin: 0; 
         }
 
         /* Sabit Header'ın altında kalmaması için padding */
@@ -41,11 +42,11 @@
         }
         .bar-fill { transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
-        /* Glassmorphism Scrollbar */
+        /* Glassmorphism Scrollbar - Koyu Tema Uyumlu */
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
     </style>
 </head>
 <body>
@@ -53,7 +54,7 @@
     <!-- React Root -->
     <div id="root"></div>
 
-    <!-- 3. ADIM: Layout Scripti (Header'ı otomatik ekler) -->
+    <!-- 3. ADIM: Layout Scripti -->
     <script src="layout.js"></script>
 
     <!-- React Uygulaması -->
@@ -89,10 +90,10 @@
                 id: 'linguistic',
                 name: 'Sözel-Dilsel Zeka',
                 icon: <BookOpen className="w-6 h-6" />,
-                color: 'text-blue-600',
+                color: 'text-blue-400', // Açık renk (Dark mode)
                 bgColor: 'bg-blue-600',
-                bgLight: 'bg-blue-50',
-                border: 'border-blue-200',
+                bgLight: 'bg-blue-900/40', // Koyu transparan
+                border: 'border-blue-700',
                 desc: 'Kelimeleri etkili kullanma, dilin inceliklerine hakimiyet, okuma ve yazma becerileri.',
                 recommendations: ['Yazarlık / Editörlük', 'Hukuk', 'Gazetecilik', 'Reklam Metin Yazarlığı', 'Politika'],
                 advice: 'Günlük tutmak, tartışma kulüplerine katılmak, yabancı dil öğrenmek ve kelime oyunları oynamak potansiyelinizi zirveye taşır.'
@@ -101,10 +102,10 @@
                 id: 'logical',
                 name: 'Mantıksal-Matematiksel Zeka',
                 icon: <Calculator className="w-6 h-6" />,
-                color: 'text-indigo-600',
+                color: 'text-indigo-400',
                 bgColor: 'bg-indigo-600',
-                bgLight: 'bg-indigo-50',
-                border: 'border-indigo-200',
+                bgLight: 'bg-indigo-900/40',
+                border: 'border-indigo-700',
                 desc: 'Soyut düşünme, neden-sonuç ilişkisi kurma, sayılarla ve mantıksal örüntülerle çalışma yeteneği.',
                 recommendations: ['Mühendislik', 'Yazılım Geliştirme', 'Veri Bilimi', 'Finans Analistliği', 'Bilimsel Araştırma'],
                 advice: 'Satranç veya Go gibi strateji oyunları oynamak, kodlama öğrenmek ve bilimsel dergileri takip etmek size iyi gelecektir.'
@@ -113,10 +114,10 @@
                 id: 'spatial',
                 name: 'Görsel-Uzamsal Zeka',
                 icon: <Palette className="w-6 h-6" />,
-                color: 'text-purple-600',
+                color: 'text-purple-400',
                 bgColor: 'bg-purple-600',
-                bgLight: 'bg-purple-50',
-                border: 'border-purple-200',
+                bgLight: 'bg-purple-900/40',
+                border: 'border-purple-700',
                 desc: 'Görsel dünyayı algılama, zihinde canlandırma, renkler ve şekillerle düşünme becerisi.',
                 recommendations: ['Mimarlık', 'Grafik Tasarım', 'Fotoğrafçılık', 'Moda Tasarımı', 'Yönetmenlik'],
                 advice: 'Fotoğrafçılıkla ilgilenmek, zihin haritaları kullanmak ve 3D modelleme programlarını öğrenmek gelişiminizi destekler.'
@@ -125,10 +126,10 @@
                 id: 'musical',
                 name: 'Müziksel-Ritmik Zeka',
                 icon: <Music className="w-6 h-6" />,
-                color: 'text-pink-500',
+                color: 'text-pink-400',
                 bgColor: 'bg-pink-500',
-                bgLight: 'bg-pink-50',
-                border: 'border-pink-200',
+                bgLight: 'bg-pink-900/40',
+                border: 'border-pink-700',
                 desc: 'Sesleri, ritimleri, tonları ve müzikal yapıları algılama, ayırt etme ve üretme yeteneği.',
                 recommendations: ['Müzisyenlik', 'Ses Mühendisliği', 'Bestecilik', 'Müzik Öğretmenliği', 'Akustik Mühendisliği'],
                 advice: 'Bir enstrüman çalmayı denemek, farklı kültürlerin müziklerini dinlemek ve ritim çalışmaları yapmak odaklanmanızı artırır.'
@@ -137,10 +138,10 @@
                 id: 'bodily',
                 name: 'Bedensel-Kinestetik Zeka',
                 icon: <Activity className="w-6 h-6" />,
-                color: 'text-red-500',
+                color: 'text-red-400',
                 bgColor: 'bg-red-500',
-                bgLight: 'bg-red-50',
-                border: 'border-red-200',
+                bgLight: 'bg-red-900/40',
+                border: 'border-red-700',
                 desc: 'Vücut koordinasyonu, denge, el becerileri ve bedeni kullanarak ifade etme gücü.',
                 recommendations: ['Cerrahi', 'Fizyoterapi', 'Sporculuk', 'Oyunculuk', 'Zanaatkarlık / Heykeltıraşlık'],
                 advice: 'Dans kurslarına katılmak, el işi hobileri (ahşap, seramik) edinmek ve düzenli spor yapmak zihninizi açar.'
@@ -149,10 +150,10 @@
                 id: 'interpersonal',
                 name: 'Sosyal-Kişilerarası Zeka',
                 icon: <Users className="w-6 h-6" />,
-                color: 'text-orange-500',
+                color: 'text-orange-400',
                 bgColor: 'bg-orange-500',
-                bgLight: 'bg-orange-50',
-                border: 'border-orange-200',
+                bgLight: 'bg-orange-900/40',
+                border: 'border-orange-700',
                 desc: 'İnsanları anlama, empati kurma, etkili iletişim ve grup dinamiklerini yönetme becerisi.',
                 recommendations: ['Psikolog', 'İnsan Kaynakları', 'Halkla İlişkiler', 'Yöneticilik', 'Diplomasi'],
                 advice: 'Gönüllü projelere katılmak, liderlik rolleri üstlenmek ve aktif dinleme egzersizleri yapmak sosyal zekanızı parlatır.'
@@ -161,10 +162,10 @@
                 id: 'intrapersonal',
                 name: 'İçsel-Öze Dönük Zeka',
                 icon: <User className="w-6 h-6" />,
-                color: 'text-teal-600',
+                color: 'text-teal-400',
                 bgColor: 'bg-teal-600',
-                bgLight: 'bg-teal-50',
-                border: 'border-teal-200',
+                bgLight: 'bg-teal-900/40',
+                border: 'border-teal-700',
                 desc: 'Kendini tanıma, içsel motivasyon, hedeflerini bilme ve duygularını yönetme gücü.',
                 recommendations: ['Girişimcilik', 'Yazarlık', 'Felsefe', 'Yaşam Koçluğu', 'Teolojik Çalışmalar'],
                 advice: 'Meditasyon yapmak, kişisel hedefler belirlemek ve düzenli olarak kendi duygu durumunuzu analiz etmek size göredir.'
@@ -173,17 +174,16 @@
                 id: 'naturalist',
                 name: 'Doğacı Zeka',
                 icon: <Trees className="w-6 h-6" />,
-                color: 'text-green-600',
+                color: 'text-green-400',
                 bgColor: 'bg-green-600',
-                bgLight: 'bg-green-50',
-                border: 'border-green-200',
+                bgLight: 'bg-green-900/40',
+                border: 'border-green-700',
                 desc: 'Doğayı anlama, canlıları sınıflandırma, çevreyle uyum ve doğal olaylara duyarlılık.',
                 recommendations: ['Veterinerlik', 'Biyolog', 'Ziraat Mühendisliği', 'Peyzaj Mimarlığı', 'Jeoloji'],
                 advice: 'Doğa yürüyüşleri yapmak, bahçecilikle uğraşmak, kamp yapmak ve belgesel izlemek zihinsel enerjinizi yeniler.'
             }
         };
 
-        // --- 50 Soruluk Genişletilmiş Havuz ---
         const rawQuestions = [
             // --- Sözel-Dilsel (7 Soru) ---
             { text: "Kelimelerle oynamayı (bulmaca, scrabble, kelime avı vb.) severim.", type: 'linguistic' },
@@ -252,7 +252,6 @@
             { text: "Mevsim geçişlerini, ayın evrelerini veya doğadaki döngüleri takip etmekten keyif alırım.", type: 'naturalist' }
         ];
 
-        // Soruları karıştır (Shuffle) ama ID'leri koru
         const shuffleArray = (array) => {
             const newArr = [...array];
             for (let i = newArr.length - 1; i > 0; i--) {
@@ -262,13 +261,11 @@
             return newArr;
         };
 
-        // --- Ana Uygulama ---
         function App() {
             const [gameState, setGameState] = useState('welcome');
             const [questions, setQuestions] = useState([]);
             const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
             
-            // Her kategori için soru sayılarını dinamik hesapla
             const questionCounts = rawQuestions.reduce((acc, q) => {
                 acc[q.type] = (acc[q.type] || 0) + 1;
                 return acc;
@@ -306,19 +303,20 @@
                 setGameState('welcome');
             };
 
+            // --- DARK MODE: Ana Konteyner Arka Planı ve Renkleri Güncellendi ---
             return (
                 <div className="flex flex-col items-center justify-center p-4 md:p-8 w-full min-h-[calc(100vh-100px)]">
-                    <div className="w-full max-w-5xl bg-white/95 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden min-h-[650px] flex flex-col relative border border-white/20">
+                    <div className="w-full max-w-5xl bg-slate-900/95 text-slate-100 backdrop-blur-md rounded-3xl shadow-2xl overflow-hidden min-h-[650px] flex flex-col relative border border-slate-700/50">
                         
-                        {/* Header */}
-                        <div className="px-8 py-5 bg-white/50 border-b border-slate-100 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm">
+                        {/* Header: Dark Mode Uyumlu */}
+                        <div className="px-8 py-5 bg-slate-800/50 border-b border-slate-700/50 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm">
                             <div className="flex items-center gap-3">
                                 <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-500/30">
                                     <Brain className="w-6 h-6 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-lg font-bold text-slate-900 tracking-tight">MindMap <span className="text-indigo-600">Pro</span></h1>
-                                    <span className="text-xs text-slate-500 font-medium">Bilimsel Zeka Envanteri</span>
+                                    <h1 className="text-lg font-bold text-slate-100 tracking-tight">MindMap <span className="text-indigo-400">Pro</span></h1>
+                                    <span className="text-xs text-slate-400 font-medium">Bilimsel Zeka Envanteri</span>
                                 </div>
                             </div>
                             
@@ -326,7 +324,7 @@
                                 {gameState !== 'welcome' && (
                                     <button 
                                         onClick={handleRestart}
-                                        className="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-indigo-600 transition-colors"
+                                        className="p-2 rounded-full hover:bg-slate-700 text-slate-400 hover:text-indigo-400 transition-colors"
                                         title="Anasayfaya Dön"
                                     >
                                         <Home className="w-5 h-5" />
@@ -334,11 +332,12 @@
                                 )}
                                 
                                 {gameState === 'quiz' && (
-                                    <div className="hidden md:flex flex-col items-end">
-                                        <span className="text-sm font-bold text-slate-700">İlerleme</span>
-                                        <div className="w-32 h-1.5 bg-slate-200 rounded-full mt-1">
+                                    // --- İLERLEME ÇUBUĞU: Artık 'hidden' değil, her zaman 'flex' ---
+                                    <div className="flex flex-col items-end">
+                                        <span className="text-sm font-bold text-slate-300">İlerleme</span>
+                                        <div className="w-32 h-1.5 bg-slate-700 rounded-full mt-1">
                                             <div 
-                                                className="h-full bg-indigo-600 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(79,70,229,0.5)]" 
+                                                className="h-full bg-indigo-500 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
                                                 style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
                                             ></div>
                                         </div>
@@ -362,7 +361,7 @@
                         </div>
                     </div>
                     
-                    <div className="mt-8 text-white/60 text-xs text-center max-w-2xl leading-relaxed font-light">
+                    <div className="mt-8 text-white/40 text-xs text-center max-w-2xl leading-relaxed font-light">
                         Bu envanter Howard Gardner'ın Çoklu Zeka Kuramı temel alınarak hazırlanmıştır. Sonuçlar tıbbi teşhis niteliği taşımaz, kişisel farkındalık ve kariyer yönlendirmesi amaçlıdır.
                     </div>
                 </div>
@@ -373,13 +372,13 @@
             return (
                 <div className="flex flex-col items-center justify-center h-full text-center slide-in space-y-10 py-8">
                     <div className="space-y-6 max-w-3xl">
-                        <span className="inline-block py-1.5 px-4 rounded-full bg-indigo-50 text-indigo-700 text-sm font-bold uppercase tracking-wider mb-2 border border-indigo-100">
+                        <span className="inline-block py-1.5 px-4 rounded-full bg-indigo-900/30 text-indigo-300 text-sm font-bold uppercase tracking-wider mb-2 border border-indigo-500/30">
                             Kapsamlı Analiz v3.0
                         </span>
-                        <h2 className="text-4xl md:text-6xl font-extrabold text-slate-900 leading-tight">
+                        <h2 className="text-4xl md:text-6xl font-extrabold text-white leading-tight">
                             Zekanın Hangi Rengisin?
                         </h2>
-                        <p className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                        <p className="text-lg md:text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto">
                             Standart IQ testleri sadece buzdağının görünen kısmıdır. 8 farklı zeka türünü ölçen bu kapsamlı test ile gerçek potansiyelinizi keşfedin.
                         </p>
                     </div>
@@ -415,10 +414,11 @@
 
         function FeatureCard({ icon, title, desc }) {
             return (
-                <div className="p-6 rounded-2xl bg-white border border-slate-100 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-shadow hover:border-indigo-100">
-                    <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">{icon}</div>
-                    <h3 className="font-bold text-slate-900">{title}</h3>
-                    <p className="text-sm text-slate-500">{desc}</p>
+                // Dark Mode Kart
+                <div className="p-6 rounded-2xl bg-slate-800 border border-slate-700 shadow-sm flex flex-col items-center gap-3 hover:shadow-md transition-shadow hover:border-indigo-500/30">
+                    <div className="p-3 bg-slate-700/50 rounded-xl text-indigo-400">{icon}</div>
+                    <h3 className="font-bold text-slate-100">{title}</h3>
+                    <p className="text-sm text-slate-400">{desc}</p>
                 </div>
             )
         }
@@ -427,27 +427,28 @@
             return (
                 <div key={question.text} className="flex flex-col items-center h-full max-w-3xl mx-auto w-full slide-in py-4">
                     
-                    <div className="w-full flex justify-between text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 md:hidden">
+                    {/* Mobil İlerleme Göstergesi - Artık Header'da var ama yine de kalabilir */}
+                    <div className="w-full flex justify-between text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 md:hidden">
                         <span>Soru {currentIndex + 1}</span>
                         <span>{total}</span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-100 rounded-full mb-12 overflow-hidden md:hidden">
-                        <div className="h-full bg-indigo-600 transition-all duration-300" style={{ width: `${((currentIndex + 1) / total) * 100}%` }}></div>
+                    <div className="w-full h-1.5 bg-slate-700 rounded-full mb-12 overflow-hidden md:hidden">
+                        <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${((currentIndex + 1) / total) * 100}%` }}></div>
                     </div>
 
                     <div className="flex-1 flex flex-col justify-center items-center text-center mb-12">
-                        <h3 className="text-2xl md:text-4xl font-semibold text-slate-800 leading-tight">
+                        <h3 className="text-2xl md:text-4xl font-semibold text-slate-100 leading-tight">
                             "{question.text}"
                         </h3>
                         <p className="mt-6 text-slate-400 font-medium">Bu ifade sizi ne kadar yansıtıyor?</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 w-full">
-                        <OptionButton value={1} label="Hiç" onClick={() => onAnswer(1, question.type)} color="border-red-200 text-red-600 hover:bg-red-50" />
-                        <OptionButton value={2} label="Az" onClick={() => onAnswer(2, question.type)} color="border-orange-200 text-orange-600 hover:bg-orange-50" />
-                        <OptionButton value={3} label="Orta" onClick={() => onAnswer(3, question.type)} color="border-slate-200 text-slate-600 hover:bg-slate-50" />
-                        <OptionButton value={4} label="Çok" onClick={() => onAnswer(4, question.type)} color="border-green-200 text-green-600 hover:bg-green-50" />
-                        <OptionButton value={5} label="Tamamen" onClick={() => onAnswer(5, question.type)} color="border-indigo-200 text-indigo-600 hover:bg-indigo-50" />
+                        <OptionButton value={1} label="Hiç" onClick={() => onAnswer(1, question.type)} color="border-red-900/30 text-red-400 hover:bg-red-900/20" />
+                        <OptionButton value={2} label="Az" onClick={() => onAnswer(2, question.type)} color="border-orange-900/30 text-orange-400 hover:bg-orange-900/20" />
+                        <OptionButton value={3} label="Orta" onClick={() => onAnswer(3, question.type)} color="border-slate-600 text-slate-400 hover:bg-slate-700/50" />
+                        <OptionButton value={4} label="Çok" onClick={() => onAnswer(4, question.type)} color="border-green-900/30 text-green-400 hover:bg-green-900/20" />
+                        <OptionButton value={5} label="Tamamen" onClick={() => onAnswer(5, question.type)} color="border-indigo-900/30 text-indigo-400 hover:bg-indigo-900/20" />
                     </div>
                 </div>
             );
@@ -455,9 +456,10 @@
 
         function OptionButton({ value, label, onClick, color }) {
             return (
+                // Dark Mode Buton
                 <button 
                     onClick={onClick}
-                    className={`h-16 sm:h-auto sm:aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border-2 bg-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${color}`}
+                    className={`h-16 sm:h-auto sm:aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border-2 bg-slate-800 transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg ${color}`}
                 >
                     <span className="text-lg md:text-xl font-bold mb-1">{value}</span>
                     <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
@@ -466,7 +468,6 @@
         }
 
         function ResultsScreen({ scores, questionCounts, onRestart }) {
-            // Dinamik Yüzde Hesaplama
             const results = Object.keys(scores).map(key => {
                 const count = questionCounts[key];
                 const maxPossible = count * 5;
@@ -482,7 +483,6 @@
 
             const dominant = results[0];
 
-            // Rapor İndirme Fonksiyonu
             const downloadReport = () => {
                 const date = new Date().toLocaleDateString('tr-TR');
                 
@@ -521,16 +521,16 @@
             return (
                 <div className="flex flex-col gap-8 slide-in pb-10">
                     <div className="text-center space-y-3 mb-4">
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-100 text-green-700 text-sm font-bold animate-pulse">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-900/30 text-green-400 text-sm font-bold animate-pulse border border-green-500/20">
                             <CheckCircle className="w-4 h-4" /> Analiz Tamamlandı
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold text-slate-900">Potansiyeliniz Keşfedildi</h2>
-                        <p className="text-slate-500 max-w-xl mx-auto">Sonuçlar, zihinsel eğilimlerinizin <span className="font-bold text-slate-800">{dominant.name}</span> yönünde kuvvetli olduğunu gösteriyor.</p>
+                        <h2 className="text-3xl md:text-4xl font-bold text-white">Potansiyeliniz Keşfedildi</h2>
+                        <p className="text-slate-400 max-w-xl mx-auto">Sonuçlar, zihinsel eğilimlerinizin <span className="font-bold text-slate-200">{dominant.name}</span> yönünde kuvvetli olduğunu gösteriyor.</p>
                     </div>
 
-                    {/* Dominant Kart */}
-                    <div className={`relative overflow-hidden p-8 rounded-3xl bg-gradient-to-br from-white to-slate-50 border-2 ${dominant.border} shadow-lg group`}>
-                        <div className={`absolute top-0 right-0 p-32 rounded-full ${dominant.bgLight} opacity-50 blur-3xl -translate-y-1/2 translate-x-1/2`}></div>
+                    {/* Dominant Kart - Dark Mode */}
+                    <div className={`relative overflow-hidden p-8 rounded-3xl bg-slate-800 border-2 ${dominant.border} shadow-lg group`}>
+                        <div className={`absolute top-0 right-0 p-32 rounded-full ${dominant.bgLight} opacity-20 blur-3xl -translate-y-1/2 translate-x-1/2`}></div>
                         
                         <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
                             <div className={`p-8 rounded-2xl ${dominant.bgColor} text-white shadow-xl transform rotate-3 group-hover:rotate-0 transition-transform duration-500`}>
@@ -539,31 +539,31 @@
                             
                             <div className="flex-1 space-y-4">
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <h3 className="text-3xl font-bold text-slate-900">{dominant.name}</h3>
+                                    <h3 className="text-3xl font-bold text-white">{dominant.name}</h3>
                                     <span className={`px-4 py-1 rounded-full text-white font-bold text-sm shadow-sm ${dominant.bgColor}`}>
                                         % {dominant.percentage} Baskın
                                     </span>
                                 </div>
-                                <p className="text-lg text-slate-600 leading-relaxed">{dominant.desc}</p>
+                                <p className="text-lg text-slate-300 leading-relaxed">{dominant.desc}</p>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                                    <div className="bg-white/80 p-5 rounded-xl border border-slate-100 backdrop-blur-sm">
-                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">
+                                    <div className="bg-slate-700/50 p-5 rounded-xl border border-slate-600 backdrop-blur-sm">
+                                        <h4 className="flex items-center gap-2 font-bold text-slate-200 mb-3 text-sm uppercase tracking-wide">
                                             <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                                             Kariyer Yolları
                                         </h4>
                                         <div className="flex flex-wrap gap-2">
                                             {dominant.recommendations.map(job => (
-                                                <span key={job} className="text-xs font-medium bg-slate-100 text-slate-600 px-2.5 py-1.5 rounded-md hover:bg-slate-200 transition-colors cursor-default">{job}</span>
+                                                <span key={job} className="text-xs font-medium bg-slate-800 text-slate-300 border border-slate-600 px-2.5 py-1.5 rounded-md hover:bg-slate-700 transition-colors cursor-default">{job}</span>
                                             ))}
                                         </div>
                                     </div>
-                                    <div className="bg-white/80 p-5 rounded-xl border border-slate-100 backdrop-blur-sm">
-                                        <h4 className="flex items-center gap-2 font-bold text-slate-800 mb-3 text-sm uppercase tracking-wide">
+                                    <div className="bg-slate-700/50 p-5 rounded-xl border border-slate-600 backdrop-blur-sm">
+                                        <h4 className="flex items-center gap-2 font-bold text-slate-200 mb-3 text-sm uppercase tracking-wide">
                                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                             Uzman Tavsiyesi
                                         </h4>
-                                        <p className="text-sm text-slate-600 italic leading-relaxed">"{dominant.advice}"</p>
+                                        <p className="text-sm text-slate-400 italic leading-relaxed">"{dominant.advice}"</p>
                                     </div>
                                 </div>
                             </div>
@@ -572,8 +572,8 @@
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Liste */}
-                        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
-                            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <div className="lg:col-span-2 bg-slate-800 rounded-3xl border border-slate-700 p-8 shadow-sm">
+                            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-indigo-500" />
                                 Bütüncül Zeka Profiliniz
                             </h3>
@@ -582,15 +582,15 @@
                                     <div key={item.id} className="group">
                                         <div className="flex justify-between items-end mb-2">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-xs font-bold text-slate-300 w-4">{index + 1}</span>
+                                                <span className="text-xs font-bold text-slate-600 w-4">{index + 1}</span>
                                                 <div className={`p-1.5 rounded-lg ${item.bgLight} ${item.color} group-hover:scale-110 transition-transform`}>
                                                     {React.cloneElement(item.icon, { className: "w-4 h-4" })}
                                                 </div>
-                                                <span className="font-medium text-slate-700 group-hover:text-slate-900 transition-colors">{item.name}</span>
+                                                <span className="font-medium text-slate-300 group-hover:text-white transition-colors">{item.name}</span>
                                             </div>
-                                            <span className="font-bold text-slate-900">% {item.percentage}</span>
+                                            <span className="font-bold text-white">% {item.percentage}</span>
                                         </div>
-                                        <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
                                             <div 
                                                 className={`h-full rounded-full ${item.bgColor} bar-fill opacity-80 group-hover:opacity-100`} 
                                                 style={{ width: `${item.percentage}%`, transitionDelay: `${index * 70}ms` }}
@@ -603,7 +603,7 @@
 
                         {/* Aksiyonlar */}
                         <div className="flex flex-col gap-4">
-                            <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-lg flex flex-col justify-between h-full relative overflow-hidden group">
+                            <div className="bg-indigo-900 text-white p-6 rounded-3xl shadow-lg flex flex-col justify-between h-full relative overflow-hidden group border border-indigo-700">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-3xl -mr-10 -mt-10 group-hover:scale-150 transition-transform duration-700"></div>
                                 <div className="relative z-10">
                                     <h3 className="text-xl font-bold mb-2">Raporu Kaydet</h3>
@@ -621,7 +621,7 @@
 
                             <button 
                                 onClick={onRestart}
-                                className="w-full py-4 bg-white border-2 border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 hover:text-indigo-600 hover:border-indigo-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                className="w-full py-4 bg-slate-800 border-2 border-slate-700 text-slate-300 rounded-2xl font-bold hover:bg-slate-700 hover:text-white hover:border-slate-600 transition-all flex items-center justify-center gap-2 shadow-sm"
                             >
                                 <Home className="w-5 h-5" />
                                 Anasayfaya Dön
