@@ -1,89 +1,81 @@
 /* ============================================================
-   ADMIN CORE - YÖNETİM PANELİ ÇEKİRDEK DOSYASI (V-FULL-FEATURED)
+   ADMIN CORE - YÖNETİM PANELİ ÇEKİRDEK (MODERN & DARK)
    ============================================================ */
 (function () {
-    // ✅ URL VE GÜVENLİK ANAHTARI
-    // Diğer dosyalar (posts, pages, tools) buradan okuyacak.
+    // API Ayarları
     window.API_URL = "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec";
-    window.API_KEY = "Sifre2025"; // Code.gs'deki şifrenin AYNISI olmalı
+    window.API_KEY = "Sifre2025"; 
 
-    // ✅ 1. YARDIMCI FONKSİYONLAR (Global Erişim İçin Window'a Atandı)
+    // --- 1. YARDIMCI FONKSİYONLAR ---
 
-    // Okuma Süresi Hesaplama (İstenen Özellik)
+    // Okuma Süresi Hesaplama
     window.calculateReadingTime = (htmlContent) => {
         if (!htmlContent) return 1;
-        // HTML etiketlerini temizle, sadece metni al
         const tempDiv = document.createElement("div");
         tempDiv.innerHTML = htmlContent;
         const text = tempDiv.textContent || tempDiv.innerText || "";
-        
-        // Boşluklara göre bölüp kelime sayısını bul
         const wordCount = text.trim().split(/\s+/).length;
-        
-        // Ortalama okuma hızı: 200 kelime/dakika
         const readingTime = Math.ceil(wordCount / 200);
         return readingTime > 0 ? readingTime : 1;
     };
 
-    // Tarih Formatlama (Tablolarda kullanmak için)
+    // Tarih Formatlama
     window.formatDate = (dateString) => {
         if (!dateString) return '-';
         return new Date(dateString).toLocaleDateString('tr-TR', {
-            year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            year: 'numeric', month: 'long', day: 'numeric'
         });
     };
 
-    // ✅ 2. SAYFA YÜKLENDİĞİNDE ÇALIŞACAKLAR
+    // --- 2. BAŞLANGIÇ İŞLEMLERİ ---
     document.addEventListener('DOMContentLoaded', () => {
         // Yetki Kontrolü
-        const isAdmin = localStorage.getItem('isAdmin');
-        if (isAdmin !== 'true') { 
+        if (localStorage.getItem('isAdmin') !== 'true') { 
             window.location.href = 'login.html'; 
             return; 
         }
 
-        // Profil Bilgisi Yerleştirme
-        const adminName = localStorage.getItem('adminName') || 'Yönetici';
-        const profileNameEl = document.querySelector('.user-info span');
-        if(profileNameEl) profileNameEl.innerText = adminName;
+        // KULLANICI ADI YÖNETİMİ (İstek üzerine)
+        // Login sırasında kaydedilen ismi alıyoruz, yoksa 'Yönetici' varsayıyoruz.
+        // localStorage'da tutarlılık sağlamak için hem 'adminName' hem 'adminUser' kontrol ediliyor.
+        const adminName = localStorage.getItem('adminName') || localStorage.getItem('adminUser') || 'Yönetici';
+        
+        // Header'daki isim alanını güncelle
+        const displayNameEl = document.getElementById('display-name');
+        if(displayNameEl) displayNameEl.innerText = adminName;
 
-        // Dashboard İstatistiklerini Yükle
+        // Avatar'ı güncelle (Opsiyonel: Adının baş harflerine göre)
+        const avatarEl = document.getElementById('user-avatar');
+        if(avatarEl) {
+            avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(adminName)}&background=3b82f6&color=fff&bold=true`;
+        }
+
+        // İstatistikleri Yükle
         loadDashboardStats();
 
-        // Sayfa yenilendiğinde URL'deki hash'e göre (örn: #posts) ilgili sekmeyi aç
+        // URL Hash kontrolü (Sayfa yenilendiğinde doğru sekme açılsın)
         const initialSection = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
         showSection(initialSection);
     });
 
-    // ✅ 3. SEKME (SAYFA) DEĞİŞTİRME YÖNETİMİ
+    // --- 3. SEKME YÖNETİMİ ---
     window.showSection = (sectionId) => {
-        // Tüm sekmeleri gizle ve aktif sınıfını kaldır
+        // Sekmeleri Gizle
         document.querySelectorAll('.admin-section').forEach(sec => { 
             sec.classList.remove('active'); 
-            sec.style.display = 'none'; 
-            sec.style.opacity = '0'; // Animasyon için sıfırla
         });
         
-        // Menüdeki aktif sınıfını temizle
+        // Menü Aktifliği
         document.querySelectorAll('.admin-menu li').forEach(item => { item.classList.remove('active'); });
 
-        // Hedef sekmeyi bul ve göster
+        // Hedef Sekmeyi Göster
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
-            targetSection.style.display = 'block';
-            // Küçük bir gecikmeyle opacity ekle (Fade-in efekti için)
-            setTimeout(() => {
-                targetSection.classList.add('active');
-                targetSection.style.opacity = '1';
-            }, 10);
-            
-            // Tarayıcı URL'ini güncelle (Geri butonu desteği için)
-            if(history.pushState) {
-                history.pushState(null, null, `#${sectionId}`);
-            }
+            targetSection.classList.add('active');
+            if(history.pushState) history.pushState(null, null, `#${sectionId}`);
         }
         
-        // Sol menüde ilgili butonu aktif yap
+        // Menüde İlgili Butonu Aktif Yap
         const menuItems = document.querySelectorAll('.admin-menu li');
         menuItems.forEach(item => {
             const onClickAttr = item.getAttribute('onclick');
@@ -92,56 +84,45 @@
             }
         });
 
-        // Modül bazlı yükleme fonksiyonlarını tetikle (Eğer tanımlılarsa)
-        // Bu fonksiyonlar diğer js dosyalarında (posts.js, tools.js vb.) olabilir.
+        // Veri Yükleme Tetikleyicileri
         if (sectionId === 'posts' && typeof window.fetchPosts === 'function') window.fetchPosts();
         if (sectionId === 'tools-manager' && typeof window.fetchTools === 'function') window.fetchTools();
         if (sectionId === 'pages-manager' && typeof window.fetchPages === 'function') window.fetchPages();
         if (sectionId === 'dashboard') loadDashboardStats();
     };
 
-    // ✅ 4. DASHBOARD İSTATİSTİKLERİ
+    // --- 4. DASHBOARD VERİLERİ ---
     async function loadDashboardStats() {
         const postCountEl = document.getElementById('total-posts-count');
         const catCountEl = document.getElementById('total-cats-count');
         
-        // Yükleniyor ikonu göster
-        if(postCountEl) postCountEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        if(catCountEl) catCountEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        if(postCountEl) postCountEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:1rem"></i>';
         
         try {
-            // API'den postları çek
             const res = await fetch(`${window.API_URL}?type=posts`);
-            if (!res.ok) throw new Error("API yanıt vermedi");
+            if (!res.ok) throw new Error("API Hatası");
             
             const data = await res.json();
             const posts = data.posts || [];
             
-            // Post sayısını yaz
             if (postCountEl) postCountEl.innerText = posts.length;
             
-            // Kategorileri Say (Tekrar edenleri süz)
+            // Kategori Sayısı
             const categories = new Set();
-            posts.forEach(p => { 
-                if(p.kategori) categories.add(p.kategori); 
-            });
-            
-            // Kategori sayısını yaz
+            posts.forEach(p => { if(p.kategori) categories.add(p.kategori); });
             if(catCountEl) catCountEl.innerText = categories.size;
 
         } catch (error) {
             console.error("Dashboard Error:", error);
             if(postCountEl) postCountEl.innerText = "-";
-            if(catCountEl) catCountEl.innerText = "-";
         }
     }
 
-    // ✅ 5. PROFİL MENÜSÜ VE ÇIKIŞ İŞLEMLERİ
+    // --- 5. MENÜ VE ÇIKIŞ ---
     window.toggleProfileMenu = () => { 
         document.getElementById('profile-dropdown')?.classList.toggle('show'); 
     };
 
-    // Menü dışına tıklayınca kapatma
     document.addEventListener('click', (e) => {
         const trigger = document.getElementById('user-profile-trigger');
         const dropdown = document.getElementById('profile-dropdown');
@@ -151,30 +132,24 @@
     });
     
     window.logout = () => { 
-        if(confirm("Çıkış yapmak istiyor musunuz?")) { 
+        if(confirm("Güvenli çıkış yapmak üzeresiniz?")) { 
             localStorage.removeItem('isAdmin'); 
-            // Opsiyonel: Diğer admin bilgilerini de temizle
             localStorage.removeItem('adminName');
+            localStorage.removeItem('adminUser');
             window.location.href = 'login.html'; 
         } 
     };
 
-    // ✅ 6. YENİ KATEGORİ EKLEME (İstenen Özellik)
-    // HTML'deki "+" butonuna onclick="addNewCategory()" şeklinde bağlanmalı
+    // --- 6. KATEGORİ EKLEME ---
     window.addNewCategory = async () => {
-        const catName = prompt("Yeni kategori adını giriniz:");
+        const catName = prompt("Yeni kategori adı:");
         if (!catName || catName.trim() === "") return;
 
-        // Buton varsa yükleniyor durumuna getir (Opsiyonel UI iyileştirmesi)
         const btn = document.getElementById('add-cat-btn'); 
         const originalContent = btn ? btn.innerHTML : "";
-        if(btn) { 
-            btn.disabled = true; 
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; 
-        }
+        if(btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; }
 
         try {
-            // API'ye kategori ekleme isteği gönder
             const response = await fetch(window.API_URL, {
                 method: "POST",
                 redirect: "follow",
@@ -187,57 +162,40 @@
             });
 
             const result = await response.json();
-
             if (result.success || result.status === 'success') {
-                alert(`✅ "${catName}" kategorisi başarıyla eklendi.`);
-                
-                // İstatistikleri güncelle
+                alert(`✅ "${catName}" kategorisi eklendi.`);
                 loadDashboardStats();
-                
-                // Eğer sayfada kategori listesi yükleyen bir fonksiyon varsa onu da tetikle
-                // if (typeof window.fetchCategories === 'function') window.fetchCategories();
-                
             } else {
-                // Backend henüz bu action'ı desteklemiyor olabilir ama kullanıcıya bilgi verelim
-                alert(`✅ "${catName}" kategorisi sisteme iletildi. (Backend kontrolü gerekebilir)`);
+                alert("İşlem sunucuya iletildi.");
             }
-
         } catch (error) {
-            console.error(error);
-            alert("Kategori eklenirken bir hata oluştu: " + error.message);
+            alert("Hata: " + error.message);
         } finally {
-            // Butonu eski haline getir
-            if(btn) { 
-                btn.disabled = false; 
-                btn.innerHTML = originalContent; 
-            }
+            if(btn) { btn.disabled = false; btn.innerHTML = originalContent; }
         }
     };
 
-    // ✅ 7. ŞİFRE GÜNCELLEME İŞLEMİ (Düzeltilmiş ve Güvenli Versiyon)
+    // --- 7. BİLGİ GÜNCELLEME ---
     window.updateAdminCredentials = async () => {
         const oldUser = document.getElementById('old-user').value;
         const oldPass = document.getElementById('old-pass').value;
         const newUser = document.getElementById('new-user').value;
         const newPass = document.getElementById('new-pass').value;
         
-        // Ayarlar sayfasındaki butonu bul
-        const btn = document.querySelector('#settings-section .btn-submit');
+        const btn = document.querySelector('#settings-section .btn-primary');
 
         if(!oldUser || !oldPass || !newUser || !newPass) {
             alert("Lütfen tüm alanları doldurunuz.");
             return;
         }
 
-        const originalText = btn ? btn.innerText : "Güncelle";
+        const originalText = btn ? btn.innerHTML : "Güncelle";
         if(btn) {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
             btn.disabled = true;
         }
 
         try {
-            // 'no-cors' modu KALDIRILDI çünkü sonucu okuyamıyorduk ve hata olsa bile başarılı sanıyorduk.
-            // Standart fetch kullanarak backend'den dönen JSON sonucunu bekliyoruz.
             const response = await fetch(window.API_URL, {
                 method: "POST",
                 redirect: "follow",
@@ -252,36 +210,27 @@
                 })
             });
 
-            if(!response.ok) throw new Error("Sunucu ile iletişim kurulamadı (" + response.status + ")");
+            if(!response.ok) throw new Error("Sunucu hatası");
             
             const result = await response.json();
 
             if (result.success || result.status === 'success') {
                 alert("✅ Bilgiler başarıyla güncellendi! Lütfen yeni bilgilerle tekrar giriş yapın.");
                 
-                // Tarayıcıdaki eski bilgileri güncelle (Login kolaylığı için)
-                localStorage.setItem('adminUser', newUser);
+                // Yeni kullanıcı adını kaydet (Gelecek loginler için)
+                localStorage.setItem('adminName', newUser);
                 
-                // Formu temizle
+                // Formu temizle ve çıkış yap
                 document.getElementById('old-user').value = "";
-                document.getElementById('old-pass').value = "";
-                document.getElementById('new-user').value = "";
-                document.getElementById('new-pass').value = "";
-                
-                // Çıkış yap
                 logout();
             } else {
-                throw new Error(result.message || "Eski kullanıcı adı veya şifre hatalı olabilir.");
+                throw new Error(result.message || "Eski bilgiler hatalı olabilir.");
             }
 
         } catch (error) {
-            console.error("Update Error:", error);
             alert("İşlem Başarısız: " + error.message);
         } finally {
-            if(btn) {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
+            if(btn) { btn.innerHTML = originalText; btn.disabled = false; }
         }
     };
 })();
