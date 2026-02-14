@@ -1,69 +1,50 @@
-// api-manager.js
-
-/**
- * API Manager for comprehensive API request management
- *
- * This module handles API requests with features like error handling,
- * rate limiting, and cache busting.
- */
-
-const axios = require('axios');
+// Browser-based API manager implementation for Google Apps Script API
 
 class ApiManager {
-    constructor(baseURL) {
-        this.api = axios.create({
-            baseURL,
-            timeout: 10000,
-        });
+    constructor() {
         this.cache = {};
-        this.rateLimit = 5; // requests per minute
+        this.rateLimit = 5; // limit to 5 requests per minute
         this.requests = 0;
-        this.queue = [];
-        this.queueInterval = setInterval(this.processQueue.bind(this), 60000);
+        this.lastRequestTime = null;
     }
 
-    async request(endpoint, params = {}, forceRefresh = false) {
-        const cacheKey = JSON.stringify({ endpoint, params });
-
-        // Cache busting logic
-        if (!forceRefresh && this.cache[cacheKey]) {
-            return this.cache[cacheKey];
-        }
-
-        // Rate limiting logic
-        if (this.requests >= this.rateLimit) {
-            return new Promise((resolve, reject) => {
-                this.queue.push({ endpoint, params, resolve, reject });
-            });
-        }
-
-        this.requests++;
-
+    async fetch(url, options) {
+        // Error handling
         try {
-            const response = await this.api.get(endpoint, { params });
-            this.cache[cacheKey] = response.data;
-            return response.data;
+            // Check rate limiting
+            const now = Date.now();
+            if (this.lastRequestTime && now - this.lastRequestTime < 60000 && this.requests >= this.rateLimit) {
+                throw new Error('Rate limit exceeded. Please try again later.');
+            }
+
+            // Cache busting
+            const cacheKey = `${url}?${new Date().getTime()}`; // Append timestamp to URL
+            if (this.cache[cacheKey]) {
+                return this.cache[cacheKey];
+            }
+
+            // Perform the fetch request
+            const response = await fetch(url, options);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Update cache
+            this.cache[cacheKey] = data;
+
+            // Update rate limit tracking
+            this.requests += 1;
+            if (!this.lastRequestTime || now - this.lastRequestTime >= 60000) {
+                this.requests = 1;
+                this.lastRequestTime = now;
+            }
+
+            return data;
+
         } catch (error) {
-            this.handleError(error);
-            throw error;
-        } finally {
-            this.requests--;
-        }
-    }
-
-    handleError(error) {
-        console.error('API Error:', error.message);
-        // You can enhance this to log errors to an external service
-    }
-
-    processQueue() {
-        while (this.queue.length > 0 && this.requests < this.rateLimit) {
-            const { endpoint, params, resolve, reject } = this.queue.shift();
-            this.request(endpoint, params)
-                .then(resolve)
-                .catch(reject);
+            console.error('Fetch Error: ', error);
+            throw error; // Re-throw the error for further handling
         }
     }
 }
-
-module.exports = ApiManager;
