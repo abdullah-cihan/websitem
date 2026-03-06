@@ -1,290 +1,301 @@
-/**
- * MODERN ADMIN TOOLS MANAGER (V-FINAL FIXED)
- * Entegrasyon: admin.js (Core) ve Yeni Code.gs ile tam uyumlu
- */
+/* admin-tools.js */
 
-class ToolsManager {
-    constructor() {
-        // admin.js tarafından tanımlanan global değişkenleri al
-        this.API_URL = window.API_URL;
-        this.API_KEY = window.API_KEY;
+(function () {
+  function C() { return window.AdminCore; }
+  function ensureCore() {
+    if (!C()) {
+      console.error('AdminCore bulunamadı. admin.js önce yüklenmeli.');
+      return false;
+    }
+    return true;
+  }
 
-        this.state = {
-            tools: [],
-            isEditMode: false,
-            editingIndex: null
-        };
+  let siteTools = [];
+  let editIndex = null;
 
-        this.elements = {
-            tbody: document.getElementById('tools-table-body'),
-            formTitle: document.getElementById("tool-title"),
-            formIcon: document.getElementById("tool-icon"),
-            formLink: document.getElementById("tool-link"),
-            submitBtn: document.querySelector('#tools-manager .btn-submit'),
-            formContainer: document.getElementById('tools-manager')
-        };
+  // Form elemanları
+  const elTitle = () => document.getElementById('tool-title');
+  const elIcon = () => document.getElementById('tool-icon');
+  const elLink = () => document.getElementById('tool-link');
 
-        // Eğer admin.js yüklenmemişse veya URL yoksa uyar
-        if (!this.API_URL) {
-            console.error("HATA: API_URL bulunamadı! Lütfen önce admin.js dosyasının yüklendiğinden emin olun.");
-            return;
-        }
+  // "Ekle" butonunu yakala (admin.html’de onclick="addTool()")
+  const elSaveBtn = () => document.querySelector('#tools-manager button[onclick*="addTool"]');
 
-        this.init();
+  // İsteğe bağlı iptal butonu (JS ile ekleyeceğiz)
+  let cancelBtn = null;
+
+  function setSaveBtnMode(mode) {
+    const btn = elSaveBtn();
+    if (!btn) return;
+
+    if (mode === 'edit') {
+      btn.textContent = 'Güncelle';
+      btn.style.opacity = '1';
+      ensureCancelBtn();
+    } else {
+      btn.textContent = 'Ekle';
+      removeCancelBtn();
+    }
+  }
+
+  function ensureCancelBtn() {
+    if (cancelBtn) return;
+
+    const btn = elSaveBtn();
+    if (!btn) return;
+
+    cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-draft';
+    cancelBtn.textContent = 'İptal';
+    cancelBtn.style.height = '45px';
+    cancelBtn.style.marginTop = '2px';
+    cancelBtn.style.marginLeft = '8px';
+
+    cancelBtn.addEventListener('click', () => {
+      resetForm();
+      showToast('Düzenleme iptal edildi', 'warning');
+    });
+
+    // Ekle butonunun yanına koy
+    btn.parentElement?.appendChild(cancelBtn);
+  }
+
+  function removeCancelBtn() {
+    if (cancelBtn) {
+      cancelBtn.remove();
+      cancelBtn = null;
+    }
+  }
+
+  function resetForm() {
+    editIndex = null;
+    if (elTitle()) elTitle().value = '';
+    if (elIcon()) elIcon().value = '';
+    if (elLink()) elLink().value = '';
+    setSaveBtnMode('add');
+  }
+
+  function loadToForm(index) {
+    const t = siteTools[index];
+    if (!t) return;
+
+    editIndex = index;
+
+    if (elTitle()) elTitle().value = t.title || '';
+    if (elIcon()) elIcon().value = t.icon || '';
+    if (elLink()) elLink().value = t.link || '';
+
+    setSaveBtnMode('edit');
+    showToast('Düzenleme modu açıldı', 'warning');
+  }
+
+  function persist() {
+    C().writeLS('siteTools', siteTools);
+  }
+
+  async function moveTool(from, to) {
+    if (to < 0 || to >= siteTools.length) return;
+
+    const core = C();
+    try {
+      const res = await core.fetchAPI('reorder_tools', { oldIndex: from, newIndex: to });
+      if (res.ok) {
+        const item = siteTools.splice(from, 1)[0];
+        siteTools.splice(to, 0, item);
+        persist();
+        renderToolsTable();
+      } else {
+        throw new Error(res.error || "Sunucu hatası");
+      }
+    } catch (err) {
+      console.error("Sıralama güncellenemedi: ", err);
+      window.showToast?.("Sıralama güncellenemedi: " + err.message, "error");
+    }
+  }
+
+  function renderToolsTable() {
+    const core = C();
+    const tbody = document.getElementById('tools-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+
+    if (!siteTools.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" style="padding:18px; color:#94a3b8; text-align:center;">
+            Henüz araç eklenmedi.
+          </td>
+        </tr>
+      `;
+      return;
     }
 
-    init() {
-        if (!this.elements.tbody) return;
+    siteTools.forEach((tool, index) => {
+      const tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.title = 'Düzenlemek için tıkla';
 
-        // Olay Dinleyicileri
-        if (this.elements.submitBtn) {
-            this.elements.submitBtn.addEventListener('click', () => this.handleToolSubmit());
-        }
+      const icon = core.safeIconClass(tool?.icon) || 'fa-solid fa-toolbox';
+      const title = core.escapeHTML(tool?.title || '');
+      const link = core.escapeHTML(tool?.link || '');
 
-        // Sürükle Bırak Başlatıcı (SortableJS)
-        if (typeof Sortable !== 'undefined') {
-            this.initSortable();
-        } else {
-            console.warn("SortableJS kütüphanesi eksik. Sürükle-bırak çalışmayacak.");
-        }
+      tr.innerHTML = `
+        <td style="text-align:center; font-size:1.2rem;">
+          <i class="${core.escapeHTML(icon)}"></i>
+        </td>
+        <td style="font-weight:600;">${title}</td>
+        <td style="color:#94a3b8; font-size:0.9rem;">${link}</td>
+        <td onclick="event.stopPropagation()">
+          <div style="display:flex; gap:6px; justify-content:flex-end;">
+            <button type="button" class="action-btn btn-edit" title="Yukarı Taşı" data-up="${index}">
+              <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <button type="button" class="action-btn btn-edit" title="Aşağı Taşı" data-down="${index}">
+              <i class="fa-solid fa-arrow-down"></i>
+            </button>
+            <button type="button" class="action-btn btn-delete" title="Sil" data-del="${index}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      `;
+
+      // satıra tıkla => düzenle
+      tr.addEventListener('click', () => loadToForm(index));
+
+      // up/down/delete
+      tr.querySelector(`[data-up="${index}"]`)?.addEventListener('click', () => {
+        moveTool(index, index - 1);
+      });
+
+      tr.querySelector(`[data-down="${index}"]`)?.addEventListener('click', () => {
+        moveTool(index, index + 1);
+      });
+
+      tr.querySelector(`[data-del="${index}"]`)?.addEventListener('click', () => {
+        window.deleteTool(index);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ==========================
+  // GLOBAL API (admin.html onclick)
+  // ==========================
+  window.addTool = async () => {
+    if (!ensureCore()) return;
+    const core = C();
+
+    const title = (elTitle()?.value || '').trim();
+    const iconRaw = (elIcon()?.value || '').trim();
+    const linkRaw = (elLink()?.value || '').trim();
+
+    if (!title || !linkRaw) return showToast('Araç adı ve link zorunlu', 'error');
+
+    const icon = iconRaw ? (core.safeIconClass(iconRaw) || '') : '';
+
+    // http/https güvenli, ama # / relative linklere de izin
+    const isHash = linkRaw.startsWith('#');
+    const isRelative = !linkRaw.includes('://') && !linkRaw.startsWith('javascript:');
+    const safe = core.safeHttpUrl(linkRaw);
+
+    const link = safe || (isHash || isRelative ? linkRaw : '');
+    if (!link) return showToast('Link geçersiz (http/https veya # / relatif olmalı)', 'error');
+
+    const btnSave = elSaveBtn();
+    if (btnSave) {
+      btnSave.disabled = true;
+      btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     }
 
-    // --- Sürükle Bırak Mantığı ---
-    initSortable() {
-        new Sortable(this.elements.tbody, {
-            animation: 150,
-            handle: '.drag-handle',
-            ghostClass: 'sortable-ghost',
-            onEnd: (evt) => this.handleReorder(evt)
-        });
+    try {
+      // EDIT MODE -> GÜNCELLE
+      if (editIndex !== null && siteTools[editIndex]) {
+        const res = await core.fetchAPI('update_tool', { index: editIndex, baslik: title, ikon: icon, link: link });
+        if (res.ok) {
+          siteTools[editIndex] = { ...siteTools[editIndex], title, icon, link };
+          persist();
+          renderToolsTable();
+          resetForm();
+          window.showToast?.('Araç güncellendi', 'success');
+        } else throw new Error(res.error || "Sunucu hatası");
+        return;
+      }
+
+      // ADD MODE -> EKLE
+      const res = await core.fetchAPI('add_tool', { baslik: title, ikon: icon, link: link });
+      if (res.ok) {
+        siteTools.unshift({ title, icon, link });
+        persist();
+        renderToolsTable();
+        resetForm();
+        window.showToast?.('Araç eklendi', 'success');
+      } else throw new Error(res.error || "Sunucu hatası");
+    } catch (err) {
+      console.error(err);
+      window.showToast?.('Araç kaydedilemedi: ' + err.message, 'error');
+    } finally {
+      if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.textContent = editIndex !== null ? 'Güncelle' : 'Ekle';
+      }
     }
+  };
 
-    async handleReorder(evt) {
-        const newIndex = evt.newIndex;
-        const oldIndex = evt.oldIndex;
+  window.deleteTool = async (index) => {
+    if (!ensureCore()) return;
+    const core = C();
 
-        if (newIndex === oldIndex) return;
+    if (!confirm('Bu aracı silmek istediğinize emin misiniz?')) return;
 
-        // Optimistic UI Update (Arayüzü hemen güncelle)
-        const movedItem = this.state.tools.splice(oldIndex, 1)[0];
-        this.state.tools.splice(newIndex, 0, movedItem);
+    try {
+      const res = await core.fetchAPI('delete_row', { type: 'tools', id: index });
+      if (res.ok) {
+        siteTools.splice(index, 1);
+        persist();
+        renderToolsTable();
 
-        this.showNotification("Sıralama güncelleniyor...", "info");
+        if (editIndex === index) resetForm();
+        else if (editIndex !== null && index < editIndex) editIndex -= 1;
 
-        try {
-            // AUTH parametresi burada otomatik olarak sendRequest içinde ekleniyor
-            await this.sendRequest({
-                action: "reorder_tools",
-                oldIndex: oldIndex,
-                newIndex: newIndex
-            });
-            this.showNotification("✅ Sıralama kaydedildi!", "success");
-            
-            // Veri bütünlüğü için listeyi yenile (1 saniye sonra)
-            setTimeout(() => this.fetchTools(), 1000);
-
-        } catch (e) {
-            console.error(e);
-            this.showNotification("⚠️ Sıralama kaydedilemedi.", "error");
-            // Hata olursa veriyi geri çek
-            this.fetchTools();
-        }
+        window.showToast?.('Araç silindi', 'success');
+      } else {
+        throw new Error(res.error || "Sunucu hatası");
+      }
+    } catch (err) {
+      console.error(err);
+      window.showToast?.('Araç sunucudan silinemedi: ' + err.message, 'error');
     }
+  };
 
-    // --- Veri Çekme (admin.js tarafından tetiklenir) ---
-    async fetchTools() {
-        this.renderLoading();
-        try {
-            // GET isteği yaparken API_KEY gerekmez, sadece URL
-            const res = await fetch(`${this.API_URL}?type=tools`);
-            const data = await res.json();
-            this.state.tools = data.tools || [];
-            this.renderTable();
-        } catch (e) {
-            console.error(e);
-            this.elements.tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:#ef4444; padding:20px;">Veri yüklenemedi.</td></tr>';
-        }
+  // ==========================
+  // INIT
+  // ==========================
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!ensureCore()) return;
+    const core = C();
+    siteTools = core.readArrayLS('siteTools', []);
+    renderToolsTable();
+    setSaveBtnMode('add');
+
+    // Backend'den çek
+    try {
+      const data = await core.fetchAPI('get_tools');
+      if (data.ok && data.tools) {
+        // Her tool = {baslik, ikon, link} olarak DB'den geliyor
+        siteTools = data.tools.map(t => ({
+          title: t.baslik,
+          icon: t.ikon,
+          link: t.link
+        }));
+        persist();
+        renderToolsTable();
+      }
+    } catch (err) {
+      console.warn("Araçlar yüklenemedi", err);
     }
-
-    // --- Render İşlemleri ---
-    renderLoading() {
-        this.elements.tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#aaa;">Veriler Yükleniyor...</td></tr>';
-    }
-
-    renderTable() {
-        this.elements.tbody.innerHTML = '';
-        if (this.state.tools.length === 0) {
-            this.elements.tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#aaa;">Henüz araç eklenmemiş.</td></tr>';
-            return;
-        }
-
-        this.state.tools.forEach((t, i) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="drag-handle" style="cursor:grab; text-align:center; color:#64748b; width: 50px;">
-                    <i class="fa-solid fa-grip-lines"></i>
-                </td>
-                <td style="text-align:center; width: 60px; font-size: 1.2rem;">
-                    <i class="${t.ikon}"></i>
-                </td>
-                <td>
-                    <strong style="color: #e2e8f0;">${t.baslik}</strong>
-                </td>
-                <td style="font-size:0.85rem; color:#94a3b8;">${t.link}</td>
-                <td style="text-align:center; white-space:nowrap; width: 100px;">
-                    <button class="btn-edit action-btn" style="color:#3b82f6; margin-right:5px;"><i class="fa-solid fa-pen"></i></button>
-                    <button class="btn-delete action-btn" style="color:#ef4444;"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            `;
-
-            // Butonlara event bağlama
-            tr.querySelector('.btn-edit').onclick = () => this.prepareEdit(i);
-            tr.querySelector('.btn-delete').onclick = (e) => this.deleteTool(i, e.currentTarget);
-
-            this.elements.tbody.appendChild(tr);
-        });
-    }
-
-    // --- Ekleme / Güncelleme ---
-    async handleToolSubmit() {
-        const baslik = this.elements.formTitle.value.trim();
-        const ikon = this.elements.formIcon.value.trim();
-        const link = this.elements.formLink.value.trim();
-
-        if (!baslik || !link) {
-            this.showNotification("Başlık ve Link alanları zorunludur!", "error");
-            return;
-        }
-
-        const btn = this.elements.submitBtn;
-        const originalText = btn.innerHTML;
-        this.setLoadingState(btn, true);
-
-        const payload = {
-            action: this.state.isEditMode ? "update_tool" : "add_tool",
-            index: this.state.editingIndex,
-            baslik: baslik,
-            ikon: ikon || "fa-solid fa-toolbox",
-            link: link
-        };
-
-        try {
-            await this.sendRequest(payload);
-            this.showNotification(
-                this.state.isEditMode ? "✅ Güncellendi" : "✅ Eklendi",
-                "success"
-            );
-            this.resetForm();
-            setTimeout(() => this.fetchTools(), 1000); // Gecikmeli yenileme
-        } catch (e) {
-            this.showNotification("İşlem başarısız: " + e, "error");
-        } finally {
-            this.setLoadingState(btn, false, originalText);
-        }
-    }
-
-    // --- Silme ---
-    async deleteTool(index, btnElement) {
-        if (!confirm("Bu aracı silmek istediğinize emin misiniz?")) return;
-
-        const originalHTML = btnElement.innerHTML;
-        btnElement.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
-
-        try {
-            await this.sendRequest({
-                action: "delete_row",
-                type: "tools",
-                id: index
-            });
-            this.showNotification("🗑️ Silindi", "success");
-            
-            // UI'dan hemen sil
-            const row = this.elements.tbody.children[index];
-            if(row) row.style.display = 'none';
-
-            setTimeout(() => this.fetchTools(), 1000);
-        } catch (e) {
-            this.showNotification("Hata oluştu.", "error");
-            btnElement.innerHTML = originalHTML;
-        }
-    }
-
-    // --- Yardımcılar ---
-    prepareEdit(index) {
-        const tool = this.state.tools[index];
-        this.state.isEditMode = true;
-        this.state.editingIndex = index;
-
-        this.elements.formTitle.value = tool.baslik;
-        this.elements.formIcon.value = tool.ikon;
-        this.elements.formLink.value = tool.link;
-
-        this.elements.submitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Güncelle';
-        this.elements.submitBtn.classList.add('btn-warning');
-        this.elements.formContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    resetForm() {
-        this.state.isEditMode = false;
-        this.state.editingIndex = null;
-        this.elements.formTitle.value = "";
-        this.elements.formIcon.value = "";
-        this.elements.formLink.value = "";
-        this.elements.submitBtn.innerText = "Ekle";
-        this.elements.submitBtn.classList.remove('btn-warning');
-    }
-
-    // API İsteği (POST)
-    async sendRequest(data) {
-        // admin.js'den gelen API_KEY'i 'auth' parametresi olarak ekle
-        // BU KISIM KRİTİK: Code.gs'deki yeni güvenlik duvarı bu 'auth' parametresini bekliyor
-        return fetch(this.API_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ ...data, auth: this.API_KEY })
-        });
-    }
-
-    setLoadingState(btn, isLoading, originalText = "") {
-        if (isLoading) {
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = this.state.isEditMode ? '<i class="fa-solid fa-floppy-disk"></i> Güncelle' : "Ekle";
-        }
-    }
-
-    showNotification(msg, type = 'info') {
-        const div = document.createElement('div');
-        div.className = `toast-msg toast-${type}`;
-        div.innerText = msg;
-        Object.assign(div.style, {
-            position: 'fixed', bottom: '20px', right: '20px', padding: '12px 24px',
-            borderRadius: '8px', color: '#fff', zIndex: 99999,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)', transition: 'all 0.3s ease',
-            opacity: '0', transform: 'translateY(20px)',
-            backgroundColor: type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
-        });
-        document.body.appendChild(div);
-        requestAnimationFrame(() => { div.style.opacity = '1'; div.style.transform = 'translateY(0)'; });
-        setTimeout(() => {
-            div.style.opacity = '0'; div.style.transform = 'translateY(20px)';
-            setTimeout(() => div.remove(), 300);
-        }, 3000);
-    }
-}
-
-// BAŞLATMA VE ENTEGRASYON
-document.addEventListener('DOMContentLoaded', () => {
-    // Sınıfı başlat
-    window.toolsManager = new ToolsManager();
-
-    // admin.js'nin aradığı global fonksiyonu tanımla
-    window.fetchTools = () => {
-        if (window.toolsManager) {
-            window.toolsManager.fetchTools();
-        }
-    };
-});
+  });
+})();
