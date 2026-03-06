@@ -360,8 +360,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const dateSpan = document.createElement('span');
     dateSpan.className = 'date';
-    // Formatlı tarih ve okuma süresi
-    dateSpan.innerHTML = `<i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${formatDateTR(post.date)} <span style="margin:0 5px; opacity:0.5;">•</span> <i class="fa-regular fa-clock" style="margin-right:4px;"></i>${getReadTime(post.content)}`;
+    // Formatlı tarih ve okuma süresi ve okunma sayısı
+    dateSpan.innerHTML = `<i class="fa-regular fa-calendar" style="margin-right:4px;"></i>${formatDateTR(post.date)} <span style="margin:0 5px; opacity:0.5;">•</span> <i class="fa-regular fa-clock" style="margin-right:4px;"></i>${getReadTime(post.content)} <span style="margin:0 5px; opacity:0.5;">•</span> <i class="fa-solid fa-eye" style="margin-right:4px;"></i>${post.okunma_sayisi || 0}`;
 
     meta.appendChild(catSpan);
     meta.appendChild(dateSpan);
@@ -460,7 +460,8 @@ document.addEventListener('DOMContentLoaded', () => {
           status: p.durum === 'Yayında' ? 'published' : (p.durum || 'draft'),
           icon: p.resim,
           isFeatured: p.one_cikan === true || p.one_cikan === "Evet",
-          linkType: 'internal'
+          linkType: 'internal',
+          okunma_sayisi: p.okunma_sayisi || 0
         }));
 
         // Güncel veriyi kaydet ve render et
