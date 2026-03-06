@@ -1,424 +1,412 @@
-/**
- * ==========================================
- * MODERN ADMIN POST MANAGER (TAM SÜRÜM)
- * Özellikler: Düzenleme, Silme, Durum Değiştirme, Sekme Geçişi, VAZGEÇME
- * ==========================================
- */
+// admin-posts.js
+// Google Sheets backend kullanılarak Post yönetimi.
 
-class PostManager {
-    constructor() {
-        this.apiUrl = window.API_URL;
-        this.state = {
-            currentEditId: null, // Düzenlenen ID
-            posts: []            // Yazı verileri
-        };
-        
-        // DOM Elementleri
-        this.dom = {
-            listContainer: document.getElementById('post-list-container'),
-            tableBody: document.getElementById('posts-table-body'),
-            
-            // Form ve Başlık (DÜZELTİLDİ)
-            form: document.getElementById('add-post-form'),
-            // Başlık .form-header içinde olduğu için seçiciyi güncelledik:
-            formHeader: document.querySelector('.editor-wrapper .form-header'), 
-            formTitle: document.querySelector('.editor-wrapper .form-header h2'),
-            
-            // Inputlar
-            title: document.getElementById('post-title'),
-            image: document.getElementById('post-image'),
-            category: document.getElementById('post-category'),
-            desc: document.getElementById('post-desc'),
-            readTime: document.getElementById('read-time'),
-            tags: document.getElementById('tags-input'),
-            date: document.getElementById('post-date'),
-            featured: document.getElementById('post-featured'),
-            
-            // Butonlar
-            submitBtn: document.querySelector('.btn-submit'),
-            draftBtn: document.querySelector('.btn-draft'),
-            cancelBtn: null 
-        };
+const AdminPosts = {
+  posts: [],
+  editPostId: null,
 
-        this.quill = null;
-        this.init();
+  init: async () => {
+    console.log("AdminPosts başlatılıyor...");
+    await AdminPosts.loadPosts();
+
+    // Editoru (Quill) bekle ve zengin toolbar ekle
+    if (typeof Quill !== 'undefined' && !window.quill) {
+
+      // Font Sistemini Genişletme
+      const Font = Quill.import('formats/font');
+      Font.whitelist = ['inter', 'roboto', 'space-grotesk', 'outfit', 'poppins', 'monospace'];
+      Quill.register(Font, true);
+
+      const toolbarOptions = [
+        [{ 'font': Font.whitelist }, { 'size': ['small', false, 'large', 'huge'] }], // Font ve Boyut
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],        // Gelişmiş başlık
+        ['bold', 'italic', 'underline', 'strike'],        // Formatlama
+        [{ 'color': [] }, { 'background': [] }],          // Renklendirme
+        [{ 'script': 'sub' }, { 'script': 'super' }],     // Alt simge, üst simge
+        [{ 'header': 1 }, { 'header': 2 }, 'blockquote', 'code-block'], // Bloklar
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],    // Liste yapısı
+        [{ 'indent': '-1' }, { 'indent': '+1' }],         // Girinti
+        [{ 'direction': 'rtl' }, { 'align': [] }],        // Hizalama ve Yön
+        ['link', 'image', 'video', 'formula'],            // Medya ve Formül
+        ['clean', 'code-block'],                          // Formatı temizle
+        ['source', 'fullscreen']                          // Ozel Butonlar (Kaynak ve Tam Ekran)
+      ];
+
+      window.quill = new Quill('#editor-container', {
+        modules: {
+          toolbar: {
+            container: toolbarOptions,
+            handlers: {
+              'source': function () {
+                const html = window.quill.root.innerHTML;
+                const newHtml = prompt("Kaynak HTML kodu (Dikkatli düzenleyin):", html);
+                if (newHtml !== null) {
+                  window.quill.root.innerHTML = newHtml;
+                }
+              },
+              'fullscreen': function () {
+                const editorContainer = document.querySelector('.ql-container').parentElement;
+                editorContainer.classList.toggle('editor-fullscreen');
+
+                // Ikon degistirme vs icin ufak kontrol
+                if (editorContainer.classList.contains('editor-fullscreen')) {
+                  window.showToast?.("Tam ekran modu aktif", "success");
+                } else {
+                  window.showToast?.("Tam ekran modundan çıkıldı", "success");
+                }
+              }
+            }
+          }
+        },
+        theme: 'snow'
+      });
+
+      // Buton ikonları ekleme (Quill varsayılan olarak bu özel butonların ikonlarını bilmez)
+      const sourceBtn = document.querySelector('.ql-source');
+      if (sourceBtn) sourceBtn.innerHTML = '<i class="fa-solid fa-code" style="font-size:14px;"></i>';
+
+      const fsBtn = document.querySelector('.ql-fullscreen');
+      if (fsBtn) fsBtn.innerHTML = '<i class="fa-solid fa-expand" style="font-size:14px;"></i>';
+
+      // Okuma süresini otomatik hesapla (Her 200 kelime = 1 dk) ve Auto-Save yap
+      window.quill.on('text-change', function () {
+        const text = window.quill.getText().trim();
+        const wordCount = text.length > 0 ? text.split(/\s+/).length : 0;
+        const readingTime = Math.ceil(wordCount / 200);
+        const readEl = document.getElementById('read-time');
+        if (readEl) {
+          readEl.value = readingTime === 0 ? '< 1 dk' : readingTime + ' dk';
+        }
+
+        // Auto-Save: Kullanıcı yazarken taslağı local storage'a yedekle
+        if (!AdminPosts.editPostId) { // Sadece yeni yazı eklenirken
+          localStorage.setItem('quill_autosave_content', window.quill.root.innerHTML);
+          const titleEl = document.getElementById('post-title');
+          if (titleEl) localStorage.setItem('quill_autosave_title', titleEl.value);
+        }
+      });
+
+      // Varsa Auto-Save'den geri yükle (Sadece yeni yazı ekranındaysa)
+      if (!AdminPosts.editPostId) {
+        const savedContent = localStorage.getItem('quill_autosave_content');
+        const savedTitle = localStorage.getItem('quill_autosave_title');
+
+        if (savedContent) window.quill.root.innerHTML = savedContent;
+        const titleEl = document.getElementById('post-title');
+        if (savedTitle && titleEl) titleEl.value = savedTitle;
+      }
+    }
+  },
+
+  loadPosts: async () => {
+    try {
+      const data = await window.AdminCore.fetchAPI('get_posts'); // Authenticated POST
+      if (data.ok) {
+        AdminPosts.posts = data.posts || [];
+        AdminPosts.populateCategories(); // Dinamik kategorileri yükle
+        AdminPosts.renderPosts();
+      } else {
+        window.showToast?.("Yazılar yüklenemedi", "error");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  },
+
+  populateCategories: () => {
+    const catSelect = document.getElementById('post-category');
+    if (!catSelect) return;
+
+    const currentVal = catSelect.value;
+    const categories = new Set(["Genel", "Teknoloji", "Yazılım"]); // Standart kategoriler
+
+    AdminPosts.posts.forEach(p => {
+      if (p.kategori) categories.add(p.kategori.trim());
+    });
+
+    catSelect.innerHTML = '';
+    Array.from(categories).sort().forEach(cat => {
+      catSelect.add(new Option(cat, cat));
+    });
+
+    if (currentVal && categories.has(currentVal)) {
+      catSelect.value = currentVal;
+    }
+  },
+
+  renderPosts: () => {
+    const tbody = document.getElementById('posts-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '';
+    if (AdminPosts.posts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Henüz yazı eklenmemiş.</td></tr>';
+      return;
     }
 
-    async init() {
-        this.initQuill();
-        this.initDateInput();
-        this.loadCategories();
-        this.createCancelButton(); // Vazgeç butonunu oluştur
-        this.bindEvents();        
-        await this.fetchPosts();  
-    }
+    AdminPosts.posts.forEach((p) => {
+      const tr = document.createElement('tr');
 
-    // --- 1. KURULUMLAR ---
+      // İkon mu resim mi?
+      let thumb = `<div style="width:50px; height:50px; background:rgba(255,255,255,0.1); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                            <i class="fa-solid fa-image"></i>
+                         </div>`;
 
-    initQuill() {
-        if (typeof Quill !== 'undefined' && !this.quill) {
-            this.quill = new Quill('#editor-container', { theme: 'snow', placeholder: 'İçerik buraya...' });
-        }
-    }
+      if (p.resim && p.resim.startsWith('fa-')) {
+        thumb = `<div style="width:50px; height:50px; background:rgba(59,130,246,0.2); color:#3b82f6; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                            <i class="${p.resim}"></i>
+                         </div>`;
+      } else if (p.resim) {
+        thumb = `<img src="${p.resim}" style="width:50px; height:50px; object-fit:cover; border-radius:8px;" onerror="this.src='https://placehold.co/50x50/1e293b/white?text=Img'">`;
+      }
 
-    initDateInput() {
-        if (this.dom.date && !this.dom.date.value) {
-            this.dom.date.valueAsDate = new Date();
-        }
-    }
+      const statusColor = (p.durum.toLowerCase() === 'yayında' || p.durum.toLowerCase() === 'published') ? '#10b981' : '#f59e0b';
+      const statusText = (p.durum.toLowerCase() === 'yayında' || p.durum.toLowerCase() === 'published') ? 'Yayında' : 'Taslak';
 
-    loadCategories() {
-        if (!this.dom.category) return;
-        const storedCats = localStorage.getItem('categories');
-        const defaultCats = ["Genel", "Teknoloji", "Yazılım", "Felsefe", "Ekonomi", "Sanat", "Hayat"];
-        const cats = storedCats ? JSON.parse(storedCats) : defaultCats;
-        this.dom.category.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join('');
-    }
-
-    // --- VAZGEÇ BUTONUNU OLUŞTURMA (YENİ) ---
-    createCancelButton() {
-        // Eğer zaten varsa tekrar oluşturma
-        if (this.dom.cancelBtn) return;
-
-        const btn = document.createElement('button');
-        btn.type = "button";
-        btn.className = "btn-cancel-edit"; 
-        // Şık bir kırmızı buton stili
-        btn.style.cssText = "display:none; margin-left: auto; padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: background 0.2s; align-items: center; gap: 5px;";
-        btn.innerHTML = '<i class="fa-solid fa-xmark"></i> Vazgeç';
-        
-        // Tıklanınca düzenleme modundan çık
-        btn.onclick = () => this.disableEditMode();
-        
-        // Butonu başlığın yanına (.form-header içine) ekle
-        if(this.dom.formHeader) {
-            // Header'ın stilini flex yaparak başlık ve butonu yan yana koyalım
-            this.dom.formHeader.style.display = "flex";
-            this.dom.formHeader.style.alignItems = "center";
-            this.dom.formHeader.style.justifyContent = "space-between";
-            this.dom.formHeader.appendChild(btn);
-            this.dom.cancelBtn = btn;
-        } else if (this.dom.form) {
-            // Header yoksa formun en başına ekle
-            this.dom.form.insertBefore(btn, this.dom.form.firstChild);
-            this.dom.cancelBtn = btn;
-        }
-    }
-
-    // --- 2. EVENTLER ---
-
-    bindEvents() {
-        if (this.dom.submitBtn) this.dom.submitBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('published'); });
-        if (this.dom.draftBtn) this.dom.draftBtn.addEventListener('click', (e) => { e.preventDefault(); this.savePost('draft'); });
-
-        if (!this.dom.listContainer) this.setupListContainer();
-        if (this.dom.listContainer) {
-            this.dom.listContainer.addEventListener('click', (e) => this.handleListClick(e));
-        }
-    }
-
-    setupListContainer() {
-        if (this.dom.tableBody) {
-            const parentTable = this.dom.tableBody.closest('table');
-            if (parentTable) parentTable.style.display = 'none';
-        }
-        if(document.getElementById('post-list-container')) {
-             this.dom.listContainer = document.getElementById('post-list-container');
-             return;
-        }
-        const wrapper = document.createElement('div');
-        wrapper.id = 'post-list-container';
-        wrapper.className = 'post-list-container';
-        const targetDiv = this.dom.tableBody ? this.dom.tableBody.closest('div') : document.body;
-        targetDiv.appendChild(wrapper);
-        this.dom.listContainer = wrapper;
-    }
-
-    handleListClick(e) {
-        const target = e.target;
-        const btn = target.closest('button'); 
-        if (!btn) return; 
-
-        const postItem = btn.closest('.post-item');
-        if (!postItem) return;
-
-        const postId = postItem.dataset.id;
-        const postData = this.state.posts.find(p => String(p.id) === String(postId));
-
-        if (!postData) return;
-
-        if (btn.classList.contains('btn-delete')) {
-            this.deletePost(postId, btn);
-        }
-        else if (btn.classList.contains('btn-edit')) {
-            this.enableEditMode(postData);
-        }
-        else if (btn.classList.contains('btn-status')) {
-            this.toggleStatus(postData, btn);
-        }
-    }
-
-    // --- 3. LİSTELEME ---
-
-    async fetchPosts() {
-        if(!this.dom.listContainer) return;
-        this.dom.listContainer.style.display = 'block';
-        this.dom.listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#9ca3af;"><i class="fa-solid fa-circle-notch fa-spin fa-2x"></i><br>Yükleniyor...</div>';
-
-        try {
-            const res = await fetch(`${this.apiUrl}?type=posts`);
-            const data = await res.json();
-            this.state.posts = data.posts || [];
-            this.renderList();
-        } catch (error) {
-            console.error(error);
-            this.dom.listContainer.innerHTML = '<p style="color:red; text-align:center;">Hata oluştu.</p>';
-        }
-    }
-
-    renderList() {
-        if (this.state.posts.length === 0) {
-            this.dom.listContainer.innerHTML = '<p style="text-align:center; color:#9ca3af; padding:20px;">Henüz yazı yok.</p>';
-            return;
-        }
-
-        const btnStyle = "border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s; margin-left:5px;";
-
-        const html = this.state.posts.slice().reverse().map(post => {
-            const dateDisplay = new Date(post.tarih).toLocaleDateString('tr-TR');
-            const isPublished = post.durum === 'Yayında';
-            const statusColor = isPublished ? '#10b981' : '#f59e0b';
-            const starIcon = (String(post.one_cikan) === "true") ? '<i class="fa-solid fa-star" style="color:#fbbf24; margin-left:5px;"></i>' : '';
-
-            return `
-                <div class="post-item" data-id="${post.id}" 
-                     style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:15px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                    
-                    <div class="post-info" style="flex:1;">
-                        <div style="font-weight:600; font-size:1.05rem; color:#f1f5f9; margin-bottom:4px;">
-                            ${post.baslik} ${starIcon}
-                        </div>
-                        <div style="font-size:0.85rem; color:#94a3b8; display:flex; gap:15px; align-items:center;">
-                            <span style="display:flex; align-items:center;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:${statusColor}; margin-right:6px;"></span>
-                                ${post.durum}
-                            </span>
-                            <span><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> ${dateDisplay}</span>
-                            <span style="background:rgba(255,255,255,0.1); padding:2px 8px; border-radius:4px; font-weight:500; font-size:0.8rem;">${post.kategori}</span>
-                        </div>
-                    </div>
-
-                    <div class="post-actions" style="display:flex; align-items:center;">
-                        <button class="btn-status" title="${isPublished ? 'Taslağa Al' : 'Yayınla'}" style="${btnStyle} background:rgba(59, 130, 246, 0.1); color:#60a5fa;">
-                            <i class="${isPublished ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash'}"></i>
-                        </button>
-                        <button class="btn-edit" title="Düzenle" style="${btnStyle} background:rgba(16, 185, 129, 0.1); color:#34d399;">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button class="btn-delete" title="Sil" style="${btnStyle} background:rgba(239, 68, 68, 0.1); color:#f87171;">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
+      tr.innerHTML = `
+                <td>${thumb}</td>
+                <td style="font-weight:600;">${p.baslik || 'İsimsiz Yazı'}</td>
+                <td><span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; font-size:0.8rem;">${p.kategori || 'Genel'}</span></td>
+                <td><span style="color:${statusColor}; font-size:0.9rem; font-weight:600;"><i class="fa-solid fa-circle" style="font-size:0.5rem; vertical-align:middle; margin-right:4px;"></i>${statusText}</span></td>
+                <td>
+                    <button class="action-btn btn-edit" onclick="editPost('${p.id}')" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
+                    <button class="action-btn btn-delete" onclick="deletePost('${p.id}')" title="Sil"><i class="fa-solid fa-trash"></i></button>
+                </td>
             `;
-        }).join('');
+      tbody.appendChild(tr);
+    });
+  }
+};
 
-        this.dom.listContainer.innerHTML = html;
+// Yeni Kategori Ekleme Fonksiyonu
+window.addNewCategory = function () {
+  const newCat = prompt("Yeni kategori adını girin:");
+  if (!newCat || !newCat.trim()) return;
+
+  const catSelect = document.getElementById('post-category');
+  if (!catSelect) return;
+
+  const cleanCat = newCat.trim();
+  // Zaten var mı diye kontrol et
+  const exists = Array.from(catSelect.options).some(opt => opt.value.toLowerCase() === cleanCat.toLowerCase());
+
+  if (!exists) {
+    catSelect.add(new Option(cleanCat, cleanCat));
+  }
+  catSelect.value = cleanCat;
+};
+
+window.savePost = async function (status) {
+  if (!window.AdminCore || typeof window.AdminCore.fetchAPI !== 'function') {
+    window.showToast?.("Sistem henüz yüklenmedi!", "error");
+    return;
+  }
+
+  const titleEl = document.getElementById('post-title');
+  const dateEl = document.getElementById('post-date');
+  const catEl = document.getElementById('post-category');
+  const readEl = document.getElementById('read-time');
+  const imgEl = document.getElementById('post-image');
+  const descEl = document.getElementById('post-desc');
+  const featEl = document.getElementById('post-featured');
+
+  const tagsInputEl = document.getElementById('tags-input');
+
+  if (!titleEl.value.trim()) {
+    window.showToast?.("Lütfen başlık giriniz.", "error");
+    titleEl.focus();
+    return;
+  }
+
+  if (!window.quill) {
+    window.showToast?.("Editör yüklenmedi.", "error");
+    return;
+  }
+
+  const content = window.quill.root.innerHTML;
+
+  // Etiket listesinden varsa topla, yoksa inputtan al
+  let tags = "";
+  const tagsList = document.getElementById('tags-list');
+  if (tagsList && tagsList.querySelectorAll('li').length > 0) {
+    tags = Array.from(tagsList.querySelectorAll('li')).map(li => li.innerText.replace('✖', '').trim()).join(', ');
+  } else if (tagsInputEl) {
+    tags = tagsInputEl.value.trim();
+  }
+
+  const postObj = {
+    baslik: titleEl.value.trim(),
+    icerik: content,
+    resim: imgEl?.value.trim() || "",
+    tarih: dateEl?.value.trim() || "",
+    kategori: catEl?.value.trim() || "Genel",
+    ozet: descEl?.value.trim() || "",
+    durum: status,
+    okuma_suresi: readEl?.value || "",
+    etiketler: tags,
+    one_cikan: featEl?.checked ? "Evet" : "Hayır"
+  };
+
+  if (AdminPosts.editPostId) {
+    postObj.id = AdminPosts.editPostId;
+  }
+
+  try {
+    const actionText = status === 'published' ? 'Yayınlanıyor...' : 'Kaydediliyor...';
+    let originalText = '';
+    const targetBtn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
+
+    if (targetBtn) {
+      originalText = targetBtn.innerHTML;
+      targetBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${actionText}`;
+      targetBtn.disabled = true;
     }
 
-    // --- 4. MODLAR (EDIT / VAZGEÇ) ---
+    const data = await window.AdminCore.fetchAPI(postObj.id ? 'update_post' : 'add_post', postObj);
 
-    enableEditMode(post) {
-        console.log("Düzenleniyor:", post.baslik);
-        this.state.currentEditId = post.id;
+    if (data.ok) {
+      window.showToast?.(status === 'published' ? "Yazı yayınlandı!" : "Taslak kaydedildi!", "success");
 
-        // Sekmeyi değiştir (Köprü)
-        if (window.switchToEditorTab) {
-            window.switchToEditorTab();
-        } else if (typeof showSection === 'function') {
-            showSection('new-post');
-        }
+      AdminPosts.editPostId = null;
+      document.getElementById('add-post-form').reset();
+      window.quill.root.innerHTML = '';
 
-        // Formu Doldur
-        if(this.dom.title) this.dom.title.value = post.baslik || "";
-        if(this.dom.image) this.dom.image.value = post.resim || "";
-        if(this.dom.category) this.dom.category.value = post.kategori || "Genel";
-        if(this.dom.desc) this.dom.desc.value = post.ozet || "";
-        if(this.dom.readTime) this.dom.readTime.value = post.okuma_suresi || "";
-        if(this.dom.tags) this.dom.tags.value = post.etiketler || "";
-        if(this.dom.featured) this.dom.featured.checked = (String(post.one_cikan) === "true");
+      // Kayıt başarılıysa auto-save i temizle
+      localStorage.removeItem('quill_autosave_content');
+      localStorage.removeItem('quill_autosave_title');
 
-        if (post.tarih && this.dom.date) {
-            let isoDate = post.tarih.includes('T') ? post.tarih.split('T')[0] : post.tarih;
-            this.dom.date.value = isoDate;
-        }
+      const headerTitle = document.querySelector('#new-post .form-header h2');
+      if (headerTitle) headerTitle.textContent = "Yeni Yazı Oluştur";
 
-        if (this.quill) {
-            const delta = this.quill.clipboard.convert(post.icerik || "");
-            this.quill.setContents(delta, 'silent');
-        }
-
-        // UI Güncelle (Başlık ve Butonlar)
-        if(this.dom.formTitle) {
-            // Orijinal başlığı sakla (eğer henüz saklanmadıysa)
-            if (!this.dom.formTitle.dataset.original) {
-                this.dom.formTitle.dataset.original = this.dom.formTitle.innerText; // .innerHTML yerine .innerText daha temiz
-            }
-            this.dom.formTitle.innerHTML = `Düzenleniyor: <span style="color:#f59e0b">${post.baslik}</span>`;
-        }
-        
-        if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Güncelle';
-            this.dom.submitBtn.style.background = '#f59e0b'; // Turuncu
-        }
-        
-        // Vazgeç butonunu göster
-        if (this.dom.cancelBtn) {
-            this.dom.cancelBtn.style.display = 'flex'; // Flex ile ortalı görünsün
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      await AdminPosts.loadPosts();
+      if (typeof showSection === 'function') showSection('posts');
+    } else {
+      window.showToast?.("Hata: " + data.error, "error");
     }
 
-    // --- VAZGEÇ VE SIFIRLA ---
-    disableEditMode() {
-        console.log("Düzenleme modu iptal edildi.");
-        this.state.currentEditId = null;
-
-        // Formu temizle
-        if(this.dom.form) this.dom.form.reset();
-        if (this.quill) this.quill.setContents([]);
-        if(this.dom.date) this.dom.date.valueAsDate = new Date();
-
-        // Başlığı eski haline getir
-        if(this.dom.formTitle) {
-            if (this.dom.formTitle.dataset.original) {
-                this.dom.formTitle.innerText = this.dom.formTitle.dataset.original;
-            } else {
-                this.dom.formTitle.innerText = "Yazı Editörü";
-            }
-        }
-
-        // Kaydet butonunu eski haline getir
-        if (this.dom.submitBtn) {
-            this.dom.submitBtn.innerHTML = 'Yayınla';
-            this.dom.submitBtn.style.background = ''; // CSS varsayılanına dön
-        }
-
-        // Vazgeç butonunu gizle
-        if (this.dom.cancelBtn) this.dom.cancelBtn.style.display = 'none';
+    if (targetBtn) {
+      targetBtn.innerHTML = originalText;
+      targetBtn.disabled = false;
     }
-
-    // --- 5. VERİTABANI İŞLEMLERİ ---
-
-    async toggleStatus(post, btn) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-
-        const newStatus = post.durum === 'Yayında' ? 'Taslak' : 'Yayında';
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>'; 
-        btn.disabled = true;
-
-        try {
-            const payload = {
-                action: "update_post",
-                id: post.id,
-                token: token,
-                // Mevcut verileri koru, sadece durumu değiştir
-                baslik: post.baslik,
-                icerik: post.icerik,
-                resim: post.resim,
-                tarih: post.tarih,
-                kategori: post.kategori,
-                ozet: post.ozet,
-                durum: newStatus, 
-                okuma_suresi: post.okuma_suresi,
-                etiketler: post.etiketler,
-                one_cikan: post.one_cikan
-            };
-
-            const response = await fetch(this.apiUrl, { method: "POST", body: JSON.stringify(payload) });
-            const result = await response.json();
-
-            if (result.ok) {
-                post.durum = newStatus;
-                this.renderList();
-            } else { throw new Error(result.error); }
-        } catch (error) {
-            alert("Hata: " + error.message);
-            btn.innerHTML = originalIcon;
-        } finally { btn.disabled = false; }
+  } catch (err) {
+    window.showToast?.("Bağlantı hatası: " + err.message, "error");
+    const targetBtn = document.querySelector(status === 'published' ? '.btn-submit' : '.btn-draft');
+    if (targetBtn) {
+      targetBtn.innerHTML = status === 'published' ? "Yayınla" : "Taslak Kaydet";
+      targetBtn.disabled = false;
     }
+  }
+};
 
-    async savePost(status) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) { alert("Oturum yok"); return; }
-        
-        const titleVal = this.dom.title.value.trim();
-        if (!titleVal) { alert("Başlık giriniz."); return; }
+window.editPost = function (id) {
+  const post = AdminPosts.posts.find(p => String(p.id) === String(id));
+  if (!post) {
+    window.showToast?.("Yazı bulunamadı!", "error");
+    return;
+  }
 
-        const activeBtn = status === 'published' ? this.dom.submitBtn : this.dom.draftBtn;
-        const oldText = activeBtn.innerHTML;
-        activeBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        activeBtn.disabled = true;
+  AdminPosts.editPostId = id;
 
-        try {
-            const payload = {
-                action: this.state.currentEditId ? "update_post" : "add_post",
-                id: this.state.currentEditId,
-                token: token,
-                baslik: titleVal,
-                icerik: this.quill ? this.quill.root.innerHTML : "",
-                resim: this.dom.image.value,
-                tarih: this.dom.date.value || new Date().toISOString().split('T')[0],
-                kategori: this.dom.category.value,
-                ozet: this.dom.desc.value,
-                durum: status === 'published' ? 'Yayında' : 'Taslak',
-                okuma_suresi: this.dom.readTime.value,
-                etiketler: this.dom.tags.value,
-                one_cikan: this.dom.featured.checked
-            };
+  // Form elemanlarını doldur
+  document.getElementById('post-title').value = post.baslik || '';
 
-            const response = await fetch(this.apiUrl, { method: "POST", body: JSON.stringify(payload) });
-            const result = await response.json();
+  // Tarih Formatı Düzeltme (2026-01-13T21:00:00.000Z gibi değerleri input=date için YYYY-MM-DD formatına çevirir)
+  let rawDate = post.tarih || '';
+  if (rawDate && String(rawDate).includes('T')) {
+    rawDate = new Date(rawDate).toISOString().split('T')[0];
+  }
+  document.getElementById('post-date').value = rawDate;
 
-            if (result.ok) {
-                alert(this.state.currentEditId ? "Güncellendi!" : "Eklendi!");
-                this.disableEditMode(); // Formu sıfırla
-                setTimeout(() => this.fetchPosts(), 500);
-            } else { throw new Error(result.error); }
-        } catch (e) { alert("Hata: " + e.message); } 
-        finally { activeBtn.innerHTML = oldText; activeBtn.disabled = false; }
+  // Kategori dropdown'ı doldurulmuş varsayıyoruz, onu seç:
+  const catSelect = document.getElementById('post-category');
+  if (catSelect) {
+    // Eğer o kategori listede yoksa ekleyip seçelim
+    const exists = Array.from(catSelect.options).some(opt => opt.value === post.kategori);
+    if (!exists && post.kategori) {
+      const newOpt = new Option(post.kategori, post.kategori);
+      catSelect.add(newOpt);
     }
+    catSelect.value = post.kategori || '';
+  }
 
-    async deletePost(id, btn) {
-        const token = localStorage.getItem('adminToken');
-        if (!token) return;
-        if (!confirm("Silinsin mi?")) return;
+  document.getElementById('post-image').value = post.resim || '';
+  document.getElementById('post-desc').value = post.ozet || '';
+  if (document.getElementById('post-featured')) {
+    document.getElementById('post-featured').checked = (post.one_cikan === "Evet");
+  }
 
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-        
-        try {
-            const response = await fetch(this.apiUrl, {
-                method: "POST",
-                body: JSON.stringify({ token, action: "delete_row", type: "posts", id })
-            });
-            const result = await response.json();
-            if (result.ok) {
-                const row = btn.closest('.post-item');
-                row.style.opacity = "0";
-                setTimeout(() => row.remove(), 400);
-                if (String(this.state.currentEditId) === String(id)) this.disableEditMode();
-            } else { throw new Error(result.error); }
-        } catch (e) { 
-            alert("Hata: " + e.message); 
-            btn.innerHTML = originalIcon; 
-        }
+  if (window.quill) {
+    window.quill.root.innerHTML = post.icerik || '';
+  }
+
+  if (typeof showSection === 'function') {
+    showSection('new-post');
+    const headerTitle = document.querySelector('#new-post .form-header h2');
+    if (headerTitle) headerTitle.textContent = "Yazıyı Düzenle";
+  }
+};
+
+window.deletePost = async function (id) {
+  if (!confirm("Bu yazıyı kalıcı olarak silmek istediğinize emin misiniz?")) return;
+
+  const tr = document.querySelector(`button[onclick="deletePost('${id}')"]`)?.closest('tr');
+  if (tr) tr.style.opacity = '0.5';
+
+  try {
+    const data = await window.AdminCore.fetchAPI('delete_row', { type: 'posts', id: id });
+    if (data.ok) {
+      window.showToast?.("Yazı silindi.", "success");
+      await AdminPosts.loadPosts();
+    } else {
+      window.showToast?.("Silinemedi: " + data.error, "error");
+      if (tr) tr.style.opacity = '1';
     }
-}
+  } catch (err) {
+    window.showToast?.("Bağlantı hatası: " + err.message, "error");
+    if (tr) tr.style.opacity = '1';
+  }
+};
+
+window.openNewPost = function () {
+  AdminPosts.editPostId = null;
+  document.getElementById('add-post-form').reset();
+  if (window.quill) window.quill.root.innerHTML = '';
+
+  const tagsList = document.getElementById('tags-list');
+  if (tagsList) tagsList.innerHTML = ''; // Eski etiketleri temizle
+
+  localStorage.removeItem('quill_autosave_content');
+  localStorage.removeItem('quill_autosave_title');
+
+  const headerTitle = document.querySelector('#new-post .form-header h2');
+  if (headerTitle) headerTitle.textContent = "Yeni Yazı Oluştur";
+
+  if (typeof showSection === 'function') showSection('new-post');
+};
+
+window.cancelEdit = function () {
+  const confirmCancel = confirm("Değişiklikleri iptal edip tüm yazılara dönmek istiyor musunuz? Kaydedilmemiş veriler silinecek.");
+  if (!confirmCancel) return;
+
+  AdminPosts.editPostId = null;
+  document.getElementById('add-post-form').reset();
+  if (window.quill) window.quill.root.innerHTML = '';
+
+  const tagsList = document.getElementById('tags-list');
+  if (tagsList) tagsList.innerHTML = ''; // Eski etiketleri temizle
+
+  localStorage.removeItem('quill_autosave_content');
+  localStorage.removeItem('quill_autosave_title');
+
+  const headerTitle = document.querySelector('#new-post .form-header h2');
+  if (headerTitle) headerTitle.textContent = "Yeni Yazı Oluştur";
+
+  if (typeof showSection === 'function') showSection('posts');
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.postManager = new PostManager();
+  // Admin.js initialize edildikten sonra çalışması için 
+  setTimeout(() => {
+    AdminPosts.init();
+  }, 500);
 });
