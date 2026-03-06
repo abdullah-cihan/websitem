@@ -282,6 +282,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const html = post.content || '<p>Bu yazının içeriği hazırlanıyor...</p>';
       contentEl.innerHTML = sanitizeHtml(html);
     }
+
+    // Okunma Sayısı (View Count) Artırma ve Gösterme
+    const viewCountEl = document.getElementById('view-count-text');
+    if (viewCountEl) {
+      viewCountEl.textContent = post.okunma_sayisi || 0;
+
+      const apiUrl = localStorage.getItem("SYSTEM_API_URL") || "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec";
+      if (post.id) {
+        fetch(apiUrl, {
+          method: 'POST',
+          body: new URLSearchParams({ action: 'increment_view', id: post.id })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.ok && data.views !== undefined) {
+              viewCountEl.textContent = data.views;
+              // LocalStorage update so card links show up to date number if needed
+              allPosts[id].okunma_sayisi = data.views;
+              localStorage.setItem('posts', JSON.stringify(allPosts));
+            }
+          })
+          .catch(err => console.warn("Okunma sayısı artırılamadı:", err));
+      }
+    }
   } else {
     // 404
     document.title = "Yazı Bulunamadı | Abdullah Cihan";
@@ -424,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="blog-content">
             <div class="meta">
                 <span class="category ${catClass}">${sanitizeHtml(rawCategory)}</span>
-                <span class="date"><i class="fa-regular fa-calendar-days"></i> ${sanitizeHtml(rawDate)}</span>
+                <span class="date"><i class="fa-regular fa-calendar-days" style="margin-right:4px"></i> ${sanitizeHtml(rawDate)} <span style="margin:0 5px; opacity:0.5;">•</span> <i class="fa-solid fa-eye" style="margin-right:4px;"></i>${rp.okunma_sayisi || 0}</span>
             </div>
             <h3>${sanitizeHtml(shortTitle)}</h3>
             <a href="${articleUrl}" class="btn-read-modern">Yazıya Git <i class="fa-solid fa-arrow-right"></i></a>
