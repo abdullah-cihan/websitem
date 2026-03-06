@@ -1,317 +1,222 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abdullah Cihan | Teknoloji & Felsefe</title>
-    
-    <!-- SEO ve Meta Etiketleri -->
-    <meta name="description" content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
-    <meta name="keywords" content="Abdullah Cihan, Teknoloji Blog, Yazılım, Python, Felsefe, YouTube">
+    <title>Abdullah Cihan | Teknoloji &amp; Felsefe</title>
+    <meta name="description"
+        content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
+
+    <link rel="canonical" href="https://abdullahcihan.com/">
+
+    <!-- SEO & AI Optimizasyon Etiketleri -->
     <meta name="author" content="Abdullah Cihan">
-    <meta name="theme-color" content="#0f172a">
-    <meta name="google-adsense-account" content="ca-pub-2893282302624336">
+    <meta name="keywords"
+        content="Abdullah Cihan, Python, Yazılım, Teknoloji, Felsefe, YouTube, Yönetim Bilişim Sistemleri">
 
-    <!-- Canonical (ÇOK ÖNEMLİ) -->
-    <link rel="canonical" href="https://www.abdullahcihan.info/">
-
-    <!-- Open Graph / Sosyal Medya -->
-    <meta property="og:type" content="website">
+    <!-- Open Graph (Sosyal Medya ve AI Önizleme) -->
     <meta property="og:title" content="Abdullah Cihan | Teknoloji & Felsefe">
-    <meta property="og:description" content="Karmaşık teknolojik problemleri sadeleştiriyor, çözümleri analiz ediyorum.">
-    <meta property="og:url" content="https://www.abdullahcihan.info/">
-    <meta property="og:image" content="https://www.abdullahcihan.info/assets/avatar.jpg">
+    <meta property="og:description"
+        content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
+    <meta property="og:url" content="https://abdullahcihan.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://abdullahcihan.com/assets/og-image.jpg">
+    <!-- Opsiyonel: og image url'nizi güncelleyebilirsiniz -->
 
-    <!-- Twitter (isteğe bağlı ama faydalı) -->
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Abdullah Cihan | Teknoloji & Felsefe">
-    <meta name="twitter:description" content="Python, Teknoloji, Felsefe ve YouTube içerikleri.">
-    <meta name="twitter:image" content="https://www.abdullahcihan.info/assets/avatar.jpg">
+    <meta name="twitter:description"
+        content="Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.">
 
-    <!-- JSON-LD (önerilir) -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="tools.css">
+
+    <!-- Schema.org JSON-LD (Yapay Zeka ve Arama Motorları İçin Kimlik) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "Abdullah Cihan",
-      "url": "https://www.abdullahcihan.info/",
-      "sameAs": ["https://www.youtube.com/@teknolojikcozumvideo"]
+      "@graph": [
+        {
+          "@type": "Person",
+          "@id": "https://abdullahcihan.com/#person",
+          "name": "Abdullah Cihan",
+          "url": "https://abdullahcihan.com/",
+          "jobTitle": "Software Developer & Content Creator",
+          "sameAs": [
+            "https://www.youtube.com/@teknolojikcozumvideo",
+            "https://github.com/abdullahcihan"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://abdullahcihan.com/#website",
+          "url": "https://abdullahcihan.com/",
+          "name": "Abdullah Cihan | Teknoloji & Felsefe",
+          "publisher": {"@id": "https://abdullahcihan.com/#person"},
+          "description": "Abdullah Cihan kişisel web sitesi. Python, Teknoloji, Felsefe ve YouTube içerikleri.",
+          "inLanguage": "tr-TR"
+        }
+      ]
     }
     </script>
 
-    <!-- Fontlar -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    
-    <!-- İkonlar -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- CSS Dosyaları -->
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="tools.css">
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2893282302624336"
+        crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-2893282302624336">
 </head>
-<body class="dark-mode"> <!-- Varsayılan olarak dark-mode sınıfı eklenebilir veya JS ile yönetilebilir -->
 
-    <!-- Yükleme Çubuğu -->
-    <div id="progress-container"><div id="progress-bar"></div></div>
-    
-    <!-- Arka Plan Efekti -->
+<body>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+
     <div class="background-glow"></div>
 
-    <!-- Header / Navigasyon -->
     <header class="header">
         <div class="container nav-container">
-            <a href="/" class="logo">A. Cihan<span class="dot">.</span></a>
-            
-            <div class="nav-controls">
-                <!-- Tema Değiştirme Butonu (Güneş/Ay) -->
-                <button id="theme-toggle" class="theme-btn" aria-label="Temayı Değiştir">
-                    <i class="fa-solid fa-sun"></i>
-                </button>
-
-                <button class="hamburger" aria-label="Menüyü Aç" aria-expanded="false">
-                    <i class="fa-solid fa-bars"></i>
-                </button>
-            </div>
-            
+            <a href="#" class="logo">A. Cihan<span class="dot">.</span></a>
+            <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
             <nav>
                 <ul class="nav-links">
                     <li><a href="#anasayfa">Ana Sayfa</a></li>
-                    <li><a href="#Hakkımda">Hakkımda</a></li>
+                    <li><a href="hakkimda.html">Hakkımda</a></li>
                     <li><a href="#blog">Blog</a></li>
-                    <li><a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank">YouTube</a></li>
-                    <li><a href="#iletisim" class="btn-cta">İletişim</a></li>
+                    <li><a href="#projeler">Projelerim</a></li>
+                    <li><a href="#youtube" class="yt-highlight">YouTube</a></li>
+                    <li><a href="#iletisim">İletişim</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
     <main>
-        <!-- Hero (Giriş) Bölümü -->
+        <!-- ========================= HERO ========================= -->
         <section id="anasayfa" class="hero-section">
             <div class="container hero-container">
                 <div class="hero-text hidden">
-                    <div class="badge"><i class="fa-solid fa-code"></i> Thinker</div>
-                    <h1>Abdullah <span class="gradient-text">CİHAN</span></h1>
-                    
-                    <p class="subtitle">Ben <span class="typewrite" data-period="2000" data-type='["Teknoloji Tutkunuyum.", "Felsefe Meraklısıyım.", "İçerik Üreticisiyim." ]'><span class="wrap"></span></span></p>
-                    
-                    <p class="description">Karmaşık teknolojik problemleri sadeleştiriyor, çözümleri analiz ediyor ve "Teknolojik Çözüm Video" kanalımda paylaşıyorum.</p>
-                    
+                    <div class="badge"><i class="fa-solid fa-code"></i> Developer &amp; Thinker</div>
+                    <h1>Abdullah <span class="gradient-text">Cihan</span></h1>
+
+                    <p class="subtitle">Ben <span class="typewrite" data-period="2000"
+                            data-type='[ "Python Geliştiricisiyim.", "Teknoloji Tutkunuyum.", "Felsefe Meraklısıyım.", "İçerik Üreticisiyim." ]'><span
+                                class="wrap"></span></span></p>
+
+                    <p class="description">Karmaşık teknolojik kavramları sadeleştiriyor, kodun felsefesini yapıyor ve
+                        "Teknolojik Çözüm Video" kanalımda paylaşıyorum.</p>
                     <div class="hero-buttons">
-                        <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn btn-primary"><i class="fa-brands fa-youtube"></i> Kanalı İncele</a>
+                        <a href="#youtube" class="btn btn-primary"><i class="fa-brands fa-youtube"></i> Kanalı
+                            İncele</a>
                         <a href="#blog" class="btn btn-outline">Yazılarım</a>
                     </div>
                 </div>
-                
                 <div class="hero-image hidden">
                     <div class="img-wrapper">
-                        <img src="assets/avatar.jpg" onerror="this.src='https://ui-avatars.com/api/?name=Abdullah+Cihan&background=0D8ABC&color=fff&size=500'" alt="Abdullah Cihan">
+                        <img src="https://placehold.co/500x500/1e293b/white?text=AC" alt="Abdullah Cihan">
                         <div class="floating-card python-card"><i class="fa-brands fa-python"></i></div>
+                        <div class="floating-card js-card"><i class="fa-brands fa-js"></i></div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Blog Bölümü -->
+        <!-- ========================= BLOG ========================= -->
         <section id="blog" class="section">
             <div class="container">
                 <div class="section-header hidden">
-                    <h2 class="section-title">Blog & Yazılar</h2>
+                    <h2 class="section-title">Blog &amp; Yazılar</h2>
                     <p>Teknoloji, yazılım ve felsefe üzerine öne çıkan notlarım.</p>
                 </div>
 
+                <!-- Blog Controls: Search & Category Pills -->
+                <div class="blog-controls hidden">
+                    <div class="search-container">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="blog-search" placeholder="Yazılarda ara...">
+                    </div>
+                    <div class="category-pills" id="category-pills-container">
+                        <!-- JS ile doldurulacak -->
+                    </div>
+                </div>
+
                 <div class="blog-layout">
-                    
-                    <!-- Sol Sidebar (Araçlar) -->
+
                     <aside class="tools-sidebar hidden">
                         <div class="sidebar-widget glass tools-widget">
                             <h3><i class="fa-solid fa-toolbox"></i> Hızlı Araçlar</h3>
-                            <div id="tools-list-container">
-                                <!-- Araçlar buraya tools.js ile yüklenecek -->
-                                <div class="skeleton-text"></div>
-                                <div class="skeleton-text"></div>
-                            </div>
+                            <div id="tools-list-container"></div>
                         </div>
                     </aside>
 
-                    <!-- Ana İçerik (Blog Listesi) -->
                     <div class="blog-main-content">
-                        <!-- Öne Çıkanlar -->
+
                         <div id="featured-container" class="featured-grid">
-                            <!-- JS ile doldurulacak -->
-                            <div class="skeleton-card glass" style="height: 300px;"></div>
                         </div>
 
                         <h3 class="sub-heading">Diğer İçerikler</h3>
-                        
-                        <!-- Standart Liste -->
+
                         <div id="standard-container" class="blog-list">
-                            <!-- JS ile doldurulacak -->
-                            <div class="skeleton-card glass" style="height: 150px; margin-bottom: 20px;"></div>
-                            <div class="skeleton-card glass" style="height: 150px; margin-bottom: 20px;"></div>
                         </div>
                     </div>
 
-                    <!-- Sağ Sidebar -->
                     <aside class="sidebar hidden">
-                       <style>
-    .followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: center !important;
-  margin-top: 30px !important;
-  padding: clamp(17px, 5%, 40px) clamp(17px, 7%, 50px) !important;
-  max-width: none !important;
-  border-radius: 6px !important;
-  box-shadow: 0 5px 25px rgba(34, 60, 47, 0.25) !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview,
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview *{
-  box-sizing: border-box !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-heading {
-  width: 100% !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-heading h5{
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field {
-  margin-top: 20px !important;
-  width: 100% !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input {
-  width: 100% !important;
-  height: 40px !important;
-  border-radius: 6px !important;
-  border: 2px solid #e9e8e8 !important;
-  background-color: #fff;
-  outline: none !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input {
-  color: #000000 !important;
-  font-family: "Montserrat" !important;
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 20px;
-  text-align: center;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input::placeholder {
-  color: #000000 !important;
-  opacity: 1 !important;
-}
+                        <div class="sidebar-widget glass" style="padding:15px; border-radius:12px; overflow:hidden;">
+                            <div class="followit--follow-form-container" attr-a attr-b attr-c attr-d attr-e attr-f>
+                                <form data-v-2164b4a9=""
+                                    action="https://api.follow.it/subscription-form/Yml0eGR2d2FRbmY5RFIvYUlnM1pxQjVZWUNXa3ZyNDJhcFlrZmJBT2J4b3p2c3FKNkYrdkl5SFNidFVCYlVLNDNwYUlyMnhpVnJHT2ZpK2ZPYm8wUnV3cHJPRDdQRkJ0UWY0SWcwdGhPZFQxZG8yZHdUNy91Uks3MDllNE5WWlh8T2hFaGtybExDYWtqeWd1RkVyU3paMkZSZXlFWlh4SU4yQ3NtUHJzcUxIbz0=/21"
+                                    method="post" data-gtm-form-interact-id="2">
+                                    <div data-v-2164b4a9="" class="form-preview"
+                                        style="background-color: var(--bg-card); position: relative; padding-bottom: 5px;">
+                                        <div data-v-2164b4a9="" class="preview-heading">
+                                            <h5 data-v-2164b4a9=""
+                                                style="font-family: 'Space Grotesk', sans-serif; font-weight: bold; color: var(--text-main); font-size: 16px; text-align: center; text-transform: none !important;">
+                                                📬 E-Bülten<br><span
+                                                    style="font-size:12px; font-weight:normal; color:var(--text-muted); font-family: 'Inter', sans-serif;">Yeni
+                                                    yazılardan haberdar olmak için katıl.</span></h5>
+                                        </div>
+                                        <div data-v-2164b4a9="" class="preview-input-field"><input data-v-2164b4a9=""
+                                                type="email" name="email" required="" placeholder="Email Adresi"
+                                                spellcheck="false"
+                                                style="width:100%; padding:10px; border-radius:8px; border:1px solid rgba(255,255,255,0.2); font-family: 'Inter', sans-serif; font-weight: normal; color: var(--text-main); font-size: 14px; text-align: center; background-color: rgba(0,0,0,0.3); text-transform: none !important; margin: 10px 0;"
+                                                data-gtm-form-interact-field-id="2"></div>
+                                        <div data-v-2164b4a9="" class="preview-submit-button"><button data-v-2164b4a9=""
+                                                type="submit"
+                                                style="width:100%; padding:10px; border-radius:8px; font-family: 'Inter', sans-serif; font-weight: bold; color: rgb(255, 255, 255); font-size: 14px; text-align: center; background: var(--gradient); text-transform: none !important; border:none; cursor:pointer; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);">Abone
+                                                Ol</button></div>
+                                    </div>
+                                </form>
+                                <div style="text-align:center; margin-top:10px;">
+                                    <a href="https://follow.it" class="powered-by-line"
+                                        style="font-size:10px; color:var(--text-muted); text-decoration:none;">Powered
+                                        by <img src="https://follow.it/images/colored-logo.svg" alt="follow.it"
+                                            height="12px"
+                                            style="vertical-align:middle; filter:grayscale(1) brightness(2);" /></a>
+                                </div>
+                            </div>
+                        </div>
 
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input:-ms-input-placeholder {
-  color: #000000 !important;
-}
-
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input::-ms-input-placeholder {
-  color: #000000 !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button {
-  margin-top: 10px !important;
-  width: 100% !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button button {
-  width: 100% !important;
-  height: 40px !important;
-  border: 0 !important;
-  border-radius: 6px !important;
-  line-height: 0px !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button button:hover {
-  cursor: pointer !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .powered-by-line {
-  color: #231f20 !important;
-  font-family: "Montserrat" !important;
-  font-size: 13px !important;
-  font-weight: 400 !important;
-  line-height: 25px !important;
-  text-align: center !important;
-  text-decoration: none !important;
-  display: flex !important;
-  width: 100% !important;
-  justify-content: center !important;
-  align-items: center !important;
-  margin-top: 10px !important;
-}
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .powered-by-line img {
-  margin-left: 10px !important;
-  height: 1.13em !important;
-  max-height: 1.13em !important;
-}
-
-/* === FOLLOW.IT DARK MODE THEME OVERRIDE (glass uyumu) === */
-
-/* Kutunun arka planını ve çerçevesini sitenin kartlarıyla aynı yap */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview{
-  background: var(--bg-card) !important;
-  border: 1px solid var(--glass-border) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  backdrop-filter: blur(16px) !important;
-  box-shadow: var(--shadow-soft) !important;
-}
-
-/* Başlık rengi (inline color: rgb(0,0,0) ezilsin) */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-heading h5{
-  color: var(--text-main) !important;
-}
-
-/* Input alanı: koyu tema */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input{
-  background: rgba(15, 23, 42, 0.6) !important;   /* dark görünüm */
-  border: 1px solid var(--glass-border) !important;
-  color: var(--text-main) !important;
-}
-
-/* Placeholder rengi */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-input-field input::placeholder{
-  color: var(--text-muted) !important;
-  opacity: 1 !important;
-}
-
-/* Abone Ol butonu: temadaki gradient ile uyumlu */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button button{
-  background: var(--gradient) !important;
-  color: #fff !important;
-  border: 0 !important;
-}
-
-/* Hover efekti */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .form-preview .preview-submit-button button:hover{
-  filter: brightness(1.05) !important;
-}
-
-/* Powered by satırı koyu temaya uysun */
-.followit--follow-form-container[attr-a][attr-b][attr-c][attr-d][attr-e][attr-f] .powered-by-line{
-  color: var(--text-muted) !important;
-}
-
-
-  </style>
-  <div class="followit--follow-form-container" attr-a attr-b attr-c attr-d attr-e attr-f>
-    <form data-v-2164b4a9="" action="https://api.follow.it/subscription-form/Yml0eGR2d2FRbmY5RFIvYUlnM1pxQjVZWUNXa3ZyNDJhcFlrZmJBT2J4b3p2c3FKNkYrdkl5SFNidFVCYlVLNDNwYUlyMnhpVnJHT2ZpK2ZPYm8wUnV3cHJPRDdQRkJ0UWY0SWcwdGhPZFQxZG8yZHdUNy91Uks3MDllNE5WWlh8T2hFaGtybExDYWtqeWd1RkVyU3paMkZSZXlFWlh4SU4yQ3NtUHJzcUxIbz0=/21" method="post" data-gtm-form-interact-id="2"><div data-v-2164b4a9="" class="form-preview" style="background-color: rgb(255, 255, 255); position: relative;"><div data-v-2164b4a9="" class="preview-heading"><h5 data-v-2164b4a9="" style="font-family: Arial; font-weight: bold; color: rgb(0, 0, 0); font-size: 16px; text-align: center; text-transform: none !important;">Yeni yazılardan haberdar olmak için katıl.</h5></div><div data-v-2164b4a9="" class="preview-input-field"><input data-v-2164b4a9="" type="email" name="email" required="" placeholder="Email Adresi" spellcheck="false" style="font-family: Arial; font-weight: normal; color: rgb(0, 0, 0); font-size: 14px; text-align: center; background-color: rgb(255, 255, 255); text-transform: none !important;" data-gtm-form-interact-field-id="2"></div><div data-v-2164b4a9="" class="preview-submit-button"><button data-v-2164b4a9="" type="submit" style="font-family: Arial; font-weight: bold; color: rgb(255, 255, 255); font-size: 16px; text-align: center; background-color: rgb(0, 0, 0); text-transform: none !important;">Abone Ol</button></div></div></form><a href="https://follow.it" class="powered-by-line">Powered by <img src="https://follow.it/images/colored-logo.svg" alt="follow.it" height="17px"/></a>
-  </div>
-
-                        <!-- Kategoriler -->
                         <div class="sidebar-widget glass">
                             <h3>Kategoriler</h3>
-                            <ul class="cat-list">
-                                <li><a href="#" onclick="filterByCategory('Python'); return false;">Python</a></li>
-                                <li><a href="#" onclick="filterByCategory('Teknoloji'); return false;">Teknoloji</a></li>
-                                <li><a href="#" onclick="filterByCategory('Felsefe'); return false;">Felsefe</a></li>
-                                <li><a href="#" onclick="filterByCategory('Video'); return false;">Video</a></li>
+                            <ul class="cat-list" id="category-list-widget">
+                                <li><a href="#"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...
+                                        <span>(-)</span></a></li>
                             </ul>
                         </div>
-                        
-                        <!-- YouTube Widget -->
+
                         <div class="sidebar-widget glass text-center">
                             <h3>Abone Ol</h3>
                             <p class="small-text">YouTube kanalıma beklerim.</p>
-                            <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn-sidebar">Kanalı Gör</a>
+                            <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank"
+                                class="btn-sidebar">Kanalı Gör</a>
                         </div>
                     </aside>
 
@@ -319,62 +224,135 @@
             </div>
         </section>
 
-        <!-- Footer -->
-        <footer id="iletisim">
-            <div class="container footer-content hidden">
-                <div class="social-box">
-                    <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="s-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-                    <a href="#" class="s-link" aria-label="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-                    <a href="#" class="s-link" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
-                    <a href="mailto:iletisim@abdullahcihan.com" class="s-link" aria-label="Email"><i class="fa-solid fa-envelope"></i></a>
+        <!-- ========================= PROJELERİM (DİNAMİK) ========================= -->
+        <section id="projeler" class="section">
+            <div class="container">
+                <div class="section-header hidden">
+                    <h2 class="section-title">Projelerim</h2>
+                    <p>Geliştirdiğim açık kaynak ve bağımsız projeler</p>
                 </div>
-                <div class="copyright">&copy; 2025 Abdullah Cihan. Tüm hakları saklıdır.</div>
+
+                <div class="projects-grid hidden" id="projects-container">
+                    <div class="text-center" style="grid-column: 1/-1; padding:30px; color:var(--text-muted);">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Projeler yükleniyor...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================= YOUTUBE ========================= -->
+        <section id="youtube" class="section">
+            <div class="container">
+                <div class="section-header hidden">
+                    <h2 class="section-title">YouTube <span class="gradient-text"
+                            style="background: linear-gradient(90deg, #ff0000, #ff4d4d); -webkit-background-clip: text; background-clip: text;">Kanalım</span>
+                    </h2>
+                    <p>Teknoloji, yapay zeka ve yazılıma dair video içeriklerim</p>
+                </div>
+
+                <div class="youtube-layout hidden">
+                    <div class="glass yt-main-card">
+                        <div class="video-wrapper">
+                            <iframe width="100%" height="100%"
+                                src="https://www.youtube.com/embed/9EGYmrvwX1k?si=ZM_nxHom2XoX16Vs"
+                                title="YouTube video player" frameborder="0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                        </div>
+                        <div class="yt-info">
+                            <h3>Son Yayınlanan Videom</h3>
+                            <p>Her hafta yeni bir içerikle karşınızdayım. Teknoloji trendleri ve kodlama eğitimleri için
+                                videoya göz atın.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass yt-side-card">
+                        <div class="yt-profile">
+                            <i class="fa-brands fa-youtube yt-huge-icon"></i>
+                            <h3>Teknolojik Çözüm Video</h3>
+                            <p>Yazılım dünyasının kalbine inen içerikler, felsefi incelemeler ve bot kodlama rehberleri.
+                            </p>
+
+                            <div class="yt-stats">
+                                <div class="stat-item">
+                                    <span class="stat-num">10K+</span>
+                                    <span class="stat-lbl">Abone</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-num">50+</span>
+                                    <span class="stat-lbl">Video</span>
+                                </div>
+                            </div>
+
+                            <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank"
+                                class="yt-subscribe-btn">
+                                <i class="fa-brands fa-youtube"></i> Hemen Abone Ol
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================= FOOTER & BÜLTEN ========================= -->
+        <footer id="iletisim" class="footer-section">
+            <div class="container">
+                <div class="newsletter-glass hidden">
+                    <div class="nl-content">
+                        <h2>📬 Haftalık Teknoloji Bültenime Katıl</h2>
+                        <p>Kodlama ipuçları, felsefi notlar ve projelerimin kamera arkası direkt kutuna gelsin. Spamsiz,
+                            saf içerik.</p>
+
+                        <form
+                            action="https://api.follow.it/subscription-form/Yml0eGR2d2FRbmY5RFIvYUlnM1pxQjVZWUNXa3ZyNDJhcFlrZmJBT2J4b3p2c3FKNkYrdkl5SFNidFVCYlVLNDNwYUlyMnhpVnJHT2ZpK2ZPYm8wUnV3cHJPRDdQRkJ0UWY0SWcwdGhPZFQxZG8yZHdUNy91Uks3MDllNE5WWlh8T2hFaGtybExDYWtqeWd1RkVyU3paMkZSZXlFWlh4SU4yQ3NtUHJzcUxIbz0=/21"
+                            method="post" target="_blank" class="nl-form">
+
+                            <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap;">
+                                <input type="email" name="email" placeholder="E-posta adresini gir..." required
+                                    style="flex:1;">
+                                <button type="submit" class="btn-nl-submit" style="white-space:nowrap;">Abone
+                                    Ol</button>
+                            </div>
+                            <div style="width:100%; text-align:left; margin-top:10px;">
+                                <small style="color:var(--text-muted); font-size:0.8rem;">
+                                    Powered by <a href="https://follow.it" target="_blank"
+                                        style="color:#38bdf8; text-decoration:none;">follow.it</a>
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="footer-bottom hidden">
+                    <div class="footer-brand">
+                        <a href="#" class="logo">A. Cihan<span class="dot" style="color:var(--primary);">.</span></a>
+                        <p>Kodlayan bir filozofun dijital günlüğü.</p>
+                    </div>
+
+                    <div class="social-box">
+                        <a href="https://www.youtube.com/@teknolojikcozumvideo/videos" target="_blank" class="s-link"
+                            title="YouTube"><i class="fa-brands fa-youtube"></i></a>
+                        <a href="#" class="s-link" title="Twitter / X"><i class="fa-brands fa-twitter"></i></a>
+                        <a href="#" class="s-link" title="GitHub"><i class="fa-brands fa-github"></i></a>
+                        <a href="mailto:iletisim@abdullahcihan.com" class="s-link" title="E-Posta"><i
+                                class="fa-solid fa-envelope"></i></a>
+                    </div>
+                </div>
+
+                <div class="copyright hidden">
+                    &copy; 2026 Abdullah Cihan. Tüm Hakları Saklıdır.
+                </div>
             </div>
         </footer>
     </main>
 
-    <!-- Yukarı Çık Butonu -->
-    <a href="#" class="back-to-top" aria-label="Yukarı Çık"><i class="fa-solid fa-arrow-up"></i></a>
+    <button id="theme-toggle" class="theme-toggle" title="Tema Değiştir" aria-label="Tema Değiştir">
+        <i class="fa-solid fa-moon"></i>
+    </button>
+    <a href="#" class="back-to-top"><i class="fa-solid fa-arrow-up"></i></a>
 
-    <!-- Scripts -->
-    <script src="script.js"></script> 
-    <script src="tools.js"></script>
-    
-    <!-- Inline JS: Hamburger Menu -->
-    <script>
-        const hamburger = document.querySelector('.hamburger');
-        const navLinks = document.querySelector('.nav-links');
-        
-        if(hamburger && navLinks){
-            hamburger.addEventListener('click', () => {
-                const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
-                hamburger.setAttribute('aria-expanded', !isExpanded);
-                navLinks.classList.toggle('active');
-                
-                // İkon değişimi
-                const icon = hamburger.querySelector('i');
-                if(icon) {
-                    icon.classList.toggle('fa-bars');
-                    icon.classList.toggle('fa-times');
-                }
-            });
-
-            // Linke tıklayınca menüyü kapat
-            document.querySelectorAll('.nav-links a').forEach(link => {
-                link.addEventListener('click', () => {
-                    navLinks.classList.remove('active');
-                    hamburger.setAttribute('aria-expanded', 'false');
-                    const icon = hamburger.querySelector('i');
-                    if(icon) {
-                        icon.classList.add('fa-bars');
-                        icon.classList.remove('fa-times');
-                    }
-                });
-            });
-        }
-    </script>
+    <script src="script.js" defer></script>
+    <script src="tools.js" defer></script>
 </body>
+
 </html>
-
-
-
