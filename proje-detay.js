@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (xBtn) xBtn.href = `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`;
         if (liBtn) liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
-        if (waBtn) waBtn.href = `https://api.whatsapp.com/send?text=${pageTitle}%20-\%20${pageUrl}`;
+        if (waBtn) waBtn.href = `https://api.whatsapp.com/send?text=${pageTitle}%20-%20${pageUrl}`;
     };
 
     const copyBtn = document.getElementById('share-copy');
