@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="admin.css">
     <link rel="stylesheet" href="admin-pages.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
 
 <body>
@@ -35,6 +35,7 @@
                 <li onclick="showSection('posts')"><i class="fa-solid fa-layer-group"></i> Yazılar</li>
                 <li onclick="showSection('new-post')"><i class="fa-solid fa-pen-to-square"></i> Yeni Yazı Ekle</li>
                 <li onclick="showSection('tools-manager')"><i class="fa-solid fa-toolbox"></i> Araç Yönetimi</li>
+                <li onclick="showSection('projects-manager')"><i class="fa-solid fa-rocket"></i> Projelerim</li>
                 <li onclick="showSection('pages-manager')"><i class="fa-solid fa-file-code"></i> Sayfalar</li>
                 <li onclick="showSection('settings')"><i class="fa-solid fa-gear"></i> Ayarlar & Yedek</li>
             </ul>
@@ -47,6 +48,7 @@
         </aside>
 
         <main class="admin-content">
+            <div class="content-glow"></div>
 
             <header class="admin-header glass">
                 <h3>Yönetim Paneli</h3>
@@ -77,12 +79,6 @@
                             <h4>Kategoriler</h4><span id="total-cats-count">0</span>
                         </div>
                     </div>
-                    <div class="stat-card glass">
-                        <div class="stat-icon icon-purple"><i class="fa-solid fa-eye"></i></div>
-                        <div>
-                            <h4>Toplam Kelime</h4><span id="total-words-count">0</span>
-                        </div>
-                    </div>
                 </div>
 
                 <div class="charts-container glass" style="margin-top: 20px; padding: 20px;">
@@ -106,7 +102,7 @@
                     <div class="actions-right">
                         <input type="text" id="search-posts" placeholder="Yazı ara..." onkeyup="filterPosts()"
                             class="search-input">
-                        <button onclick="showSection('new-post')" class="btn-add"><i class="fa-solid fa-plus"></i> Yeni
+                        <button onclick="openNewPost()" class="btn-add"><i class="fa-solid fa-plus"></i> Yeni
                             Ekle</button>
                     </div>
                 </div>
@@ -141,7 +137,7 @@
                             </div>
                             <div class="form-group flex-1">
                                 <label>Tarih</label>
-                                <input type="text" id="post-date">
+                                <input type="date" id="post-date" required>
                             </div>
                         </div>
 
@@ -191,6 +187,8 @@
 
                         <div class="form-footer">
                             <button type="button" onclick="savePost('draft')" class="btn-draft">Taslak Kaydet</button>
+                            <button type="button" onclick="cancelEdit()" class="btn-cancel"
+                                style="background: rgba(255,255,255,0.05); color: #cbd5e1; border: 1px solid rgba(255,255,255,0.1); padding: 12px 25px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s; margin-right: auto;">Vazgeç</button>
                             <button type="button" onclick="savePost('published')" class="btn-submit">Yayınla</button>
                         </div>
                     </form>
@@ -241,6 +239,87 @@
                             <tbody id="tools-table-body"></tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- ========================= PROJELER YÖNETİMİ ========================= -->
+            <section id="projects-manager" class="admin-section">
+                <div class="section-top">
+                    <h2>Projelerim</h2>
+                    <button type="button" onclick="openNewProjectForm()" class="btn-add"><i
+                            class="fa-solid fa-plus"></i>
+                        Yeni Proje Ekle</button>
+                </div>
+
+                <!-- Proje Ekleme/Düzenleme Formu -->
+                <div id="project-form-container" class="glass"
+                    style="display:none; padding:25px; margin-bottom:25px; border-radius:12px;">
+                    <h3 id="project-form-title">Yeni Proje Ekle</h3>
+                    <input type="hidden" id="project-edit-id">
+
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-top:15px;">
+                        <div>
+                            <label class="form-label">Proje Adı</label>
+                            <input type="text" id="project-baslik" class="form-input" placeholder="Ör: Auto YBS Bot">
+                        </div>
+                        <div>
+                            <label class="form-label">İkon (FontAwesome)</label>
+                            <input type="text" id="project-ikon" class="form-input" placeholder="Ör: fa-solid fa-robot"
+                                value="fa-solid fa-code">
+                        </div>
+                        <div>
+                            <label class="form-label">İkon Rengi</label>
+                            <input type="color" id="project-renk" value="#38bdf8"
+                                style="height:40px; border:none; cursor:pointer;">
+                        </div>
+                        <div>
+                            <label class="form-label">Teknoloji Etiketleri (virgülle)</label>
+                            <input type="text" id="project-etiketler" class="form-input"
+                                placeholder="Python, Selenium, Flask">
+                        </div>
+                        <div>
+                            <label class="form-label">GitHub Linki</label>
+                            <input type="url" id="project-github" class="form-input"
+                                placeholder="https://github.com/...">
+                        </div>
+                        <div>
+                            <label class="form-label">Demo Linki</label>
+                            <input type="url" id="project-demo" class="form-input" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div style="margin-top:15px;">
+                        <label class="form-label">Proje Açıklaması</label>
+                        <textarea id="project-aciklama" class="form-input" rows="3"
+                            placeholder="Projenin kısa açıklaması..."></textarea>
+                    </div>
+                    <div style="margin-top:15px; display:flex; gap:10px;">
+                        <button type="button" onclick="saveProject()" class="btn-add"><i class="fa-solid fa-check"></i>
+                            Kaydet</button>
+                        <button type="button" onclick="cancelProjectForm()" class="btn-cancel"
+                            style="padding:10px 20px; border:1px solid rgba(255,255,255,0.15); background:transparent; color:var(--text-muted); border-radius:8px; cursor:pointer;">Vazgeç</button>
+                    </div>
+                </div>
+
+                <!-- Proje Listesi -->
+                <div class="table-responsive glass">
+                    <table class="posts-table">
+                        <thead>
+                            <tr>
+                                <th>İkon</th>
+                                <th>Proje Adı</th>
+                                <th>Etiketler</th>
+                                <th>GitHub</th>
+                                <th>Demo</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projects-table-body">
+                            <tr>
+                                <td colspan="6" class="text-center"><i class="fa-solid fa-spinner fa-spin"></i>
+                                    Yükleniyor...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
@@ -335,14 +414,19 @@
         </main>
     </div>
 
-    <!-- SCRIPTS: Modüler sıra -->
-    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+    <button id="theme-toggle" class="theme-toggle" title="Tema Değiştir" aria-label="Tema Değiştir">
+        <i class="fa-solid fa-moon"></i>
+    </button>
 
-    <script src="admin.js"></script>
-    <script src="admin-dashboard.js"></script>
-    <script src="admin-posts.js"></script>
-    <script src="admin-tools.js"></script>
-    <script src="admin-pages.js"></script>
+    <!-- SCRIPTS: Modüler sıra -->
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js" defer></script>
+
+    <script src="admin.js" defer></script>
+    <script src="admin-dashboard.js" defer></script>
+    <script src="admin-posts.js" defer></script>
+    <script src="admin-tools.js" defer></script>
+    <script src="admin-pages.js" defer></script>
+    <script src="admin-projects.js" defer></script>
 </body>
 
 </html>
