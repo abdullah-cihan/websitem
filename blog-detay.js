@@ -51,11 +51,33 @@ document.addEventListener('DOMContentLoaded', () => {
   // SHARE (X / LinkedIn / WhatsApp / Kopyala)
   // ==========================================
   const pageUrl = encodeURIComponent(window.location.href);
-  const pageTitle = encodeURIComponent(document.title || 'Yazı');
 
-  const xBtn = document.getElementById('share-x');
-  const liBtn = document.getElementById('share-linkedin');
-  const waBtn = document.getElementById('share-whatsapp');
+  const setupShareButtons = (customTitle) => {
+    const pageTitle = encodeURIComponent(customTitle || 'Blog Yazısı');
+
+    const xBtn = document.getElementById('share-x');
+    const liBtn = document.getElementById('share-linkedin');
+    const waBtn = document.getElementById('share-whatsapp');
+
+    if (xBtn) {
+      // X (Twitter) paylaşım URL
+      xBtn.href = `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`;
+    }
+
+    if (liBtn) {
+      // LinkedIn paylaşım URL
+      liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
+    }
+
+    if (waBtn) {
+      // WhatsApp paylaşım URL
+      waBtn.href = `https://api.whatsapp.com/send?text=${pageTitle}%20-%20${pageUrl}`;
+    }
+  };
+
+  // İlk açılışta boş başlıkla çağır (veya varsayılanla)
+  setupShareButtons(document.title);
+
   const copyBtn = document.getElementById('share-copy');
 
   const toast = document.getElementById('share-toast');
@@ -66,21 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(window.__share_toast_t);
     window.__share_toast_t = setTimeout(() => toast.classList.remove('show'), 1600);
   };
-
-  if (xBtn) {
-    // X (Twitter) paylaşım URL
-    xBtn.href = `https://twitter.com/intent/tweet?text=${pageTitle}&url=${pageUrl}`;
-  }
-
-  if (liBtn) {
-    // LinkedIn paylaşım URL
-    liBtn.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
-  }
-
-  if (waBtn) {
-    // WhatsApp paylaşım URL
-    waBtn.href = `https://api.whatsapp.com/send?text=${pageTitle}%20-%20${pageUrl}`;
-  }
 
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
@@ -211,6 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const desc = String(post.summary || post.ozet || 'Ayrıntılar için tıklayın...'); // Use summary/ozet if available
 
     document.title = `${title} | Abdullah Cihan`;
+
+    // Update share buttons with loaded title
+    setupShareButtons(title);
 
     // Update Open Graph and Canonical tags dynamically
     const ogTitle = document.getElementById('og-title');
