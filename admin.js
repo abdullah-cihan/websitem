@@ -1,4 +1,39 @@
+// ==========================================
+// DARK / LIGHT MODE TOGGLE (Sayfa yüklenmeden önce, FOUC önleme)
+// ==========================================
+(function () {
+  const saved = localStorage.getItem('siteTheme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+
 document.addEventListener('DOMContentLoaded', () => {
+  // --- Theme Toggle Logic ---
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  if (themeToggleBtn) {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const icon = themeToggleBtn.querySelector('i');
+    if (currentTheme === 'light' && icon) {
+      icon.className = 'fa-solid fa-sun';
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const icon = themeToggleBtn.querySelector('i');
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+
+      if (isLight) {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('siteTheme', 'dark');
+        if (icon) icon.className = 'fa-solid fa-moon';
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+        localStorage.setItem('siteTheme', 'light');
+        if (icon) icon.className = 'fa-solid fa-sun';
+      }
+    });
+  }
+
   // ============================================
   // 0) GÜVENLİK KONTROLÜ (Client-side / UX)
   // ============================================
@@ -57,6 +92,25 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  // --- API HELPER ---
+  async function fetchAPI(action, payload = {}) {
+    const apiUrl = localStorage.getItem("SYSTEM_API_URL") || "https://script.google.com/macros/s/AKfycbwnUnPxxwIYV0L3M0j4SBdcDec-rzb3rhqqDCieXEUWFQRyjfdJM-N0xTgG8A9gDl1z6A/exec";
+    if (!apiUrl) throw new Error("API_URL tanımlı değil!");
+
+    const token = sessionStorage.getItem('adminToken');
+    const body = { action, token, ...payload };
+
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(body).toString()
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || "Sunucu hatası");
+    return data;
+  }
+
   // Modüllerin ortak kullanımı için tek namespace
   window.AdminCore = {
     escapeHTML,
@@ -64,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     safeIconClass,
     readArrayLS,
     writeLS,
+    fetchAPI
   };
 
   // ============================================
@@ -155,18 +210,51 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!u || !oldP || !newP) return showToast("Alanlar boş olamaz", "error");
     if (newP.length < 8) return showToast("Yeni şifre en az 8 karakter olmalı", "error");
 
-    const stored = localStorage.getItem('ADMIN_CRED_HASH') || '';
-    const oldHash = await sha256(`${u}:${oldP}`);
-    if (oldHash !== stored) return showToast("Mevcut şifre hatalı", "error");
+    showToast("İşlem yapılıyor, lütfen bekleyin...", "warning");
+    const btn = document.querySelector("#settings .btn-submit");
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...`;
+    }
 
-    const newHash = await sha256(`${newU}:${newP}`);
-    localStorage.setItem('ADMIN_CRED_HASH', newHash);
+    try {
+      // 1. App Script Backend Testi
+      await AdminCore.fetchAPI('update_admin', {
+        old_user: u,
+        old_pass: oldP,
+        new_user: newU,
+        new_pass: newP
+      });
+      // Backend başarılı oldu, auth bilgilerini cache'te tutabiliriz
+      const newHash = await sha256(`${newU}:${newP}`);
+      localStorage.setItem('ADMIN_CRED_HASH', newHash);
 
-    showToast("✅ Şifre güncellendi", "success");
+      showToast("✅ Şifre güncellendi", "success");
+      sessionStorage.clear();
+      setTimeout(() => (window.location.href = 'login.html'), 1500);
 
-    sessionStorage.removeItem('adminToken');
-    sessionStorage.removeItem('adminTokenExp');
-    setTimeout(() => (window.location.href = 'login.html'), 600);
+    } catch (e) {
+      // 2. LocalStorage Fallback Testi (Şifre Backend'de güncellenemedi veya API yok)
+      console.warn("API Hatası (Fallback Devrede):", e.message);
+
+      const stored = localStorage.getItem('ADMIN_CRED_HASH') || '';
+      const oldHash = await sha256(`${u}:${oldP}`);
+
+      if (oldHash !== stored) {
+        showToast("Mevcut şifre hatalı", "error");
+      } else {
+        const newHash = await sha256(`${newU}:${newP}`);
+        localStorage.setItem('ADMIN_CRED_HASH', newHash);
+        showToast("✅ Şifre (Yerel) güncellendi", "success");
+        sessionStorage.clear();
+        setTimeout(() => (window.location.href = 'login.html'), 1500);
+      }
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `Güncelle`;
+      }
+    }
   };
 
   // ============================================
