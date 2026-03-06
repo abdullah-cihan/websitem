@@ -1,39 +1,76 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog Detay | Abdullah Cihan</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css">        
-    <link rel="stylesheet" href="blog-detay.css">  
+
+    <!-- Open Graph (Sosyal Medya Paylaşım) Meta Etiketleri -->
+    <meta property="og:title" id="og-title" content="Blog Yazısı | Abdullah Cihan">
+    <meta property="og:description" id="og-desc" content="Ayrıntılar için tıklayın...">
+    <meta property="og:image" id="og-image" content="">
+    <meta property="og:url" id="og-url" content="">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <!-- SEO & AI Optimizasyon Etiketleri -->
+    <link rel="canonical" id="canonical-url" href="https://abdullahcihan.com/blog-detay.html">
+    <meta name="author" content="Abdullah Cihan">
+
+    <!-- Schema.org JSON-LD (Yapay Zeka ve Arama Motorları İçin Makale Kimliği) -->
+    <script type="application/ld+json" id="article-json-ld">
+    {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Blog Yazısı | Abdullah Cihan",
+      "author": {
+        "@type": "Person",
+        "name": "Abdullah Cihan",
+        "url": "https://abdullahcihan.com/"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Abdullah Cihan",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://abdullahcihan.com/favicon.ico"
+        }
+      }
+    }
+    </script>
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="blog-detay.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2893282302624336"
+        crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-2893282302624336">
 </head>
+
 <body>
 
-    <div id="progress-container"><div id="progress-bar"></div></div>
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
     <div class="background-glow"></div>
 
     <header class="header">
         <div class="container nav-container">
             <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
-            
-            <!-- NAV CONTROLS: Tema Butonu ve Hamburger Menü -->
-            <div class="nav-controls">
-                <button id="theme-toggle" class="theme-btn" aria-label="Temayı Değiştir">
-                    <i class="fa-solid fa-moon"></i>
-                </button>
-                <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
-            </div>
-
+            <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.html">Ana Sayfa</a></li>
                     <li><a href="index.html#blog">Blog</a></li>
-                    <li><a href="#youtube">YouTube</a></li>
-                    <li><a href="#iletisim" class="btn-cta">İletişim</a></li>
+                    <li><a href="#youtube" class="yt-highlight">YouTube</a></li>
+                    <li><a href="#iletisim">İletişim</a></li>
                 </ul>
             </nav>
         </div>
@@ -43,21 +80,21 @@
         <section class="article-header-section">
             <div class="container">
                 <a href="index.html#blog" class="back-link"><i class="fa-solid fa-arrow-left"></i> Blog'a Dön</a>
-                
+
                 <div class="article-meta">
                     <span id="detail-category" class="category">Kategori</span>
                     <span id="detail-date" class="date">Tarih</span>
                 </div>
-                
+
                 <h1 id="detail-title" class="article-main-title">Yazı Yükleniyor...</h1>
             </div>
         </section>
 
         <section id="article-body-section" class="section article-body">
             <div class="container detail-layout">
-                
+
                 <div class="article-content glass">
-                    
+
                     <div class="article-cover">
                         <div class="cover-placeholder">
                             <i id="detail-icon" class="fa-solid fa-spinner"></i>
@@ -70,33 +107,49 @@
                     </div>
 
                     <div class="share-box">
-                    <span class="share-title">Bu yazıyı paylaş:</span>
+                        <span class="share-title">Bu yazıyı paylaş:</span>
 
-                    <div class="share-actions">
-                        <a class="share-btn share-x" href="#" id="share-x" target="_blank" rel="noopener noreferrer" aria-label="X'te paylaş">
-                        <i class="fa-brands fa-x-twitter"></i>
-                        <span>X</span>
-                        </a>
+                        <div class="share-actions">
+                            <a class="share-btn share-x" href="#" id="share-x" target="_blank" rel="noopener noreferrer"
+                                aria-label="X'te paylaş">
+                                <i class="fa-brands fa-twitter"></i>
+                                <span>X</span>
+                            </a>
 
-                        <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn'de paylaş">
-                        <i class="fa-brands fa-linkedin-in"></i>
-                        <span>LinkedIn</span>
-                        </a>
+                            <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank"
+                                rel="noopener noreferrer" aria-label="LinkedIn'de paylaş">
+                                <i class="fa-brands fa-linkedin-in"></i>
+                                <span>LinkedIn</span>
+                            </a>
 
-                        <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp'ta paylaş">
-                        <i class="fa-brands fa-whatsapp"></i>
-                        <span>WhatsApp</span>
-                        </a>
+                            <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank"
+                                rel="noopener noreferrer" aria-label="WhatsApp'ta paylaş">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
 
-                        <button class="share-btn share-copy" type="button" id="share-copy" aria-label="Linki kopyala">
-                        <i class="fa-solid fa-link"></i>
-                        <span>Kopyala</span>
-                        </button>
+                            <button class="share-btn share-copy" type="button" id="share-copy"
+                                aria-label="Linki kopyala">
+                                <i class="fa-solid fa-link"></i>
+                                <span>Kopyala</span>
+                            </button>
+                        </div>
+
+                        <small class="share-hint">Link otomatik alınır. İstersen kopyalayıp paylaşabilirsin.</small>
+
+                        <div class="share-toast" id="share-toast" aria-live="polite"></div>
                     </div>
 
-                    <small class="share-hint">Link otomatik alınır. İstersen kopyalayıp paylaşabilirsin.</small>
-
-                    <div class="share-toast" id="share-toast" aria-live="polite"></div>
+                    <!-- BENZER YAZILAR EKLENTİSİ -->
+                    <div id="related-posts-section" class="related-posts-section"
+                        style="margin-top: 60px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <h3
+                            style="font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; color: var(--text-main); margin-bottom: 25px;">
+                            Şunlara da göz atabilirsiniz...</h3>
+                        <div id="related-posts-grid"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                            <!-- Dinamik olarak JS ile dolacak -->
+                        </div>
                     </div>
                 </div>
 
@@ -113,7 +166,8 @@
                     <div class="sidebar-widget glass text-center">
                         <h3>Abone Ol</h3>
                         <p class="small-text">YouTube kanalıma beklerim.</p>
-                        <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank" class="btn-sidebar">Kanalı Gör</a>
+                        <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank"
+                            class="btn-sidebar">Kanalı Gör</a>
                     </div>
                 </aside>
             </div>
@@ -126,68 +180,21 @@
         </footer>
     </main>
 
+    <button id="theme-toggle" class="theme-toggle" title="Tema Değiştir" aria-label="Tema Değiştir">
+        <i class="fa-solid fa-moon"></i>
+    </button>
     <a href="#" class="back-to-top"><i class="fa-solid fa-arrow-up"></i></a>
     <script src="blog-detay.js"></script>
-    
+
     <script>
-        // --- UI ETKİLEŞİMLERİ & TEMA YÖNETİMİ ---
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const hamburger = document.querySelector('.hamburger');
-            const navLinks = document.querySelector('.nav-links');
-            const themeToggle = document.getElementById('theme-toggle');
-            const body = document.body;
-            const themeIcon = themeToggle ? themeToggle.querySelector('i') : null;
-
-            // 1. Mobil Menü
-            if(hamburger && navLinks){
-                hamburger.addEventListener('click', () => {
-                    navLinks.classList.toggle('active');
-                    // İkon değişimi (Opsiyonel)
-                    const icon = hamburger.querySelector('i');
-                    if(icon) {
-                        icon.classList.toggle('fa-bars');
-                        icon.classList.toggle('fa-xmark');
-                    }
-                });
-            }
-
-            // 2. Tema Yönetimi (Local Storage)
-            const savedTheme = localStorage.getItem('theme');
-            
-            // Eğer kayıtlı tema 'dark' ise uygula
-            if (savedTheme === 'dark') {
-                body.classList.add('dark-mode');
-                if(themeIcon) {
-                    themeIcon.classList.remove('fa-moon');
-                    themeIcon.classList.add('fa-sun');
-                }
-            }
-
-            // Tema Butonuna Tıklama
-            if(themeToggle) {
-                themeToggle.addEventListener('click', () => {
-                    body.classList.toggle('dark-mode');
-                    const isDark = body.classList.contains('dark-mode');
-
-                    if (isDark) {
-                        // Karanlık Moda geçildi -> Kaydet ve Güneş ikonu göster
-                        localStorage.setItem('theme', 'dark');
-                        if(themeIcon) {
-                            themeIcon.classList.remove('fa-moon');
-                            themeIcon.classList.add('fa-sun');
-                        }
-                    } else {
-                        // Aydınlık Moda geçildi -> Kaydet ve Ay ikonu göster
-                        localStorage.setItem('theme', 'light');
-                        if(themeIcon) {
-                            themeIcon.classList.remove('fa-sun');
-                            themeIcon.classList.add('fa-moon');
-                        }
-                    }
-                });
-            }
-        });
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+        if (hamburger) {
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
     </script>
 </body>
+
 </html>
