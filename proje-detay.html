@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje Detay | Abdullah Cihan</title>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Open Graph (Sosyal Medya Paylaşım) Meta Etiketleri -->
+    <meta property="og:title" id="og-title" content="Proje Görüntüle | Abdullah Cihan">
+    <meta property="og:description" id="og-desc" content="Ayrıntılar için tıklayın...">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="blog-detay.css">
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2893282302624336"
+        crossorigin="anonymous"></script>
+    <meta name="google-adsense-account" content="ca-pub-2893282302624336">
+</head>
+
+<body>
+
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    <div class="background-glow"></div>
+
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">A. Cihan<span class="dot">.</span></a>
+            <div class="hamburger"><i class="fa-solid fa-bars"></i></div>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="index.html">Ana Sayfa</a></li>
+                    <li><a href="index.html#blog">Blog</a></li>
+                    <li><a href="index.html#projeler">Projelerim</a></li>
+                    <li><a href="index.html#youtube" class="yt-highlight">YouTube</a></li>
+                    <li><a href="#iletisim">İletişim</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="article-header-section" id="project-header" style="transition: background-color 0.5s;">
+            <div class="container">
+                <a href="index.html#projeler" class="back-link"><i class="fa-solid fa-arrow-left"></i> Projelere Dön</a>
+
+                <div class="article-meta" style="margin-top:20px;">
+                    <span id="detail-date" class="date">Tarih</span>
+                </div>
+
+                <h1 id="detail-title" class="article-main-title">Proje Yükleniyor...</h1>
+
+                <div id="detail-tags" class="tags-wrapper" style="justify-content:center; margin-top:20px;">
+                    <!-- Etiketler dinamik -->
+                </div>
+            </div>
+        </section>
+
+        <section id="article-body-section" class="section article-body">
+            <div class="container detail-layout">
+
+                <div class="article-content glass">
+
+                    <!-- Cover Icon (Büyük) -->
+                    <div class="article-cover"
+                        style="height:250px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.1); border-radius:15px; margin-bottom: 30px;">
+                        <i id="detail-icon" class="fa-solid fa-spinner fa-spin"
+                            style="font-size: 5rem; color: var(--primary);"></i>
+                    </div>
+
+                    <div id="detail-content"
+                        style="font-size: 1.1rem; line-height: 1.8; text-align: center; margin-bottom: 40px; color: var(--text-muted);">
+                        <p>İçerik getiriliyor...</p>
+                    </div>
+
+                    <div id="project-action-links"
+                        style="display:flex; justify-content:center; gap: 20px; margin-bottom: 50px;">
+                        <!-- Butonlar JS'den -->
+                    </div>
+
+                    <div class="share-box">
+                        <span class="share-title">Bu projeyi paylaş:</span>
+
+                        <div class="share-actions">
+                            <a class="share-btn share-x" href="#" id="share-x" target="_blank" rel="noopener noreferrer"
+                                aria-label="X'te paylaş">
+                                <i class="fa-brands fa-twitter"></i>
+                                <span>X</span>
+                            </a>
+
+                            <a class="share-btn share-linkedin" href="#" id="share-linkedin" target="_blank"
+                                rel="noopener noreferrer" aria-label="LinkedIn'de paylaş">
+                                <i class="fa-brands fa-linkedin-in"></i>
+                                <span>LinkedIn</span>
+                            </a>
+
+                            <a class="share-btn share-whatsapp" href="#" id="share-whatsapp" target="_blank"
+                                rel="noopener noreferrer" aria-label="WhatsApp'ta paylaş">
+                                <i class="fa-brands fa-whatsapp"></i>
+                                <span>WhatsApp</span>
+                            </a>
+
+                            <button class="share-btn share-copy" type="button" id="share-copy"
+                                aria-label="Linki kopyala">
+                                <i class="fa-solid fa-link"></i>
+                                <span>Kopyala</span>
+                            </button>
+                        </div>
+
+                        <small class="share-hint">Link otomatik alınır. İstersen kopyalayıp paylaşabilirsin.</small>
+                        <div class="share-toast" id="share-toast" aria-live="polite"></div>
+                    </div>
+                </div>
+
+                <aside class="sidebar">
+                    <div class="sidebar-widget glass">
+                        <h3>Daha Fazla Proje</h3>
+                        <ul class="cat-list" id="sidebar-projects-list">
+                            <li><a href="#"><i class="fa-solid fa-spinner fa-spin"></i> Yükleniyor...</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-widget glass text-center">
+                        <h3>Abone Ol</h3>
+                        <p class="small-text">YouTube kanalıma beklerim.</p>
+                        <a href="https://www.youtube.com/@teknolojikcozumvideo" target="_blank"
+                            class="btn-sidebar">Kanalı Gör</a>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <footer id="iletisim">
+            <div class="container footer-content">
+                <div class="copyright">&copy; 2025 Abdullah Cihan.</div>
+            </div>
+        </footer>
+    </main>
+
+    <button id="theme-toggle" class="theme-toggle" title="Tema Değiştir" aria-label="Tema Değiştir">
+        <i class="fa-solid fa-moon"></i>
+    </button>
+    <a href="#" class="back-to-top"><i class="fa-solid fa-arrow-up"></i></a>
+
+    <script src="proje-detay.js"></script>
+
+    <script>
+        const hamburger = document.querySelector('.hamburger');
+        const navLinks = document.querySelector('.nav-links');
+        if (hamburger) {
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+
+</html>
