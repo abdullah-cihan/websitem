@@ -121,6 +121,27 @@
                         <tbody id="posts-table-body"></tbody>
                     </table>
                 </div>
+
+                <!-- Sayfalama (Pagination) -->
+                <div class="pagination-container"
+                    style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+                    <div class="rows-per-page">
+                        <label style="display:inline-block; margin-right:10px; color:#94a3b8; font-size:0.9rem;">Sayfa
+                            başı:</label>
+                        <select id="posts-per-page" onchange="AdminPosts.changePerPage()"
+                            style="width:70px; padding:6px; background:#0f172a; border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:white;">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <div id="posts-pagination" class="pagination-controls"
+                        style="display:flex; gap:10px; align-items:center;">
+                        <!-- JS ile doldurulacak -->
+                    </div>
+                </div>
+
             </section>
 
             <section id="new-post" class="admin-section">
