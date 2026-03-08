@@ -3,7 +3,10 @@
 
 const AdminPosts = {
   posts: [],
+  filteredPosts: [],
   editPostId: null,
+  currentPage: 1,
+  postsPerPage: 10,
 
   init: async () => {
     console.log("AdminPosts başlatılıyor...");
@@ -147,17 +150,113 @@ const AdminPosts = {
     }
   },
 
+  sortPostsByDate: () => {
+    AdminPosts.posts.sort((a, b) => {
+      const dateA = new Date(a.tarih || 0);
+      const dateB = new Date(b.tarih || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+  },
+
+  filterPostsList: () => {
+    const searchInput = document.getElementById('search-posts');
+    const query = searchInput ? searchInput.value.toLowerCase() : '';
+
+    if (!query) {
+      AdminPosts.filteredPosts = [...AdminPosts.posts];
+    } else {
+      AdminPosts.filteredPosts = AdminPosts.posts.filter(p =>
+        (p.baslik && p.baslik.toLowerCase().includes(query)) ||
+        (p.kategori && p.kategori.toLowerCase().includes(query))
+      );
+    }
+    AdminPosts.currentPage = 1; // Arama değişince ilk sayfaya dön
+    AdminPosts.renderPosts();
+  },
+
+  changePerPage: () => {
+    const select = document.getElementById('posts-per-page');
+    if (select) {
+      AdminPosts.postsPerPage = parseInt(select.value, 10);
+      AdminPosts.currentPage = 1;
+      AdminPosts.renderPosts();
+    }
+  },
+
+  goToPage: (page) => {
+    AdminPosts.currentPage = page;
+    AdminPosts.renderPosts();
+  },
+
+  renderPagination: () => {
+    const paginationContainer = document.getElementById('posts-pagination');
+    if (!paginationContainer) return;
+
+    paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(AdminPosts.filteredPosts.length / AdminPosts.postsPerPage);
+
+    if (totalPages <= 1) return;
+
+    // Önceki Butonu
+    const prevBtn = document.createElement('button');
+    prevBtn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+    prevBtn.className = 'btn-draft';
+    prevBtn.style.padding = '5px 10px';
+    prevBtn.disabled = AdminPosts.currentPage === 1;
+    if (AdminPosts.currentPage === 1) prevBtn.style.opacity = '0.5';
+    prevBtn.onclick = () => AdminPosts.goToPage(AdminPosts.currentPage - 1);
+    paginationContainer.appendChild(prevBtn);
+
+    // Sayfa Numaraları
+    for (let i = 1; i <= totalPages; i++) {
+      // Basit sayfalama (Tüm sayfaları göster. Çok sayfa olursa ileride daraltılabilir)
+      const pageBtn = document.createElement('button');
+      pageBtn.textContent = i;
+      pageBtn.className = i === AdminPosts.currentPage ? 'btn-submit' : 'btn-draft';
+      pageBtn.style.padding = '5px 12px';
+      pageBtn.onclick = () => AdminPosts.goToPage(i);
+      paginationContainer.appendChild(pageBtn);
+    }
+
+    // Sonraki Butonu
+    const nextBtn = document.createElement('button');
+    nextBtn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+    nextBtn.className = 'btn-draft';
+    nextBtn.style.padding = '5px 10px';
+    nextBtn.disabled = AdminPosts.currentPage === totalPages;
+    if (AdminPosts.currentPage === totalPages) nextBtn.style.opacity = '0.5';
+    nextBtn.onclick = () => AdminPosts.goToPage(AdminPosts.currentPage + 1);
+    paginationContainer.appendChild(nextBtn);
+  },
+
   renderPosts: () => {
     const tbody = document.getElementById('posts-table-body');
     if (!tbody) return;
 
     tbody.innerHTML = '';
-    if (AdminPosts.posts.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Henüz yazı eklenmemiş.</td></tr>';
+
+    // Eğer filteredPosts tanımlı değilse ilk yüklemede eşitle ve tarihe göre sırala
+    if (!AdminPosts.filteredPosts || AdminPosts.filteredPosts.length === 0 && AdminPosts.posts.length > 0) {
+      AdminPosts.sortPostsByDate();
+      AdminPosts.filteredPosts = [...AdminPosts.posts];
+    } else if (AdminPosts.posts.length > 0 && AdminPosts.filteredPosts.length === 0) { // Arama sonucu 0 ise
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Aradığınız kriterlere uygun yazı bulunamadı.</td></tr>';
+      AdminPosts.renderPagination();
       return;
     }
 
-    AdminPosts.posts.forEach((p) => {
+    if (AdminPosts.filteredPosts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Henüz yazı eklenmemiş.</td></tr>';
+      AdminPosts.renderPagination();
+      return;
+    }
+
+    // Sayfalama Hesaplamaları
+    const startIndex = (AdminPosts.currentPage - 1) * AdminPosts.postsPerPage;
+    const endIndex = startIndex + AdminPosts.postsPerPage;
+    const paginatedPosts = AdminPosts.filteredPosts.slice(startIndex, endIndex);
+
+    paginatedPosts.forEach((p) => {
       const tr = document.createElement('tr');
 
       // İkon mu resim mi?
@@ -188,6 +287,8 @@ const AdminPosts = {
             `;
       tbody.appendChild(tr);
     });
+
+    AdminPosts.renderPagination();
   }
 };
 
