@@ -70,7 +70,8 @@ const AdminPosts = {
             }
           }
         },
-        theme: 'snow'
+        theme: 'snow',
+        placeholder: 'Hikayenizi anlatın...'
       });
 
       // Buton ikonları ekleme (Quill varsayılan olarak bu özel butonların ikonlarını bilmez)
