@@ -17,6 +17,10 @@ const AdminPosts = {
       Font.whitelist = ['inter', 'roboto', 'space-grotesk', 'outfit', 'poppins', 'monospace'];
       Quill.register(Font, true);
 
+      if (typeof QuillBlotFormatter !== 'undefined') {
+        Quill.register('modules/blotFormatter', QuillBlotFormatter.default || QuillBlotFormatter);
+      }
+
       const toolbarOptions = [
         [{ 'font': Font.whitelist }, { 'size': ['small', false, 'large', 'huge'] }], // Font ve Boyut
         [{ 'header': [1, 2, 3, 4, 5, 6, false] }],        // Gelişmiş başlık
@@ -34,9 +38,17 @@ const AdminPosts = {
 
       window.quill = new Quill('#editor-container', {
         modules: {
+          blotFormatter: {},
           toolbar: {
             container: toolbarOptions,
             handlers: {
+              'image': function () {
+                const range = window.quill.getSelection();
+                const value = prompt("Lütfen Görsel URL'sini giriniz (örn: https://...):");
+                if (value) {
+                  window.quill.insertEmbed(range ? range.index : 0, 'image', value, Quill.sources.USER);
+                }
+              },
               'source': function () {
                 const html = window.quill.root.innerHTML;
                 const newHtml = prompt("Kaynak HTML kodu (Dikkatli düzenleyin):", html);
