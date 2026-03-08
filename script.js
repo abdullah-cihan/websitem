@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeCategoryFilter = new URLSearchParams(window.location.search).get('category') || null;
   let currentSearchQuery = '';
+  let currentFrontPage = 1;
+  const postsPerPageFront = 10;
 
   // Tarih Formatlayıcı (Örn: "23 Ocak 2026 12:40")
   const formatDateTR = (dateStr) => {
@@ -114,11 +116,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${mins} dk okuma`;
   };
 
-  const renderPosts = () => {
+  const renderPosts = (resetPage = false) => {
+    if (resetPage) currentFrontPage = 1;
     // Sadece "published" olanlar
     let blogPosts = allPosts.filter(post =>
       post && (post.status === 'published' || post.status === undefined || post.durum === 'yayında' || post.durum === 'Yayında')
     );
+
+    // Tarihe göre yeniden eskiye sırala
+    blogPosts.sort((a, b) => {
+      const dateA = new Date(a.date || a.tarih || 0);
+      const dateB = new Date(b.date || b.tarih || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
 
     const featuredContainer = document.getElementById('featured-container');
     const standardContainer = document.getElementById('standard-container');
@@ -173,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (searchInput) searchInput.value = '';
           // URL'den de sil
           window.history.replaceState({}, document.title, window.location.pathname);
-          renderPosts();
+          renderPosts(true);
         });
       }
     } else {
@@ -187,20 +197,51 @@ document.addEventListener('DOMContentLoaded', () => {
       p.textContent = 'Aramanıza uygun yazı bulunamadı.';
       standardContainer.appendChild(p);
     } else {
+      // Toplam Kaç Standart Post Var
+      const loadMoreBtn = document.getElementById('load-more-btn');
+      let standardPosts = [];
+      let featuredPostsCount = 0;
+
       filteredPosts.forEach((post) => {
-        const realIndex = allPosts.indexOf(post);
-        const card = createPostCard(post, realIndex);
-
-        // Eğer arama veya filtre varsa hepsini standarda diz (tasarım bozulmaması için)
-        // Yoksa featured ve standard olarak ayır
         const isFeaturedPost = post.isFeatured || post.one_cikan === "Evet" || post.one_cikan === true;
-
         if (isFeaturedPost && !activeCategoryFilter && !currentSearchQuery) {
-          featuredContainer.appendChild(card);
+          featuredPostsCount++;
         } else {
-          standardContainer.appendChild(card);
+          standardPosts.push(post);
         }
       });
+
+      // Pagination Limitini Uygula
+      const limit = currentFrontPage * postsPerPageFront;
+      const paginatedStandardPosts = standardPosts.slice(0, limit);
+
+      // Render Featured
+      filteredPosts.forEach((post) => {
+        const isFeaturedPost = post.isFeatured || post.one_cikan === "Evet" || post.one_cikan === true;
+        if (isFeaturedPost && !activeCategoryFilter && !currentSearchQuery) {
+          const realIndex = allPosts.indexOf(post);
+          featuredContainer.appendChild(createPostCard(post, realIndex));
+        }
+      });
+
+      // Render Standard (Paginated)
+      paginatedStandardPosts.forEach((post) => {
+        const realIndex = allPosts.indexOf(post);
+        standardContainer.appendChild(createPostCard(post, realIndex));
+      });
+
+      // Load More Butonu Mantığı
+      if (loadMoreBtn) {
+        if (standardPosts.length > limit) {
+          loadMoreBtn.style.display = 'inline-block';
+          loadMoreBtn.onclick = () => {
+            currentFrontPage++;
+            renderPosts(false); // Yeni sayfayı üstüne eklemesi için tekrar render eder (render fonksiyonu zaten innerHTML siliyor, böylece hepsi yeniden yüklenir)
+          };
+        } else {
+          loadMoreBtn.style.display = 'none';
+        }
+      }
     }
 
     // Animasyonlar
@@ -219,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       currentSearchQuery = e.target.value.trim();
-      renderPosts();
+      renderPosts(true);
     });
   }
 
@@ -262,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             activeCategoryFilter = cat;
             window.history.replaceState({}, '', `?category=${encodeURIComponent(cat)}#blog`);
-            renderPosts();
+            renderPosts(true);
           });
 
           li.appendChild(a);
@@ -281,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
       allPill.addEventListener('click', () => {
         activeCategoryFilter = null;
         window.history.replaceState({}, '', window.location.pathname + '#blog');
-        renderPosts();
+        renderPosts(true);
       });
       pillsContainer.appendChild(allPill);
 
@@ -292,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.addEventListener('click', () => {
           activeCategoryFilter = cat;
           window.history.replaceState({}, '', `?category=${encodeURIComponent(cat)}#blog`);
-          renderPosts();
+          renderPosts(true);
         });
         pillsContainer.appendChild(pill);
       });
@@ -435,7 +476,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Cache'den ilk (varsa) gösterim, yoksa skeleton göster
   if (allPosts && allPosts.length > 0) {
-    renderPosts();
+    renderPosts(true);
   } else {
     renderSkeletons();
   }
@@ -467,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Güncel veriyi kaydet ve render et
         localStorage.setItem('posts', JSON.stringify(formattedPosts));
         allPosts = formattedPosts;
-        renderPosts(allPosts);
+        renderPosts(true);
       }
     } catch (err) {
       console.warn("Sunucudan yazılar çekilemedi, yerel önbellek gösteriliyor.");
