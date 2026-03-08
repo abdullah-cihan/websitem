@@ -275,10 +275,23 @@ const AdminPosts = {
       const statusColor = (p.durum.toLowerCase() === 'yayında' || p.durum.toLowerCase() === 'published') ? '#10b981' : '#f59e0b';
       const statusText = (p.durum.toLowerCase() === 'yayında' || p.durum.toLowerCase() === 'published') ? 'Yayında' : 'Taslak';
 
+      // Tarih Formatı
+      let formattedDate = '-';
+      if (p.tarih) {
+        const d = new Date(p.tarih);
+        if (!isNaN(d.getTime())) {
+          formattedDate = d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+      }
+
+      const readCount = p.okunma_sayisi || 0;
+
       tr.innerHTML = `
                 <td>${thumb}</td>
                 <td style="font-weight:600;">${p.baslik || 'İsimsiz Yazı'}</td>
                 <td><span style="background:rgba(255,255,255,0.05); padding:4px 8px; border-radius:4px; font-size:0.8rem;">${p.kategori || 'Genel'}</span></td>
+                <td><span style="color:#94a3b8; font-size:0.9rem;">${formattedDate}</span></td>
+                <td><span style="background:rgba(56, 189, 248, 0.1); color:#38bdf8; padding:4px 8px; border-radius:4px; font-size:0.8rem; font-weight:600;"><i class="fa-solid fa-eye" style="margin-right:4px;"></i>${readCount}</span></td>
                 <td><span style="color:${statusColor}; font-size:0.9rem; font-weight:600;"><i class="fa-solid fa-circle" style="font-size:0.5rem; vertical-align:middle; margin-right:4px;"></i>${statusText}</span></td>
                 <td>
                     <button class="action-btn btn-edit" onclick="editPost('${p.id}')" title="Düzenle"><i class="fa-solid fa-pen"></i></button>
